@@ -1229,7 +1229,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 //데이터를 가져온지 오래 되었고 요청한 리스트에 있으면
                 var isIn = tmps.Where(x => TickerDB.TickerList.Where(x1 => x1.LastDateTime < dateTime).Select(x => x.Market).Contains(x));
 
-                if (isIn != null && isIn.Any())
+                if (TickerDB.TickerList != null && TickerDB.TickerList.Any() && isIn != null && isIn.Any())
                 {
                     tmp = string.Join(',', isIn);
 
@@ -1296,6 +1296,8 @@ namespace MetaFrm.Stock.Exchange.Upbit
                         }
                     }
                 }
+
+                TickerDB.TickerList ??= new();
 
                 var notIn = tmps.Where(x => !TickerDB.TickerList.Select(x => x.Market).Contains(x));
 
@@ -1373,7 +1375,12 @@ namespace MetaFrm.Stock.Exchange.Upbit
             Models.Ticker result = new();
 
             if (tmps != null)
-                result.TickerList = TickerDB.TickerList.Where(x => tmps.Contains(x.Market)).ToList();
+            {
+                var value = TickerDB.TickerList.Where(x => tmps.Contains(x.Market));
+
+                if (value != null)
+                    result.TickerList = value.ToList();
+            }
 
             return result;
         }
