@@ -22,6 +22,7 @@
     <RepositoryUrl>https://github.com/MetaFrm/MetaFrm.Stock.Utility</RepositoryUrl>
     <PackageIcon>icon.png</PackageIcon>
     <PackageTags>meta;framework;dotnet;maui;</PackageTags>
+    <SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ss:fffZ"))</SourceRevisionId>
   </PropertyGroup>
 
   <ItemGroup>
