@@ -1,0 +1,106 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <RootNamespace>MetaFrm</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>MetaFrm.Stock.Utility</AssemblyName>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>MetaFrm.Stock.Utility.net7.0</PackageId>
+    <Title>Meta Framework Stock Utility</Title>
+    <Version>7.0.1.1</Version>
+    <Authors>dsun</Authors>
+    <Company>Meta Framework</Company>
+    <Product>Meta Framework Stock Utility</Product>
+    <Description>Meta Framework
+(Multi platform &amp; Meta management)</Description>
+    <Copyright>Copyright 2023. dsun all rights reserved.</Copyright>
+    <PackageProjectUrl>https://github.com/MetaFrm/MetaFrm.Stock.Utility</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MetaFrm/MetaFrm.Stock.Utility</RepositoryUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>meta;framework;dotnet;maui;</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\src\Exchange\Upbit\Account.cs" Link="Exchange\Upbit\Account.cs" />
+    <Compile Include="..\src\Exchange\Upbit\AccountInfo.cs" Link="Exchange\Upbit\AccountInfo.cs" />
+    <Compile Include="..\src\Exchange\Upbit\ApiKyes.cs" Link="Exchange\Upbit\ApiKyes.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Ask.cs" Link="Exchange\Upbit\Ask.cs" />
+    <Compile Include="..\src\Exchange\Upbit\AskAccount.cs" Link="Exchange\Upbit\AskAccount.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Bid.cs" Link="Exchange\Upbit\Bid.cs" />
+    <Compile Include="..\src\Exchange\Upbit\BidAccount.cs" Link="Exchange\Upbit\BidAccount.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Candles.cs" Link="Exchange\Upbit\Candles.cs" />
+    <Compile Include="..\src\Exchange\Upbit\CandlesDay.cs" Link="Exchange\Upbit\CandlesDay.cs" />
+    <Compile Include="..\src\Exchange\Upbit\CandlesMinute.cs" Link="Exchange\Upbit\CandlesMinute.cs" />
+    <Compile Include="..\src\Exchange\Upbit\CandlesMonth.cs" Link="Exchange\Upbit\CandlesMonth.cs" />
+    <Compile Include="..\src\Exchange\Upbit\CandlesWeek.cs" Link="Exchange\Upbit\CandlesWeek.cs" />
+    <Compile Include="..\src\Exchange\Upbit\CoinAddress.cs" Link="Exchange\Upbit\CoinAddress.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Deposits.cs" Link="Exchange\Upbit\Deposits.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Error.cs" Link="Exchange\Upbit\Error.cs" />
+    <Compile Include="..\src\Exchange\Upbit\ErrorRoot.cs" Link="Exchange\Upbit\ErrorRoot.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Market.cs" Link="Exchange\Upbit\Market.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Markets.cs" Link="Exchange\Upbit\Markets.cs" />
+    <Compile Include="..\src\Exchange\Upbit\MinuteCandleType.cs" Link="Exchange\Upbit\MinuteCandleType.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Order.cs" Link="Exchange\Upbit\Order.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Orderbook.cs" Link="Exchange\Upbit\Orderbook.cs" />
+    <Compile Include="..\src\Exchange\Upbit\OrderbookUnit.cs" Link="Exchange\Upbit\OrderbookUnit.cs" />
+    <Compile Include="..\src\Exchange\Upbit\OrderChance.cs" Link="Exchange\Upbit\OrderChance.cs" />
+    <Compile Include="..\src\Exchange\Upbit\OrderSide.cs" Link="Exchange\Upbit\OrderSide.cs" />
+    <Compile Include="..\src\Exchange\Upbit\OrderType.cs" Link="Exchange\Upbit\OrderType.cs" />
+    <Compile Include="..\src\Exchange\Upbit\OrderWebSocket.cs" Link="Exchange\Upbit\OrderWebSocket.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Ticker.cs" Link="Exchange\Upbit\Ticker.cs" />
+    <Compile Include="..\src\Exchange\Upbit\TickerWebSocket.cs" Link="Exchange\Upbit\TickerWebSocket.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Ticks.cs" Link="Exchange\Upbit\Ticks.cs" />
+    <Compile Include="..\src\Exchange\Upbit\Trade.cs" Link="Exchange\Upbit\Trade.cs" />
+    <Compile Include="..\src\Exchange\Upbit\UpbitApi.cs" Link="Exchange\Upbit\UpbitApi.cs" />
+    <Compile Include="..\src\Exchange\Upbit\WithdrawsCoin.cs" Link="Exchange\Upbit\WithdrawsCoin.cs" />
+    <Compile Include="..\src\IApi.cs" Link="IApi.cs" />
+    <Compile Include="..\src\Models\Account.cs" Link="Models\Account.cs" />
+    <Compile Include="..\src\Models\ApiKyes.cs" Link="Models\ApiKyes.cs" />
+    <Compile Include="..\src\Models\Ask.cs" Link="Models\Ask.cs" />
+    <Compile Include="..\src\Models\AskAccount.cs" Link="Models\AskAccount.cs" />
+    <Compile Include="..\src\Models\Bid.cs" Link="Models\Bid.cs" />
+    <Compile Include="..\src\Models\BidAccount.cs" Link="Models\BidAccount.cs" />
+    <Compile Include="..\src\Models\Candles.cs" Link="Models\Candles.cs" />
+    <Compile Include="..\src\Models\CandlesDay.cs" Link="Models\CandlesDay.cs" />
+    <Compile Include="..\src\Models\CandlesMinute.cs" Link="Models\CandlesMinute.cs" />
+    <Compile Include="..\src\Models\CandlesMonth.cs" Link="Models\CandlesMonth.cs" />
+    <Compile Include="..\src\Models\CandlesWeek.cs" Link="Models\CandlesWeek.cs" />
+    <Compile Include="..\src\Models\CoinAddress.cs" Link="Models\CoinAddress.cs" />
+    <Compile Include="..\src\Models\Deposits.cs" Link="Models\Deposits.cs" />
+    <Compile Include="..\src\Models\Error.cs" Link="Models\Error.cs" />
+    <Compile Include="..\src\Models\Market.cs" Link="Models\Market.cs" />
+    <Compile Include="..\src\Models\Markets.cs" Link="Models\Markets.cs" />
+    <Compile Include="..\src\Models\MinuteCandleType.cs" Link="Models\MinuteCandleType.cs" />
+    <Compile Include="..\src\Models\Order.cs" Link="Models\Order.cs" />
+    <Compile Include="..\src\Models\Orderbook.cs" Link="Models\Orderbook.cs" />
+    <Compile Include="..\src\Models\OrderbookUnit.cs" Link="Models\OrderbookUnit.cs" />
+    <Compile Include="..\src\Models\OrderChance.cs" Link="Models\OrderChance.cs" />
+    <Compile Include="..\src\Models\OrderSide.cs" Link="Models\OrderSide.cs" />
+    <Compile Include="..\src\Models\OrderType.cs" Link="Models\OrderType.cs" />
+    <Compile Include="..\src\Models\Ticker.cs" Link="Models\Ticker.cs" />
+    <Compile Include="..\src\Models\Ticks.cs" Link="Models\Ticks.cs" />
+    <Compile Include="..\src\Models\Trade.cs" Link="Models\Trade.cs" />
+    <Compile Include="..\src\Models\WithdrawsCoin.cs" Link="Models\WithdrawsCoin.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MetaFrm.Core.net7.0" Version="7.0.1.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>

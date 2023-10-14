@@ -1,0 +1,126 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34202.233
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaFrm.Stock.Utility(net6.0)", "MetaFrm.Stock.Utility(net6.0)\MetaFrm.Stock.Utility(net6.0).csproj", "{9A62F54E-8E30-4AB6-976B-C14FA5E5989F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaFrm.Stock.Utility(net7.0)", "MetaFrm.Stock.Utility(net7.0)\MetaFrm.Stock.Utility(net7.0).csproj", "{157F657B-5A08-43D8-B1BB-18941844CB5E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{43BEF168-A67F-4D2B-B327-2661539BABBD}"
+	ProjectSection(SolutionItems) = preProject
+		src\IApi.cs = src\IApi.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{F05E1B28-B7F4-4AF8-8B4B-329709B6DD4B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{AC3052D0-61FB-45D1-82B7-70E1C037F2A0}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build_6.0.yml = .github\workflows\build_6.0.yml
+		.github\workflows\build_7.0.yml = .github\workflows\build_7.0.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "솔루션 항목", "솔루션 항목", "{1D9E91F8-0B51-40AB-BD0C-C911FAE3B9F5}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		LICENSE.txt = LICENSE.txt
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Models", "Models", "{1BFEAE28-F7FD-467E-9A24-69BC6C4C85A2}"
+	ProjectSection(SolutionItems) = preProject
+		src\Models\Account.cs = src\Models\Account.cs
+		src\Models\ApiKyes.cs = src\Models\ApiKyes.cs
+		src\Models\Ask.cs = src\Models\Ask.cs
+		src\Models\AskAccount.cs = src\Models\AskAccount.cs
+		src\Models\Bid.cs = src\Models\Bid.cs
+		src\Models\BidAccount.cs = src\Models\BidAccount.cs
+		src\Models\Candles.cs = src\Models\Candles.cs
+		src\Models\CandlesDay.cs = src\Models\CandlesDay.cs
+		src\Models\CandlesMinute.cs = src\Models\CandlesMinute.cs
+		src\Models\CandlesMonth.cs = src\Models\CandlesMonth.cs
+		src\Models\CandlesWeek.cs = src\Models\CandlesWeek.cs
+		src\Models\CoinAddress.cs = src\Models\CoinAddress.cs
+		src\Models\Deposits.cs = src\Models\Deposits.cs
+		src\Models\Error.cs = src\Models\Error.cs
+		src\Models\Market.cs = src\Models\Market.cs
+		src\Models\Markets.cs = src\Models\Markets.cs
+		src\Models\MinuteCandleType.cs = src\Models\MinuteCandleType.cs
+		src\Models\Order.cs = src\Models\Order.cs
+		src\Models\Orderbook.cs = src\Models\Orderbook.cs
+		src\Models\OrderbookUnit.cs = src\Models\OrderbookUnit.cs
+		src\Models\OrderChance.cs = src\Models\OrderChance.cs
+		src\Models\OrderSide.cs = src\Models\OrderSide.cs
+		src\Models\OrderType.cs = src\Models\OrderType.cs
+		src\Models\Ticker.cs = src\Models\Ticker.cs
+		src\Models\Ticks.cs = src\Models\Ticks.cs
+		src\Models\Trade.cs = src\Models\Trade.cs
+		src\Models\WithdrawsCoin.cs = src\Models\WithdrawsCoin.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Exchange", "Exchange", "{E7B514D8-128A-431F-902B-3B3CFF6AC25A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Upbit", "Upbit", "{90B9E3E6-AF7E-4E77-BF9B-77100ACA430E}"
+	ProjectSection(SolutionItems) = preProject
+		src\Exchange\Upbit\Account.cs = src\Exchange\Upbit\Account.cs
+		src\Exchange\Upbit\AccountInfo.cs = src\Exchange\Upbit\AccountInfo.cs
+		src\Exchange\Upbit\ApiKyes.cs = src\Exchange\Upbit\ApiKyes.cs
+		src\Exchange\Upbit\Ask.cs = src\Exchange\Upbit\Ask.cs
+		src\Exchange\Upbit\AskAccount.cs = src\Exchange\Upbit\AskAccount.cs
+		src\Exchange\Upbit\Bid.cs = src\Exchange\Upbit\Bid.cs
+		src\Exchange\Upbit\BidAccount.cs = src\Exchange\Upbit\BidAccount.cs
+		src\Exchange\Upbit\Candles.cs = src\Exchange\Upbit\Candles.cs
+		src\Exchange\Upbit\CandlesDay.cs = src\Exchange\Upbit\CandlesDay.cs
+		src\Exchange\Upbit\CandlesMinute.cs = src\Exchange\Upbit\CandlesMinute.cs
+		src\Exchange\Upbit\CandlesMonth.cs = src\Exchange\Upbit\CandlesMonth.cs
+		src\Exchange\Upbit\CandlesWeek.cs = src\Exchange\Upbit\CandlesWeek.cs
+		src\Exchange\Upbit\CoinAddress.cs = src\Exchange\Upbit\CoinAddress.cs
+		src\Exchange\Upbit\Deposits.cs = src\Exchange\Upbit\Deposits.cs
+		src\Exchange\Upbit\Error.cs = src\Exchange\Upbit\Error.cs
+		src\Exchange\Upbit\ErrorRoot.cs = src\Exchange\Upbit\ErrorRoot.cs
+		src\Exchange\Upbit\Market.cs = src\Exchange\Upbit\Market.cs
+		src\Exchange\Upbit\Markets.cs = src\Exchange\Upbit\Markets.cs
+		src\Exchange\Upbit\MinuteCandleType.cs = src\Exchange\Upbit\MinuteCandleType.cs
+		src\Exchange\Upbit\Order.cs = src\Exchange\Upbit\Order.cs
+		src\Exchange\Upbit\Orderbook.cs = src\Exchange\Upbit\Orderbook.cs
+		src\Exchange\Upbit\OrderbookUnit.cs = src\Exchange\Upbit\OrderbookUnit.cs
+		src\Exchange\Upbit\OrderChance.cs = src\Exchange\Upbit\OrderChance.cs
+		src\Exchange\Upbit\OrderSide.cs = src\Exchange\Upbit\OrderSide.cs
+		src\Exchange\Upbit\OrderType.cs = src\Exchange\Upbit\OrderType.cs
+		src\Exchange\Upbit\OrderWebSocket.cs = src\Exchange\Upbit\OrderWebSocket.cs
+		src\Exchange\Upbit\Ticker.cs = src\Exchange\Upbit\Ticker.cs
+		src\Exchange\Upbit\TickerWebSocket.cs = src\Exchange\Upbit\TickerWebSocket.cs
+		src\Exchange\Upbit\Ticks.cs = src\Exchange\Upbit\Ticks.cs
+		src\Exchange\Upbit\Trade.cs = src\Exchange\Upbit\Trade.cs
+		src\Exchange\Upbit\UpbitApi.cs = src\Exchange\Upbit\UpbitApi.cs
+		src\Exchange\Upbit\WithdrawsCoin.cs = src\Exchange\Upbit\WithdrawsCoin.cs
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9A62F54E-8E30-4AB6-976B-C14FA5E5989F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A62F54E-8E30-4AB6-976B-C14FA5E5989F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A62F54E-8E30-4AB6-976B-C14FA5E5989F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A62F54E-8E30-4AB6-976B-C14FA5E5989F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{157F657B-5A08-43D8-B1BB-18941844CB5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{157F657B-5A08-43D8-B1BB-18941844CB5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{157F657B-5A08-43D8-B1BB-18941844CB5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{157F657B-5A08-43D8-B1BB-18941844CB5E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AC3052D0-61FB-45D1-82B7-70E1C037F2A0} = {F05E1B28-B7F4-4AF8-8B4B-329709B6DD4B}
+		{1BFEAE28-F7FD-467E-9A24-69BC6C4C85A2} = {43BEF168-A67F-4D2B-B327-2661539BABBD}
+		{E7B514D8-128A-431F-902B-3B3CFF6AC25A} = {43BEF168-A67F-4D2B-B327-2661539BABBD}
+		{90B9E3E6-AF7E-4E77-BF9B-77100ACA430E} = {E7B514D8-128A-431F-902B-3B3CFF6AC25A}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1547E748-CDB9-4674-999B-8A438B794365}
+	EndGlobalSection
+EndGlobal
