@@ -36,6 +36,11 @@
         public string? Side { get; set; }
 
         /// <summary>
+        /// 수수료
+        /// </summary>
+        public decimal Fee { get; set; }
+
+        /// <summary>
         /// 주문 생성 시간
         /// </summary>
         public DateTime CreatedAt { get; set; }

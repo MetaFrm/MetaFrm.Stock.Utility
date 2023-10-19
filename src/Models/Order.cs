@@ -32,7 +32,7 @@
         /// <summary>
         /// 주문 당시 화폐 가격
         /// </summary>
-        public decimal? Price { get; set; }
+        public decimal Price { get; set; }
 
         /// <summary>
         /// 체결 가격의 평균가
@@ -60,12 +60,12 @@
         /// <summary>
         /// 사용자가 입력한 주문 양
         /// </summary>
-        public decimal? Volume { get; set; }
+        public decimal Volume { get; set; }
 
         /// <summary>
         /// 체결 후 남은 주문 양
         /// </summary>
-        public decimal? RemainingVolume { get; set; }
+        public decimal RemainingVolume { get; set; }
 
         /// <summary>
         /// 수수료로 예약된 비용

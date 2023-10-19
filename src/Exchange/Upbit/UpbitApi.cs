@@ -4,6 +4,7 @@ using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -16,6 +17,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
     /// </summary>
     public class UpbitApi : IApi, IAction, IDisposable
     {
+        private readonly object _lock = new();
         private JwtHeader? JwtHeader;
         private HttpClient? HttpClient { get; set; }
         double IApi.TimeoutMilliseconds
@@ -33,7 +35,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     this.HttpClient.Timeout = TimeSpan.FromMilliseconds(value);
             }
         }
-        decimal IApi.ExchangeID { get; set; }
+        decimal IApi.ExchangeID { get; set; } = 1;
         string IApi.AccessKey { get; set; } = "";
         string IApi.SecretKey { get; set; } = "";
         private string BaseUrl { get; set; } = "https://api.upbit.com/v1/";
@@ -43,6 +45,8 @@ namespace MetaFrm.Stock.Exchange.Upbit
         private int CallCount = 0;
         private int BaseTimeoutDecreaseMod { get; set; } = 200;
 
+        private readonly int SocketCloseTimeOutSeconds = 60 * 5;
+
         /// <summary>
         /// Action event Handler입니다.
         /// </summary>
@@ -51,13 +55,15 @@ namespace MetaFrm.Stock.Exchange.Upbit
         /// <summary>
         /// UpbitApi
         /// </summary>
-        public UpbitApi()
+        public UpbitApi(bool runTickerFromWebSocket, bool runOrderResultFromWebSocket)
         {
             this.CreateHttpClient(null);
 
-            this.RunTickerFromWebSocket();
+            if (runTickerFromWebSocket)
+                this.RunTickerFromWebSocket();
 
-            this.RunOrderResultFromWebSocket();
+            if (runOrderResultFromWebSocket)
+                this.RunOrderResultFromWebSocket();
         }
         private void CreateHttpClient(TimeSpan? timeSpan)
         {
@@ -73,32 +79,38 @@ namespace MetaFrm.Stock.Exchange.Upbit
             string? result = "";
             HttpRequestMessage requestMessage;
 
-            Thread.Sleep(90);
-
             try
             {
                 this.CallCount += 1;
 
-                if (this.HttpClient != null)
-                {
-                    requestMessage = new()
+                lock (this._lock)
+                    if (this.HttpClient != null)
                     {
-                        Method = httpMethod,
-                        RequestUri = new Uri(url + (nameValueCollection == null ? "" : ToQueryString(nameValueCollection)))
-                    };
-                    requestMessage.Headers.Authorization = new("Bearer", this.JWT(nameValueCollection, ((IApi)this).AccessKey, ((IApi)this).SecretKey));
+                        if (url.Contains("order"))
+                            Thread.Sleep(130);
+                        else if (url.Contains("accounts") || url.Contains("withdraw") || url.Contains("deposit") || url.Contains("status") || url.Contains("api_keys"))
+                            Thread.Sleep(40);
+                        else
+                            Thread.Sleep(110);
+
+                        requestMessage = new()
+                        {
+                            Method = httpMethod,
+                            RequestUri = new Uri(url + (nameValueCollection == null ? "" : ToQueryString(nameValueCollection)))
+                        };
+                        requestMessage.Headers.Authorization = new("Bearer", this.JWT(nameValueCollection, ((IApi)this).AccessKey, ((IApi)this).SecretKey));
 
 
-                    result = this.HttpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead).Result.Content.ReadAsStringAsync().Result;
+                        result = this.HttpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead).Result.Content.ReadAsStringAsync().Result;
 
-                    //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
-                    //100 Milliseconds 감소
-                    if (this.HttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
-                    {
-                        this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds - 100));
-                        this.CallCount = 0;
+                        //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
+                        //100 Milliseconds 감소
+                        if (this.HttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
+                        {
+                            this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds - 100));
+                            this.CallCount = 0;
+                        }
                     }
-                }
 
                 return result;
             }
@@ -168,17 +180,20 @@ namespace MetaFrm.Stock.Exchange.Upbit
             //return to.ToString("s") + "+09:00";
             return string.Format("{0}+09:00", to.ToString("s"));
         }
-        private static Models.Error? GetError(string result)
+        private static Models.Error? GetError(string methodName, string result)
         {
             Error? error = JsonSerializer.Deserialize<ErrorRoot>(result)?.Error;
 
-            Console.WriteLine($"{error?.Message} {error?.Name}");
+            Console.WriteLine($"{methodName} : {error?.Message} {error?.Name}");
 
             return error != null ? new() { Message = error.Message, Code = error.Name } : null;
         }
-        private static Models.Error GetError(Exception ex)
+        private Models.Error GetError(Exception ex, bool isDetail)
         {
-            Console.WriteLine(ex.ToString());
+            if (isDetail)
+                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} {ex}");
+            else
+                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} {ex.Message}");
 
             return new() { Message = ex.Message, Code = ex.ToString() };
         }
@@ -187,41 +202,35 @@ namespace MetaFrm.Stock.Exchange.Upbit
         Models.Account IApi.Account()
         {
             string? tmp;
-            Account[]? list;
+            List<Account>? list;
             Models.Account result = new();
 
             try
             {
                 tmp = this.CallAPI($"{this.BaseUrl}accounts", null, HttpMethod.Get);
 
-                if (tmp != null)
-                {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
-                    {
-                        list = JsonSerializer.Deserialize<Account[]>(tmp);
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
 
-                        if (list != null)
-                        {
-                            result.AccountList = new();
-                            foreach (var item in list)
-                                result.AccountList.Add(new()
-                                {
-                                    Currency = item.Currency,
-                                    Balance = item.Balance,
-                                    Locked = item.Locked,
-                                    AvgKrwBuyPrice = item.AvgKrwBuyPrice,
-                                    Modified = item.Modified,
-                                    UnitCurrency = item.UnitCurrency,
-                                });
-                        }
-                    }
-                }
+                list = JsonSerializer.Deserialize<List<Account>>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+
+                if (list == null) return result;
+
+                result.AccountList = new();
+                foreach (var item in list)
+                    result.AccountList.Add(new()
+                    {
+                        Currency = item.Currency,
+                        Balance = item.Balance,
+                        Locked = item.Locked,
+                        AvgKrwBuyPrice = item.AvgKrwBuyPrice,
+                        Modified = item.Modified,
+                        UnitCurrency = item.UnitCurrency,
+                    });
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
@@ -240,92 +249,87 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 tmp = this.CallAPI($"{this.BaseUrl}orders/chance", new NameValueCollection { { "market", market } }, HttpMethod.Get);
 
-                if (tmp != null)
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+
+                orderChance = JsonSerializer.Deserialize<OrderChance>(tmp);
+
+                if (orderChance != null)
                 {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
+                    result = new()
                     {
-                        orderChance = JsonSerializer.Deserialize<OrderChance>(tmp);
+                        BidFee = orderChance.BidFee,
+                        AskFee = orderChance.AskFee,
+                    };
 
-                        if (orderChance != null)
+                    if (orderChance.Market != null)
+                    {
+                        result.Market = new()
                         {
-                            result = new()
+                            ID = orderChance.Market.ID,
+                            Name = orderChance.Market.Name,
+                            AskTypes = orderChance.Market.AskTypes,
+                            BidTypes = orderChance.Market.BidTypes,
+                            OrderSides = orderChance.Market.OrderSides,
+                            MaxTotal = orderChance.Market.MaxTotal,
+                            State = orderChance.Market.State,
+                        };
+                        if (orderChance.Market.Bid != null)
+                        {
+                            result.Market.Bid = new()
                             {
-                                BidFee = orderChance.BidFee,
-                                AskFee = orderChance.AskFee,
+                                Currency = orderChance.Market.Bid.Currency,
+                                PriceUnit = orderChance.Market.Bid.PriceUnit,
+                                MinTotal = orderChance.Market.Bid.MinTotal,
                             };
-
-                            if (orderChance.Market != null)
-                            {
-                                result.Market = new()
-                                {
-                                    ID = orderChance.Market.ID,
-                                    Name = orderChance.Market.Name,
-                                    AskTypes = orderChance.Market.AskTypes,
-                                    BidTypes = orderChance.Market.BidTypes,
-                                    OrderSides = orderChance.Market.OrderSides,
-                                    MaxTotal = orderChance.Market.MaxTotal,
-                                    State = orderChance.Market.State,
-                                };
-                                if (orderChance.Market.Bid != null)
-                                {
-                                    result.Market.Bid = new()
-                                    {
-                                        Currency = orderChance.Market.Bid.Currency,
-                                        PriceUnit = orderChance.Market.Bid.PriceUnit,
-                                        MinTotal = orderChance.Market.Bid.MinTotal,
-                                    };
-                                }
-                                if (orderChance.Market.Ask != null)
-                                {
-                                    result.Market.Bid = new()
-                                    {
-                                        Currency = orderChance.Market.Ask.Currency,
-                                        PriceUnit = orderChance.Market.Ask.PriceUnit,
-                                        MinTotal = orderChance.Market.Ask.MinTotal,
-                                    };
-                                }
-                            }
-                            if (orderChance.BidAccount != null)
-                            {
-                                result.BidAccount = new()
-                                {
-                                    Currency = orderChance.BidAccount.Currency,
-                                    Balance = orderChance.BidAccount.Balance,
-                                    Locked = orderChance.BidAccount.Locked,
-                                    AvgKrwBuyPrice = orderChance.BidAccount.AvgKrwBuyPrice,
-                                    Modified = orderChance.BidAccount.Modified,
-                                    UnitCurrency = orderChance.BidAccount.UnitCurrency,
-                                };
-                            }
-                            if (orderChance.AskAccount != null)
-                            {
-                                result.AskAccount = new()
-                                {
-                                    Currency = orderChance.AskAccount.Currency,
-                                    Balance = orderChance.AskAccount.Balance,
-                                    Locked = orderChance.AskAccount.Locked,
-                                    AvgBuyPrice = orderChance.AskAccount.AvgBuyPrice,
-                                    Modified = orderChance.AskAccount.Modified,
-                                    UnitCurrency = orderChance.AskAccount.UnitCurrency,
-                                };
-                            }
                         }
-                        else
-                            result = new() { Error = new() { Message = "OrderChance is null : OrderChance IApi.OrderChance(string market)", Code = "OrderChance is null" } };
+                        if (orderChance.Market.Ask != null)
+                        {
+                            result.Market.Bid = new()
+                            {
+                                Currency = orderChance.Market.Ask.Currency,
+                                PriceUnit = orderChance.Market.Ask.PriceUnit,
+                                MinTotal = orderChance.Market.Ask.MinTotal,
+                            };
+                        }
+                    }
+                    if (orderChance.BidAccount != null)
+                    {
+                        result.BidAccount = new()
+                        {
+                            Currency = orderChance.BidAccount.Currency,
+                            Balance = orderChance.BidAccount.Balance,
+                            Locked = orderChance.BidAccount.Locked,
+                            AvgKrwBuyPrice = orderChance.BidAccount.AvgKrwBuyPrice,
+                            Modified = orderChance.BidAccount.Modified,
+                            UnitCurrency = orderChance.BidAccount.UnitCurrency,
+                        };
+                    }
+                    if (orderChance.AskAccount != null)
+                    {
+                        result.AskAccount = new()
+                        {
+                            Currency = orderChance.AskAccount.Currency,
+                            Balance = orderChance.AskAccount.Balance,
+                            Locked = orderChance.AskAccount.Locked,
+                            AvgBuyPrice = orderChance.AskAccount.AvgBuyPrice,
+                            Modified = orderChance.AskAccount.Modified,
+                            UnitCurrency = orderChance.AskAccount.UnitCurrency,
+                        };
                     }
                 }
+                else
+                    result = new() { Error = new() { Message = "OrderChance is null : OrderChance IApi.OrderChance(string market)", Code = "OrderChance is null" } };
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
         }
 
-        Models.Order Order(string uuid)
+        Models.Order IApi.Order(string market, string sideName, string uuid)
         {
             string? tmp;
             Order? order;
@@ -335,68 +339,59 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 tmp = this.CallAPI($"{this.BaseUrl}order", new NameValueCollection { { "uuid", uuid } }, HttpMethod.Get);
 
-                if (tmp != null)
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+
+                order = JsonSerializer.Deserialize<Order>(tmp);
+
+                if (order != null)
                 {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
+                    result = new()
                     {
-                        order = JsonSerializer.Deserialize<Order>(tmp);
+                        UUID = order.UUID,
+                        Side = order.Side,
+                        OrdType = order.OrdType,
+                        Price = order.Price ?? 0,
+                        State = order.State,
+                        Market = order.Market,
+                        CreatedAt = order.CreatedAt,
+                        Volume = order.Volume ?? 0,
+                        RemainingVolume = order.RemainingVolume ?? 0,
+                        ReservedFee = order.ReservedFee,
+                        RemainingFee = order.RemainingFee,
+                        PaidFee = order.PaidFee,
+                        Locked = order.Locked,
+                        ExecutedVolume = order.ExecutedVolume,
+                        TradesCount = order.TradesCount,
+                    };
 
-                        if (order != null)
+                    if (order.Trades != null)
+                    {
+                        result.Trades = new();
+                        foreach (var tradeItem in order.Trades)
                         {
-                            result = new()
+                            order.Trades.Add(new()
                             {
-                                UUID = order.UUID,
-                                Side = order.Side,
-                                OrdType = order.OrdType,
-                                Price = order.Price,
-                                State = order.State,
-                                Market = order.Market,
-                                CreatedAt = order.CreatedAt,
-                                Volume = order.Volume,
-                                RemainingVolume = order.RemainingVolume,
-                                ReservedFee = order.ReservedFee,
-                                RemainingFee = order.RemainingFee,
-                                PaidFee = order.PaidFee,
-                                Locked = order.Locked,
-                                ExecutedVolume = order.ExecutedVolume,
-                                TradesCount = order.TradesCount,
-                            };
-
-                            if (order.Trades != null)
-                            {
-                                result.Trades = new();
-                                foreach (var tradeItem in order.Trades)
-                                {
-                                    order.Trades.Add(new()
-                                    {
-                                        Market = tradeItem.Market,
-                                        UUID = tradeItem.UUID,
-                                        Price = tradeItem.Price,
-                                        Volume = tradeItem.Volume,
-                                        Funds = tradeItem.Funds,
-                                        Side = tradeItem.Side,
-                                        CreatedAt = tradeItem.CreatedAt,
-                                    });
-                                }
-                            }
+                                Market = tradeItem.Market,
+                                UUID = tradeItem.UUID,
+                                Price = tradeItem.Price,
+                                Volume = tradeItem.Volume,
+                                Funds = tradeItem.Funds,
+                                Side = tradeItem.Side,
+                                CreatedAt = tradeItem.CreatedAt,
+                            });
                         }
-                        else
-                            result = new() { Error = new() { Message = "order is null : Order IApi.Order(string uuid)", Code = "order is null" } };
                     }
                 }
+                else
+                    result = new() { Error = new() { Message = "order is null : Order IApi.Order(string uuid)", Code = "order is null" } };
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
-        }
-        Models.Order IApi.Order(string market, string sideName, string uuid)
-        {
-            return this.Order(uuid);
         }
 
         Models.Order IApi.AllOrder(string market, string order_by)
@@ -437,79 +432,70 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
             try
             {
-                if (market == null || market == "")
+                if (market == null || market == "" || market == "ALL")
                     tmp = this.CallAPI(this.BaseUrl + "orders", new NameValueCollection { { "page", page.ToString() }, { "order_by", order_by } }, HttpMethod.Get);
                 else
                     tmp = this.CallAPI(this.BaseUrl + "orders", new NameValueCollection { { "market", market }, { "page", page.ToString() }, { "order_by", order_by } }, HttpMethod.Get);
 
-                if (tmp != null)
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+
+                list = JsonSerializer.Deserialize<Order[]>(tmp);
+
+                if (list == null) return result;
+
+                result.OrderList = new();
+                foreach (var item in list)
                 {
-                    if (tmp.Contains("error"))
+                    Models.Order order = new()
                     {
-                        result.Error = GetError(tmp);
-                        result.OrderList = new();
-                    }
-                    else
-                    {
-                        list = JsonSerializer.Deserialize<Order[]>(tmp);
+                        UUID = item.UUID,
+                        Side = item.Side,
+                        OrdType = item.OrdType,
+                        Price = item.Price ?? 0,
+                        State = item.State,
+                        Market = item.Market,
+                        CreatedAt = item.CreatedAt,
+                        Volume = item.Volume ?? 0,
+                        RemainingVolume = item.RemainingVolume ?? 0,
+                        ReservedFee = item.ReservedFee,
+                        RemainingFee = item.RemainingFee,
+                        PaidFee = item.PaidFee,
+                        Locked = item.Locked,
+                        ExecutedVolume = item.ExecutedVolume,
+                        TradesCount = item.TradesCount,
+                    };
 
-                        if (list != null)
+                    if (item.Trades != null)
+                    {
+                        order.Trades = new();
+                        foreach (var tradeItem in item.Trades)
                         {
-                            result.OrderList = new();
-                            foreach (var item in list)
+                            order.Trades.Add(new()
                             {
-                                Models.Order order = new()
-                                {
-                                    UUID = item.UUID,
-                                    Side = item.Side,
-                                    OrdType = item.OrdType,
-                                    Price = item.Price,
-                                    State = item.State,
-                                    Market = item.Market,
-                                    CreatedAt = item.CreatedAt,
-                                    Volume = item.Volume,
-                                    RemainingVolume = item.RemainingVolume,
-                                    ReservedFee = item.ReservedFee,
-                                    RemainingFee = item.RemainingFee,
-                                    PaidFee = item.PaidFee,
-                                    Locked = item.Locked,
-                                    ExecutedVolume = item.ExecutedVolume,
-                                    TradesCount = item.TradesCount,
-                                };
-
-                                if (item.Trades != null)
-                                {
-                                    order.Trades = new();
-                                    foreach (var tradeItem in item.Trades)
-                                    {
-                                        order.Trades.Add(new()
-                                        {
-                                            Market = tradeItem.Market,
-                                            UUID = tradeItem.UUID,
-                                            Price = tradeItem.Price,
-                                            Volume = tradeItem.Volume,
-                                            Funds = tradeItem.Funds,
-                                            Side = tradeItem.Side,
-                                            CreatedAt = tradeItem.CreatedAt,
-                                        });
-                                    }
-                                }
-
-                                result.OrderList.Add(order);
-                            }
+                                Market = tradeItem.Market,
+                                UUID = tradeItem.UUID,
+                                Price = tradeItem.Price,
+                                Volume = tradeItem.Volume,
+                                Funds = tradeItem.Funds,
+                                Side = tradeItem.Side,
+                                CreatedAt = tradeItem.CreatedAt,
+                            });
                         }
                     }
+
+                    result.OrderList.Add(order);
                 }
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
         }
 
-        Models.Order CancelOrder(string uuid)
+        Models.Order IApi.CancelOrder(string market, string sideName, string uuid)
         {
             string? tmp;
             Order? order;
@@ -519,68 +505,59 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 tmp = this.CallAPI($"{this.BaseUrl}order", new NameValueCollection { { "uuid", uuid } }, HttpMethod.Delete);
 
-                if (tmp != null)
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+
+                order = JsonSerializer.Deserialize<Order>(tmp);
+
+                if (order != null)
                 {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
+                    result = new()
                     {
-                        order = JsonSerializer.Deserialize<Order>(tmp);
+                        UUID = order.UUID,
+                        Side = order.Side,
+                        OrdType = order.OrdType,
+                        Price = order.Price ?? 0,
+                        State = order.State,
+                        Market = order.Market,
+                        CreatedAt = order.CreatedAt,
+                        Volume = order.Volume ?? 0,
+                        RemainingVolume = order.RemainingVolume ?? 0,
+                        ReservedFee = order.ReservedFee,
+                        RemainingFee = order.RemainingFee,
+                        PaidFee = order.PaidFee,
+                        Locked = order.Locked,
+                        ExecutedVolume = order.ExecutedVolume,
+                        TradesCount = order.TradesCount,
+                    };
 
-                        if (order != null)
+                    if (order.Trades != null)
+                    {
+                        result.Trades = new();
+                        foreach (var tradeItem in order.Trades)
                         {
-                            result = new()
+                            order.Trades.Add(new()
                             {
-                                UUID = order.UUID,
-                                Side = order.Side,
-                                OrdType = order.OrdType,
-                                Price = order.Price,
-                                State = order.State,
-                                Market = order.Market,
-                                CreatedAt = order.CreatedAt,
-                                Volume = order.Volume,
-                                RemainingVolume = order.RemainingVolume,
-                                ReservedFee = order.ReservedFee,
-                                RemainingFee = order.RemainingFee,
-                                PaidFee = order.PaidFee,
-                                Locked = order.Locked,
-                                ExecutedVolume = order.ExecutedVolume,
-                                TradesCount = order.TradesCount,
-                            };
-
-                            if (order.Trades != null)
-                            {
-                                result.Trades = new();
-                                foreach (var tradeItem in order.Trades)
-                                {
-                                    order.Trades.Add(new()
-                                    {
-                                        Market = tradeItem.Market,
-                                        UUID = tradeItem.UUID,
-                                        Price = tradeItem.Price,
-                                        Volume = tradeItem.Volume,
-                                        Funds = tradeItem.Funds,
-                                        Side = tradeItem.Side,
-                                        CreatedAt = tradeItem.CreatedAt,
-                                    });
-                                }
-                            }
+                                Market = tradeItem.Market,
+                                UUID = tradeItem.UUID,
+                                Price = tradeItem.Price,
+                                Volume = tradeItem.Volume,
+                                Funds = tradeItem.Funds,
+                                Side = tradeItem.Side,
+                                CreatedAt = tradeItem.CreatedAt,
+                            });
                         }
-                        else
-                            result = new() { Error = new() { Message = "order is null : Order IApi.CancelOrder(string uuid)", Code = "order is null" } };
                     }
                 }
+                else
+                    result = new() { Error = new() { Message = "order is null : Order IApi.CancelOrder(string uuid)", Code = "order is null" } };
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
-        }
-        Models.Order IApi.CancelOrder(string market, string sideName, string uuid)
-        {
-            return this.CancelOrder(uuid);
         }
 
         Models.Order IApi.MakeOrder(string market, Models.OrderSide side, decimal volume, decimal price, Models.OrderType ord_type)
@@ -606,68 +583,64 @@ namespace MetaFrm.Stock.Exchange.Upbit
                         { "ord_type", ord_type.ToString() }
                     }
                     , HttpMethod.Post);
-                if (tmp != null)
+
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+
+                order = JsonSerializer.Deserialize<Order>(tmp);
+
+                if (order != null)
                 {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
+                    result = new()
                     {
-                        order = JsonSerializer.Deserialize<Order>(tmp);
+                        UUID = order.UUID,
+                        Side = order.Side,
+                        OrdType = order.OrdType,
+                        Price = order.Price ?? 0,
+                        State = order.State,
+                        Market = order.Market,
+                        CreatedAt = order.CreatedAt,
+                        Volume = order.Volume ?? 0,
+                        RemainingVolume = order.RemainingVolume ?? 0,
+                        ReservedFee = order.ReservedFee,
+                        RemainingFee = order.RemainingFee,
+                        PaidFee = order.PaidFee,
+                        Locked = order.Locked,
+                        ExecutedVolume = order.ExecutedVolume,
+                        TradesCount = order.TradesCount,
+                    };
 
-                        if (order != null)
+                    if (order.Trades != null)
+                    {
+                        result.Trades = new();
+                        foreach (var tradeItem in order.Trades)
                         {
-                            result = new()
+                            order.Trades.Add(new()
                             {
-                                UUID = order.UUID,
-                                Side = order.Side,
-                                OrdType = order.OrdType,
-                                Price = order.Price,
-                                State = order.State,
-                                Market = order.Market,
-                                CreatedAt = order.CreatedAt,
-                                Volume = order.Volume,
-                                RemainingVolume = order.RemainingVolume,
-                                ReservedFee = order.ReservedFee,
-                                RemainingFee = order.RemainingFee,
-                                PaidFee = order.PaidFee,
-                                Locked = order.Locked,
-                                ExecutedVolume = order.ExecutedVolume,
-                                TradesCount = order.TradesCount,
-                            };
-
-                            if (order.Trades != null)
-                            {
-                                result.Trades = new();
-                                foreach (var tradeItem in order.Trades)
-                                {
-                                    order.Trades.Add(new()
-                                    {
-                                        Market = tradeItem.Market,
-                                        UUID = tradeItem.UUID,
-                                        Price = tradeItem.Price,
-                                        Volume = tradeItem.Volume,
-                                        Funds = tradeItem.Funds,
-                                        Side = tradeItem.Side,
-                                        CreatedAt = tradeItem.CreatedAt,
-                                    });
-                                }
-                            }
+                                Market = tradeItem.Market,
+                                UUID = tradeItem.UUID,
+                                Price = tradeItem.Price,
+                                Volume = tradeItem.Volume,
+                                Funds = tradeItem.Funds,
+                                Side = tradeItem.Side,
+                                CreatedAt = tradeItem.CreatedAt,
+                            });
                         }
-                        else
-                            result = new() { Error = new() { Message = "order is null : Order IApi.MakeOrder(string market, OrderSide side, decimal volume, decimal price, OrderType ord_type)", Code = "order is null" } };
                     }
-
                 }
+                else
+                    result = new() { Error = new() { Message = "order is null : Order IApi.MakeOrder(string market, OrderSide side, decimal volume, decimal price, OrderType ord_type)", Code = "order is null" } };
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
         }
 
         private ClientWebSocket? WebSocketOrder;
+        private DateTime RunOrderResultFromWebSocketDateTime;
         private async void RunOrderResultFromWebSocket()
         {
             await Task.Run(async () =>
@@ -680,14 +653,23 @@ namespace MetaFrm.Stock.Exchange.Upbit
                         break;
                 }
 
+                this.RunOrderResultFromWebSocketDateTime = DateTime.Now;
+                Console.WriteLine($"{this.RunOrderResultFromWebSocketDateTime:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} Start : RunOrderResultFromWebSocket");
                 while (true)
                 {
                     await Task.Delay(2000);
 
                     if (this.WebSocketOrder == null)
                     {
+                        this.RunOrderResultFromWebSocketDateTime = DateTime.Now;
                         this.WebSocketOrder = new ClientWebSocket();
                         this.OrderResultFromWebSocket(((IApi)this).AccessKey, ((IApi)this).SecretKey);
+                    }
+
+                    if ((DateTime.Now - this.RunOrderResultFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
+                    {
+                        this.OrderResultFromWebSocketClose();
+                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocketClose(RunOrderResultFromWebSocket)");
                     }
                 }
             });
@@ -722,9 +704,10 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 while (this.WebSocketOrder.State == WebSocketState.Open)
                 {
-                    if (dateTime.Day != DateTime.Now.Day)
+                    if ((DateTime.Now - dateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds)
                     {
                         this.OrderResultFromWebSocketClose();
+                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocketClose");
                         break;
                     }
 
@@ -740,7 +723,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     if (data.IsNullOrEmpty())
                         continue;
 
-                    Console.WriteLine(data);
+                    //Console.WriteLine(data);
 
                     var orderWebSocket = JsonSerializer.Deserialize<OrderWebSocket>(data);
                     //var orderWebSocket = JsonSerializer.Deserialize<OrderWebSocket>(Encoding.UTF8.GetString(bytesReceived.Array, 0, result.Count));
@@ -763,7 +746,8 @@ namespace MetaFrm.Stock.Exchange.Upbit
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{ex.Message} : {ex}");
+                this.Action?.Invoke(this, new() { Action = "OrderExecution", Value = null });
+                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocket {ex.Message}");
                 this.OrderResultFromWebSocketClose();
             }
         }
@@ -802,41 +786,35 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 tmp = this.CallAPI($"{this.BaseUrl}deposits", new NameValueCollection { { "currency", currency }, { "imit", imit.ToString() }, { "page", page.ToString() }, { "order_by", order_by } }, HttpMethod.Get);
 
-                if (tmp != null)
-                {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
-                    {
-                        list = JsonSerializer.Deserialize<Deposits[]>(tmp);
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
 
-                        if (list != null)
-                        {
-                            result.DepositsList = new();
-                            foreach (var item in list)
-                            {
-                                result.DepositsList.Add(new()
-                                {
-                                    Type = item.Type,
-                                    UUID = item.UUID,
-                                    Currency = item.Currency,
-                                    NetType = item.NetType,
-                                    TxID = item.TxID,
-                                    State = item.State,
-                                    CreatedAt = item.CreatedAt,
-                                    DoneAt = item.DoneAt,
-                                    Amount = item.Amount,
-                                    Fee = item.Fee,
-                                    TransactionType = item.TransactionType,
-                                });
-                            }
-                        }
-                    }
+                list = JsonSerializer.Deserialize<Deposits[]>(tmp);
+
+                if (list == null) return result;
+
+                result.DepositsList = new();
+                foreach (var item in list)
+                {
+                    result.DepositsList.Add(new()
+                    {
+                        Type = item.Type,
+                        UUID = item.UUID,
+                        Currency = item.Currency,
+                        NetType = item.NetType,
+                        TxID = item.TxID,
+                        State = item.State,
+                        CreatedAt = item.CreatedAt,
+                        DoneAt = item.DoneAt,
+                        Amount = item.Amount,
+                        Fee = item.Fee,
+                        TransactionType = item.TransactionType,
+                    });
                 }
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
@@ -855,32 +833,26 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 tmp = this.CallAPI($"{this.BaseUrl}api_keys", null, HttpMethod.Get);
 
-                if (tmp != null)
-                {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
-                    {
-                        list = JsonSerializer.Deserialize<ApiKyes[]>(tmp);
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
 
-                        if (list != null)
-                        {
-                            result.ApiKyesList = new();
-                            foreach (var item in list)
-                            {
-                                result.ApiKyesList.Add(new()
-                                {
-                                    AccessKey = item.AccessKey,
-                                    ExpireAt = item.ExpireAt,
-                                });
-                            }
-                        }
-                    }
+                list = JsonSerializer.Deserialize<ApiKyes[]>(tmp);
+
+                if (list == null) return result;
+
+                result.ApiKyesList = new();
+                foreach (var item in list)
+                {
+                    result.ApiKyesList.Add(new()
+                    {
+                        AccessKey = item.AccessKey,
+                        ExpireAt = item.ExpireAt,
+                    });
                 }
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
@@ -895,7 +867,6 @@ namespace MetaFrm.Stock.Exchange.Upbit
             string? tmp;
             Markets[]? list;
             Models.Markets result = new();
-            Models.Error? error;
 
             try
             {
@@ -906,45 +877,28 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                         tmp = this.CallAPI($"{this.BaseUrl}market/all", null, HttpMethod.Get);
 
-                        if (tmp != null)
-                        {
-                            if (tmp.Contains("error"))
+                        if (string.IsNullOrEmpty(tmp)) return MarketsDB;
+                        if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return MarketsDB; }
+
+                        list = JsonSerializer.Deserialize<Markets[]>(tmp);
+
+                        if (list == null) return MarketsDB;
+
+                        result.MarketList = new();
+                        foreach (var item in list)
+                            result.MarketList.Add(new()
                             {
-                                error = GetError(tmp);
-
-                                if (error != null)
-                                    Console.WriteLine($"{error.Code} : {error.Message}");
-                                else
-                                    Console.WriteLine(tmp);
-
-                                //result.Error = GetError(tmp);
-                            }
-                            else
-                            {
-                                list = JsonSerializer.Deserialize<Markets[]>(tmp);
-
-
-                                if (list != null)
-                                {
-                                    result.MarketList = new();
-                                    foreach (var item in list)
-                                        result.MarketList.Add(new()
-                                        {
-                                            Market = item.Market,
-                                            KoreanName = item.KoreanName,
-                                            EnglishName = item.EnglishName,
-                                        });
-                                }
-                            }
-                        }
+                                Market = item.Market,
+                                KoreanName = item.KoreanName,
+                                EnglishName = item.EnglishName,
+                            });
 
                         MarketsDB = result;
                     }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{ex.Message} : {ex}");
-                //result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return MarketsDB;
@@ -963,41 +917,35 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 tmp = this.CallAPI($"{this.BaseUrl}candles/minutes/{(int)unit}", new NameValueCollection { { "market", market }, { "to", (to == default) ? DateTime2String(DateTime.Now) : DateTime2String(to) }, { "count", count.ToString() } }, HttpMethod.Get);
 
-                if (tmp != null)
-                {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
-                    {
-                        list = JsonSerializer.Deserialize<CandlesMinute[]>(tmp);
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
 
-                        if (list != null)
-                        {
-                            result.CandlesMinuteList = new();
-                            foreach (var item in list)
-                            {
-                                result.CandlesMinuteList.Add(new()
-                                {
-                                    Market = item.Market,
-                                    CandleDateTimeUtc = item.CandleDateTimeUtc,
-                                    CandleDateTimeKst = item.CandleDateTimeKst,
-                                    OpeningPrice = item.OpeningPrice,
-                                    HighPrice = item.HighPrice,
-                                    LowPrice = item.LowPrice,
-                                    TradePrice = item.TradePrice,
-                                    TimeStamp = item.TimeStamp,
-                                    CandleAccTradePrice = item.CandleAccTradePrice,
-                                    CandleAccTradeVolume = item.CandleAccTradeVolume,
-                                    Unit = item.Unit,
-                                });
-                            }
-                        }
-                    }
+                list = JsonSerializer.Deserialize<CandlesMinute[]>(tmp);
+
+                if (list == null) return result;
+
+                result.CandlesMinuteList = new();
+                foreach (var item in list)
+                {
+                    result.CandlesMinuteList.Add(new()
+                    {
+                        Market = item.Market,
+                        CandleDateTimeUtc = item.CandleDateTimeUtc,
+                        CandleDateTimeKst = item.CandleDateTimeKst,
+                        OpeningPrice = item.OpeningPrice,
+                        HighPrice = item.HighPrice,
+                        LowPrice = item.LowPrice,
+                        TradePrice = item.TradePrice,
+                        TimeStamp = item.TimeStamp,
+                        CandleAccTradePrice = item.CandleAccTradePrice,
+                        CandleAccTradeVolume = item.CandleAccTradeVolume,
+                        Unit = item.Unit,
+                    });
                 }
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
@@ -1013,44 +961,38 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 tmp = this.CallAPI($"{this.BaseUrl}candles/days", new NameValueCollection { { "market", market }, { "to", (to == default) ? DateTime2String(DateTime.Now) : DateTime2String(to) }, { "count", count.ToString() } }, HttpMethod.Get);
 
-                if (tmp != null)
-                {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
-                    {
-                        list = JsonSerializer.Deserialize<CandlesDay[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
 
-                        if (list != null)
-                        {
-                            result.CandlesDayList = new();
-                            foreach (var item in list)
-                            {
-                                result.CandlesDayList.Add(new()
-                                {
-                                    Market = item.Market,
-                                    CandleDateTimeUtc = item.CandleDateTimeUtc,
-                                    CandleDateTimeKst = item.CandleDateTimeKst,
-                                    OpeningPrice = item.OpeningPrice,
-                                    HighPrice = item.HighPrice,
-                                    LowPrice = item.LowPrice,
-                                    TradePrice = item.TradePrice,
-                                    TimeStamp = item.TimeStamp,
-                                    CandleAccTradePrice = item.CandleAccTradePrice,
-                                    CandleAccTradeVolume = item.CandleAccTradeVolume,
-                                    PrevClosingPrice = item.PrevClosingPrice,
-                                    ChangePrice = item.ChangePrice,
-                                    ChangeRate = item.ChangeRate,
-                                    ConvertedTradePrice = item.ConvertedTradePrice,
-                                });
-                            }
-                        }
-                    }
+                list = JsonSerializer.Deserialize<CandlesDay[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
+
+                if (list == null) return result;
+
+                result.CandlesDayList = new();
+                foreach (var item in list)
+                {
+                    result.CandlesDayList.Add(new()
+                    {
+                        Market = item.Market,
+                        CandleDateTimeUtc = item.CandleDateTimeUtc,
+                        CandleDateTimeKst = item.CandleDateTimeKst,
+                        OpeningPrice = item.OpeningPrice,
+                        HighPrice = item.HighPrice,
+                        LowPrice = item.LowPrice,
+                        TradePrice = item.TradePrice,
+                        TimeStamp = item.TimeStamp,
+                        CandleAccTradePrice = item.CandleAccTradePrice,
+                        CandleAccTradeVolume = item.CandleAccTradeVolume,
+                        PrevClosingPrice = item.PrevClosingPrice,
+                        ChangePrice = item.ChangePrice,
+                        ChangeRate = item.ChangeRate,
+                        ConvertedTradePrice = item.ConvertedTradePrice,
+                    });
                 }
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
@@ -1066,41 +1008,35 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 tmp = this.CallAPI($"{this.BaseUrl}candles/weeks", new NameValueCollection { { "market", market }, { "to", (to == default) ? DateTime2String(DateTime.Now) : DateTime2String(to) }, { "count", count.ToString() } }, HttpMethod.Get);
 
-                if (tmp != null)
-                {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
-                    {
-                        list = JsonSerializer.Deserialize<CandlesWeek[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
 
-                        if (list != null)
-                        {
-                            result.CandlesWeekList = new();
-                            foreach (var item in list)
-                            {
-                                result.CandlesWeekList.Add(new()
-                                {
-                                    Market = item.Market,
-                                    CandleDateTimeUtc = item.CandleDateTimeUtc,
-                                    CandleDateTimeKst = item.CandleDateTimeKst,
-                                    OpeningPrice = item.OpeningPrice,
-                                    HighPrice = item.HighPrice,
-                                    LowPrice = item.LowPrice,
-                                    TradePrice = item.TradePrice,
-                                    TimeStamp = item.TimeStamp,
-                                    CandleAccTradePrice = item.CandleAccTradePrice,
-                                    CandleAccTradeVolume = item.CandleAccTradeVolume,
-                                    FirstDayOfPeriod = item.FirstDayOfPeriod,
-                                });
-                            }
-                        }
-                    }
+                list = JsonSerializer.Deserialize<CandlesWeek[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
+
+                if (list == null) return result;
+
+                result.CandlesWeekList = new();
+                foreach (var item in list)
+                {
+                    result.CandlesWeekList.Add(new()
+                    {
+                        Market = item.Market,
+                        CandleDateTimeUtc = item.CandleDateTimeUtc,
+                        CandleDateTimeKst = item.CandleDateTimeKst,
+                        OpeningPrice = item.OpeningPrice,
+                        HighPrice = item.HighPrice,
+                        LowPrice = item.LowPrice,
+                        TradePrice = item.TradePrice,
+                        TimeStamp = item.TimeStamp,
+                        CandleAccTradePrice = item.CandleAccTradePrice,
+                        CandleAccTradeVolume = item.CandleAccTradeVolume,
+                        FirstDayOfPeriod = item.FirstDayOfPeriod,
+                    });
                 }
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
@@ -1116,41 +1052,35 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 tmp = this.CallAPI($"{this.BaseUrl}candles/months", new NameValueCollection { { "market", market }, { "to", (to == default) ? DateTime2String(DateTime.Now) : DateTime2String(to) }, { "count", count.ToString() } }, HttpMethod.Get);
 
-                if (tmp != null)
-                {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
-                    {
-                        list = JsonSerializer.Deserialize<CandlesMonth[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
 
-                        if (list != null)
-                        {
-                            result.CandlesMonthList = new();
-                            foreach (var item in list)
-                            {
-                                result.CandlesMonthList.Add(new()
-                                {
-                                    Market = item.Market,
-                                    CandleDateTimeUtc = item.CandleDateTimeUtc,
-                                    CandleDateTimeKst = item.CandleDateTimeKst,
-                                    OpeningPrice = item.OpeningPrice,
-                                    HighPrice = item.HighPrice,
-                                    LowPrice = item.LowPrice,
-                                    TradePrice = item.TradePrice,
-                                    TimeStamp = item.TimeStamp,
-                                    CandleAccTradePrice = item.CandleAccTradePrice,
-                                    CandleAccTradeVolume = item.CandleAccTradeVolume,
-                                    FirstDayOfPeriod = item.FirstDayOfPeriod,
-                                });
-                            }
-                        }
-                    }
+                list = JsonSerializer.Deserialize<CandlesMonth[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
+
+                if (list == null) return result;
+
+                result.CandlesMonthList = new();
+                foreach (var item in list)
+                {
+                    result.CandlesMonthList.Add(new()
+                    {
+                        Market = item.Market,
+                        CandleDateTimeUtc = item.CandleDateTimeUtc,
+                        CandleDateTimeKst = item.CandleDateTimeKst,
+                        OpeningPrice = item.OpeningPrice,
+                        HighPrice = item.HighPrice,
+                        LowPrice = item.LowPrice,
+                        TradePrice = item.TradePrice,
+                        TimeStamp = item.TimeStamp,
+                        CandleAccTradePrice = item.CandleAccTradePrice,
+                        CandleAccTradeVolume = item.CandleAccTradeVolume,
+                        FirstDayOfPeriod = item.FirstDayOfPeriod,
+                    });
                 }
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
@@ -1169,40 +1099,34 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 tmp = this.CallAPI($"{this.BaseUrl}trades/ticks", new NameValueCollection { { "market", market }, { "to", (to == default) ? "" : to.ToString("HH:mm:ss") }, { "count", count.ToString() } }, HttpMethod.Get);
 
-                if (tmp != null)
-                {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
-                    {
-                        list = JsonSerializer.Deserialize<Ticks[]>(tmp);
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
 
-                        if (list != null)
-                        {
-                            result.TicksList = new();
-                            foreach (var item in list)
-                            {
-                                result.TicksList.Add(new()
-                                {
-                                    Market = item.Market,
-                                    TradeDateUtc = item.TradeDateUtc,
-                                    TradeTimeUtc = item.TradeTimeUtc,
-                                    TimeStamp = item.TimeStamp,
-                                    TradePrice = item.TradePrice,
-                                    TradeVolume = item.TradeVolume,
-                                    PrevClosingPrice = item.PrevClosingPrice,
-                                    ChangePrice = item.ChangePrice,
-                                    Side = item.Side,
-                                    Sequential_ID = item.Sequential_ID,
-                                });
-                            }
-                        }
-                    }
+                list = JsonSerializer.Deserialize<Ticks[]>(tmp);
+
+                if (list == null) return result;
+
+                result.TicksList = new();
+                foreach (var item in list)
+                {
+                    result.TicksList.Add(new()
+                    {
+                        Market = item.Market,
+                        TradeDateUtc = item.TradeDateUtc,
+                        TradeTimeUtc = item.TradeTimeUtc,
+                        TimeStamp = item.TimeStamp,
+                        TradePrice = item.TradePrice,
+                        TradeVolume = item.TradeVolume,
+                        PrevClosingPrice = item.PrevClosingPrice,
+                        ChangePrice = item.ChangePrice,
+                        Side = item.Side,
+                        Sequential_ID = item.Sequential_ID,
+                    });
                 }
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;
@@ -1213,11 +1137,11 @@ namespace MetaFrm.Stock.Exchange.Upbit
         #region "시세 현재가(Ticker) 조회/현재가 정보"
         private static readonly Models.Ticker TickerDB = new();
         private static ClientWebSocket? WebSocketTickerDB;
+        private static DateTime RunTickerFromWebSocketDateTime;
         Models.Ticker IApi.Ticker(string markets)
         {
             string? tmp;
             Ticker[]? list;
-            //Models.Ticker result = new();
             string[]? tmps = null;
             DateTime dateTime = DateTime.Now.AddSeconds(-60);
             Models.Error? error;
@@ -1239,14 +1163,12 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     {
                         if (tmp.Contains("error"))
                         {
-                            error = GetError(tmp);
+                            error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp);
 
                             if (error != null)
                                 Console.WriteLine($"{error.Code} : {error.Message}");
                             else
                                 Console.WriteLine(tmp);
-
-                            //result.Error = GetError(tmp);
                         }
                         else
                         {
@@ -1312,14 +1234,12 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     {
                         if (tmp.Contains("error"))
                         {
-                            error = GetError(tmp);
+                            error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp);
 
                             if (error != null)
                                 Console.WriteLine($"{error.Code} : {error.Message}");
                             else
                                 Console.WriteLine(tmp);
-
-                            //result.Error = GetError(tmp);
                         }
                         else
                         {
@@ -1369,7 +1289,6 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 Console.WriteLine($"{ex.Message} : {ex}");
-                //result.Error = GetError(ex);
             }
 
             Models.Ticker result = new();
@@ -1391,14 +1310,23 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 await Task.Delay(5000);
 
+                RunTickerFromWebSocketDateTime = DateTime.Now;
+                Console.WriteLine($"{RunTickerFromWebSocketDateTime:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} Start : RunTickerFromWebSocket");
                 while (true)
                 {
                     await Task.Delay(2000);
 
                     if (WebSocketTickerDB == null)
                     {
+                        RunTickerFromWebSocketDateTime = DateTime.Now;
                         WebSocketTickerDB = new ClientWebSocket();
                         this.TickerFromWebSocket();
+                    }
+
+                    if ((DateTime.Now - RunTickerFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
+                    {
+                        TickerFromWebSocketClose();
+                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocketClose(RunTickerFromWebSocket)");
                     }
                 }
             });
@@ -1443,9 +1371,10 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 while (WebSocketTickerDB.State == WebSocketState.Open)
                 {
-                    if (dateTime1.Day != DateTime.Now.Day)
+                    if ((DateTime.Now - dateTime1.AddSeconds(5)).TotalSeconds >= this.SocketCloseTimeOutSeconds)
                     {
                         TickerFromWebSocketClose();
+                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} TickerFromWebSocketClose");
                         break;
                     }
 
@@ -1540,7 +1469,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{ex.Message} : {ex}");
+                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} TickerFromWebSocket {ex.Message}");
                 TickerFromWebSocketClose();
             }
         }
@@ -1575,51 +1504,44 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 tmp = this.CallAPI($"{this.BaseUrl}orderbook", new NameValueCollection { { "markets", markets } }, HttpMethod.Get);
 
-                if (tmp != null)
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+
+                list = JsonSerializer.Deserialize<Orderbook[]>(tmp);
+
+                if (list == null) return result;
+
+                result.OrderbookList = new();
+                foreach (var item in list)
                 {
-                    if (tmp.Contains("error"))
-                        result.Error = GetError(tmp);
-                    else
+                    result.OrderbookList.Add(new()
                     {
-                        list = JsonSerializer.Deserialize<Orderbook[]>(tmp);
+                        Market = item.Market,
+                        TimeStamp = item.TimeStamp,
+                        TotalAskSize = item.TotalAskSize,
+                        TotalBidSize = item.TotalBidSize,
+                    });
 
-                        if (list != null)
+                    if (item.OrderbookUnits != null)
+                    {
+                        result.OrderbookUnits = new();
+                        foreach (var itemUnit in item.OrderbookUnits)
                         {
-                            result.OrderbookList = new();
-                            foreach (var item in list)
+                            result.OrderbookUnits.Add(new()
                             {
-                                result.OrderbookList.Add(new()
-                                {
-                                    Market = item.Market,
-                                    TimeStamp = item.TimeStamp,
-                                    TotalAskSize = item.TotalAskSize,
-                                    TotalBidSize = item.TotalBidSize,
-                                });
-
-                                if (item.OrderbookUnits != null)
-                                {
-                                    result.OrderbookUnits = new();
-                                    foreach (var itemUnit in item.OrderbookUnits)
-                                    {
-                                        result.OrderbookUnits.Add(new()
-                                        {
-                                            AskPrice = itemUnit.AskPrice,
-                                            BidPrice = itemUnit.BidPrice,
-                                            AskSize = itemUnit.AskSize,
-                                            BidSize = itemUnit.BidSize,
-                                        });
-                                    }
-                                }
-
-                            }
+                                AskPrice = itemUnit.AskPrice,
+                                BidPrice = itemUnit.BidPrice,
+                                AskSize = itemUnit.AskSize,
+                                BidSize = itemUnit.BidSize,
+                            });
                         }
-
                     }
+
                 }
             }
             catch (Exception ex)
             {
-                result.Error = GetError(ex);
+                result.Error = this.GetError(ex, true);
             }
 
             return result;

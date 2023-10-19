@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34202.233
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaFrm.Stock.Utility(net6.0)", "MetaFrm.Stock.Utility(net6.0)\MetaFrm.Stock.Utility(net6.0).csproj", "{9A62F54E-8E30-4AB6-976B-C14FA5E5989F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MetaFrm.Stock.Utility(net6.0)", "MetaFrm.Stock.Utility(net6.0)\MetaFrm.Stock.Utility(net6.0).csproj", "{9A62F54E-8E30-4AB6-976B-C14FA5E5989F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MetaFrm.Stock.Utility(net7.0)", "MetaFrm.Stock.Utility(net7.0)\MetaFrm.Stock.Utility(net7.0).csproj", "{157F657B-5A08-43D8-B1BB-18941844CB5E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MetaFrm.Stock.Utility(net7.0)", "MetaFrm.Stock.Utility(net7.0)\MetaFrm.Stock.Utility(net7.0).csproj", "{157F657B-5A08-43D8-B1BB-18941844CB5E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{43BEF168-A67F-4D2B-B327-2661539BABBD}"
 	ProjectSection(SolutionItems) = preProject
@@ -63,7 +63,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Upbit", "Upbit", "{90B9E3E6-AF7E-4E77-BF9B-77100ACA430E}"
 	ProjectSection(SolutionItems) = preProject
 		src\Exchange\Upbit\Account.cs = src\Exchange\Upbit\Account.cs
-		src\Exchange\Upbit\AccountInfo.cs = src\Exchange\Upbit\AccountInfo.cs
 		src\Exchange\Upbit\ApiKyes.cs = src\Exchange\Upbit\ApiKyes.cs
 		src\Exchange\Upbit\Ask.cs = src\Exchange\Upbit\Ask.cs
 		src\Exchange\Upbit\AskAccount.cs = src\Exchange\Upbit\AskAccount.cs
@@ -96,6 +95,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Upbit", "Upbit", "{90B9E3E6
 		src\Exchange\Upbit\WithdrawsCoin.cs = src\Exchange\Upbit\WithdrawsCoin.cs
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Bithumb", "Bithumb", "{ED4C662F-04BF-4FC0-99BE-E2A72A91E6F4}"
+	ProjectSection(SolutionItems) = preProject
+		src\Exchange\Bithumb\AccountInfo.cs = src\Exchange\Bithumb\AccountInfo.cs
+		src\Exchange\Bithumb\BithumbApi.cs = src\Exchange\Bithumb\BithumbApi.cs
+		src\Exchange\Bithumb\BithumbData.cs = src\Exchange\Bithumb\BithumbData.cs
+		src\Exchange\Bithumb\BithumbDataJsonElement.cs = src\Exchange\Bithumb\BithumbDataJsonElement.cs
+		src\Exchange\Bithumb\BithumbDataJsonElementContent.cs = src\Exchange\Bithumb\BithumbDataJsonElementContent.cs
+		src\Exchange\Bithumb\BithumbDataJsonElementList.cs = src\Exchange\Bithumb\BithumbDataJsonElementList.cs
+		src\Exchange\Bithumb\BithumbDatas.cs = src\Exchange\Bithumb\BithumbDatas.cs
+		src\Exchange\Bithumb\ResultStatus.cs = src\Exchange\Bithumb\ResultStatus.cs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -119,6 +130,7 @@ Global
 		{1BFEAE28-F7FD-467E-9A24-69BC6C4C85A2} = {43BEF168-A67F-4D2B-B327-2661539BABBD}
 		{E7B514D8-128A-431F-902B-3B3CFF6AC25A} = {43BEF168-A67F-4D2B-B327-2661539BABBD}
 		{90B9E3E6-AF7E-4E77-BF9B-77100ACA430E} = {E7B514D8-128A-431F-902B-3B3CFF6AC25A}
+		{ED4C662F-04BF-4FC0-99BE-E2A72A91E6F4} = {E7B514D8-128A-431F-902B-3B3CFF6AC25A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1547E748-CDB9-4674-999B-8A438B794365}
