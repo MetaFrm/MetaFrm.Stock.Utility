@@ -10,7 +10,7 @@ namespace MetaFrm.Stock
         /// <summary>
         /// ExchangeID
         /// </summary>
-        decimal ExchangeID { get; set; }
+        int ExchangeID { get; set; }
 
         /// <summary>
         /// Access Key

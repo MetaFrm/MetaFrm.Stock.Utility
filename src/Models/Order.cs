@@ -3,7 +3,7 @@
     /// <summary>
     /// Order
     /// </summary>
-    public class Order : ICore
+    public class Order : ICore, IEquatable<Order?>
     {
         /// <summary>
         /// OrderList
@@ -106,5 +106,31 @@
         /// 에러
         /// </summary>
         public Error? Error { get; set; }
+
+        /// <summary>
+        /// Equals
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public bool Equals(Order? obj)
+        {
+            if (obj is null)
+                return false;
+
+            return this.UUID == obj.UUID && this.State == obj.State && this.RemainingVolume == obj.RemainingVolume;
+        }
+
+        /// <summary>
+        /// Equals
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override bool Equals(object? obj) => Equals(obj as Order);
+
+        /// <summary>
+        /// GetHashCode
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode() => (this.UUID, this.State, this.RemainingVolume).GetHashCode();
     }
 }

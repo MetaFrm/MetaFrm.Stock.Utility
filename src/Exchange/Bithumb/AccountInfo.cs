@@ -1,6 +1,4 @@
-﻿using MetaFrm.Stock.Models;
-
-namespace MetaFrm.Stock.Exchange.Bithumb
+﻿namespace MetaFrm.Stock.Exchange.Bithumb
 {
     /// <summary>
     /// 전체 계좌 조회

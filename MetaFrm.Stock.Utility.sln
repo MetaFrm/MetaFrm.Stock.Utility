@@ -59,6 +59,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Models", "Models", "{1BFEAE
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Exchange", "Exchange", "{E7B514D8-128A-431F-902B-3B3CFF6AC25A}"
+	ProjectSection(SolutionItems) = preProject
+		src\Exchange\Exchanger.cs = src\Exchange\Exchanger.cs
+		src\Exchange\Setting.cs = src\Exchange\Setting.cs
+		src\Exchange\SettingGridTrading.cs = src\Exchange\SettingGridTrading.cs
+		src\Exchange\User.cs = src\Exchange\User.cs
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Upbit", "Upbit", "{90B9E3E6-AF7E-4E77-BF9B-77100ACA430E}"
 	ProjectSection(SolutionItems) = preProject
@@ -107,6 +113,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Bithumb", "Bithumb", "{ED4C
 		src\Exchange\Bithumb\ResultStatus.cs = src\Exchange\Bithumb\ResultStatus.cs
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console", "Console", "{C36BC119-F853-4EA5-A0A2-7BF032A6F8AC}"
+	ProjectSection(SolutionItems) = preProject
+		src\Console\Utility.cs = src\Console\Utility.cs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -131,6 +142,7 @@ Global
 		{E7B514D8-128A-431F-902B-3B3CFF6AC25A} = {43BEF168-A67F-4D2B-B327-2661539BABBD}
 		{90B9E3E6-AF7E-4E77-BF9B-77100ACA430E} = {E7B514D8-128A-431F-902B-3B3CFF6AC25A}
 		{ED4C662F-04BF-4FC0-99BE-E2A72A91E6F4} = {E7B514D8-128A-431F-902B-3B3CFF6AC25A}
+		{C36BC119-F853-4EA5-A0A2-7BF032A6F8AC} = {43BEF168-A67F-4D2B-B327-2661539BABBD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1547E748-CDB9-4674-999B-8A438B794365}

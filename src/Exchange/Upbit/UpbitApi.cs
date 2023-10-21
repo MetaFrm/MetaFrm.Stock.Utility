@@ -1,10 +1,11 @@
 ﻿using MetaFrm.Control;
+using MetaFrm.Stock.Console;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.WebSockets;
-using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -35,7 +36,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     this.HttpClient.Timeout = TimeSpan.FromMilliseconds(value);
             }
         }
-        decimal IApi.ExchangeID { get; set; } = 1;
+        int IApi.ExchangeID { get; set; } = 1;
         string IApi.AccessKey { get; set; } = "";
         string IApi.SecretKey { get; set; } = "";
         private string BaseUrl { get; set; } = "https://api.upbit.com/v1/";
@@ -52,6 +53,10 @@ namespace MetaFrm.Stock.Exchange.Upbit
         /// </summary>
         public event MetaFrmEventHandler? Action;
 
+        private static bool IsRunTickerFromWebSocket = false;
+
+        private bool IsDispose = false;
+
         /// <summary>
         /// UpbitApi
         /// </summary>
@@ -59,8 +64,11 @@ namespace MetaFrm.Stock.Exchange.Upbit
         {
             this.CreateHttpClient(null);
 
-            if (runTickerFromWebSocket)
+            if (runTickerFromWebSocket && !IsRunTickerFromWebSocket)
+            {
+                IsRunTickerFromWebSocket = true;
                 this.RunTickerFromWebSocket();
+            }
 
             if (runOrderResultFromWebSocket)
                 this.RunOrderResultFromWebSocket();
@@ -116,7 +124,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
 
                 if (this.HttpClient != null)
                     this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds + 100));//오류 발생하면 100 Milliseconds 증가
@@ -171,7 +179,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
                 return null;
             }
         }
@@ -180,20 +188,17 @@ namespace MetaFrm.Stock.Exchange.Upbit
             //return to.ToString("s") + "+09:00";
             return string.Format("{0}+09:00", to.ToString("s"));
         }
-        private static Models.Error? GetError(string methodName, string result)
+        private static Models.Error? GetError(string result, [CallerMemberName] string methodName = "")
         {
             Error? error = JsonSerializer.Deserialize<ErrorRoot>(result)?.Error;
 
-            Console.WriteLine($"{methodName} : {error?.Message} {error?.Name}");
+            $"{methodName} : {error?.Message} {error?.Name}".WriteMessage();
 
             return error != null ? new() { Message = error.Message, Code = error.Name } : null;
         }
         private Models.Error GetError(Exception ex, bool isDetail)
         {
-            if (isDetail)
-                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} {ex}");
-            else
-                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} {ex.Message}");
+            ex.WriteMessage(isDetail, ((IApi)this).ExchangeID);
 
             return new() { Message = ex.Message, Code = ex.ToString() };
         }
@@ -210,7 +215,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}accounts", null, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
                 list = JsonSerializer.Deserialize<List<Account>>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
@@ -250,9 +255,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}orders/chance", new NameValueCollection { { "market", market } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
-                orderChance = JsonSerializer.Deserialize<OrderChance>(tmp);
+                orderChance = JsonSerializer.Deserialize<OrderChance>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (orderChance != null)
                 {
@@ -340,9 +345,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}order", new NameValueCollection { { "uuid", uuid } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
-                order = JsonSerializer.Deserialize<Order>(tmp);
+                order = JsonSerializer.Deserialize<Order>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (order != null)
                 {
@@ -417,7 +422,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.ToString());
+                    ex.WriteMessage(false, ((IApi)this).ExchangeID);
                     break;
                 }
             }
@@ -438,9 +443,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     tmp = this.CallAPI(this.BaseUrl + "orders", new NameValueCollection { { "market", market }, { "page", page.ToString() }, { "order_by", order_by } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<Order[]>(tmp);
+                list = JsonSerializer.Deserialize<Order[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
 
@@ -506,9 +511,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}order", new NameValueCollection { { "uuid", uuid } }, HttpMethod.Delete);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
-                order = JsonSerializer.Deserialize<Order>(tmp);
+                order = JsonSerializer.Deserialize<Order>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (order != null)
                 {
@@ -585,9 +590,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     , HttpMethod.Post);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
-                order = JsonSerializer.Deserialize<Order>(tmp);
+                order = JsonSerializer.Deserialize<Order>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (order != null)
                 {
@@ -654,10 +659,12 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 }
 
                 this.RunOrderResultFromWebSocketDateTime = DateTime.Now;
-                Console.WriteLine($"{this.RunOrderResultFromWebSocketDateTime:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} Start : RunOrderResultFromWebSocket");
+                $"Start : RunOrderResultFromWebSocket".WriteMessage(((IApi)this).ExchangeID);
                 while (true)
                 {
                     await Task.Delay(2000);
+
+                    if (this.IsDispose) break;
 
                     if (this.WebSocketOrder == null)
                     {
@@ -669,7 +676,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     if ((DateTime.Now - this.RunOrderResultFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
                     {
                         this.OrderResultFromWebSocketClose();
-                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocketClose(RunOrderResultFromWebSocket)");
+                        $"OrderResultFromWebSocketClose(RunOrderResultFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
                     }
                 }
             });
@@ -707,7 +714,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     if ((DateTime.Now - dateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds)
                     {
                         this.OrderResultFromWebSocketClose();
-                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocketClose");
+                        $"OrderResultFromWebSocketClose".WriteMessage(((IApi)this).ExchangeID);
                         break;
                     }
 
@@ -747,7 +754,8 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 this.Action?.Invoke(this, new() { Action = "OrderExecution", Value = null });
-                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocket {ex.Message}");
+
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
                 this.OrderResultFromWebSocketClose();
             }
         }
@@ -763,7 +771,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"{ex.Message} : {ex}");
+                    ex.WriteMessage(false, ((IApi)this).ExchangeID);
                     this.WebSocketOrder = null;
                 }
             }
@@ -787,9 +795,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}deposits", new NameValueCollection { { "currency", currency }, { "imit", imit.ToString() }, { "page", page.ToString() }, { "order_by", order_by } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<Deposits[]>(tmp);
+                list = JsonSerializer.Deserialize<Deposits[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
 
@@ -834,9 +842,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}api_keys", null, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<ApiKyes[]>(tmp);
+                list = JsonSerializer.Deserialize<ApiKyes[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
 
@@ -878,9 +886,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                         tmp = this.CallAPI($"{this.BaseUrl}market/all", null, HttpMethod.Get);
 
                         if (string.IsNullOrEmpty(tmp)) return MarketsDB;
-                        if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return MarketsDB; }
+                        if (tmp.Contains("error")) { result.Error = GetError(tmp); return MarketsDB; }
 
-                        list = JsonSerializer.Deserialize<Markets[]>(tmp);
+                        list = JsonSerializer.Deserialize<Markets[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                         if (list == null) return MarketsDB;
 
@@ -918,9 +926,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}candles/minutes/{(int)unit}", new NameValueCollection { { "market", market }, { "to", (to == default) ? DateTime2String(DateTime.Now) : DateTime2String(to) }, { "count", count.ToString() } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<CandlesMinute[]>(tmp);
+                list = JsonSerializer.Deserialize<CandlesMinute[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
 
@@ -962,7 +970,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}candles/days", new NameValueCollection { { "market", market }, { "to", (to == default) ? DateTime2String(DateTime.Now) : DateTime2String(to) }, { "count", count.ToString() } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
                 list = JsonSerializer.Deserialize<CandlesDay[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
 
@@ -1009,7 +1017,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}candles/weeks", new NameValueCollection { { "market", market }, { "to", (to == default) ? DateTime2String(DateTime.Now) : DateTime2String(to) }, { "count", count.ToString() } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
                 list = JsonSerializer.Deserialize<CandlesWeek[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
 
@@ -1053,7 +1061,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}candles/months", new NameValueCollection { { "market", market }, { "to", (to == default) ? DateTime2String(DateTime.Now) : DateTime2String(to) }, { "count", count.ToString() } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
                 list = JsonSerializer.Deserialize<CandlesMonth[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
 
@@ -1100,9 +1108,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}trades/ticks", new NameValueCollection { { "market", market }, { "to", (to == default) ? "" : to.ToString("HH:mm:ss") }, { "count", count.ToString() } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<Ticks[]>(tmp);
+                list = JsonSerializer.Deserialize<Ticks[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
 
@@ -1163,16 +1171,11 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     {
                         if (tmp.Contains("error"))
                         {
-                            error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp);
-
-                            if (error != null)
-                                Console.WriteLine($"{error.Code} : {error.Message}");
-                            else
-                                Console.WriteLine(tmp);
+                            error = GetError(tmp);
                         }
                         else
                         {
-                            list = JsonSerializer.Deserialize<Ticker[]>(tmp.Replace(":null", ":0"));
+                            list = JsonSerializer.Deserialize<Ticker[]>(tmp.Replace(":null", ":0"), new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                             if (list != null)
                             {
@@ -1234,16 +1237,11 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     {
                         if (tmp.Contains("error"))
                         {
-                            error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp);
-
-                            if (error != null)
-                                Console.WriteLine($"{error.Code} : {error.Message}");
-                            else
-                                Console.WriteLine(tmp);
+                            error = GetError(tmp);
                         }
                         else
                         {
-                            list = JsonSerializer.Deserialize<Ticker[]>(tmp.Replace(":null", ":0"));
+                            list = JsonSerializer.Deserialize<Ticker[]>(tmp.Replace(":null", ":0"), new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                             if (list != null)
                             {
@@ -1288,7 +1286,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{ex.Message} : {ex}");
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
             }
 
             Models.Ticker result = new();
@@ -1308,13 +1306,21 @@ namespace MetaFrm.Stock.Exchange.Upbit
         {
             await Task.Run(async () =>
             {
-                await Task.Delay(5000);
+                while (true)
+                {
+                    await Task.Delay(5000);
+
+                    if (!((IApi)this).AccessKey.IsNullOrEmpty() && !((IApi)this).SecretKey.IsNullOrEmpty())
+                        break;
+                }
 
                 RunTickerFromWebSocketDateTime = DateTime.Now;
-                Console.WriteLine($"{RunTickerFromWebSocketDateTime:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} Start : RunTickerFromWebSocket");
+                $"Start : RunTickerFromWebSocket".WriteMessage(((IApi)this).ExchangeID);
                 while (true)
                 {
                     await Task.Delay(2000);
+
+                    if (this.IsDispose) break;
 
                     if (WebSocketTickerDB == null)
                     {
@@ -1326,7 +1332,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     if ((DateTime.Now - RunTickerFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
                     {
                         TickerFromWebSocketClose();
-                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocketClose(RunTickerFromWebSocket)");
+                        $"OrderResultFromWebSocketClose(RunTickerFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
                     }
                 }
             });
@@ -1374,7 +1380,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     if ((DateTime.Now - dateTime1.AddSeconds(5)).TotalSeconds >= this.SocketCloseTimeOutSeconds)
                     {
                         TickerFromWebSocketClose();
-                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} TickerFromWebSocketClose");
+                        $"TickerFromWebSocketClose".WriteMessage(((IApi)this).ExchangeID);
                         break;
                     }
 
@@ -1469,7 +1475,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} TickerFromWebSocket {ex.Message}");
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
                 TickerFromWebSocketClose();
             }
         }
@@ -1485,7 +1491,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"{ex.Message} : {ex}");
+                    ex.WriteMessage(false);
                     WebSocketTickerDB = null;
                 }
             }
@@ -1505,9 +1511,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 tmp = this.CallAPI($"{this.BaseUrl}orderbook", new NameValueCollection { { "markets", markets } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
-                if (tmp.Contains("error")) { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", tmp); return result; }
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<Orderbook[]>(tmp);
+                list = JsonSerializer.Deserialize<Orderbook[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
 
@@ -1560,11 +1566,18 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 this.HttpClient?.Dispose();
                 this.HttpClient = null;
 
+                this.OrderResultFromWebSocketClose();
+                TickerFromWebSocketClose();
+
                 GC.SuppressFinalize(this);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
+            }
+            finally
+            {
+                this.IsDispose = true;
             }
         }
     }

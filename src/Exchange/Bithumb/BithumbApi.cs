@@ -1,8 +1,9 @@
 ﻿using MetaFrm.Control;
+using MetaFrm.Stock.Console;
 using System.Collections.Specialized;
 using System.Net;
 using System.Net.WebSockets;
-using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -32,7 +33,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             }
         }
 
-        decimal IApi.ExchangeID { get; set; } = 2;
+        int IApi.ExchangeID { get; set; } = 2;
         string IApi.AccessKey { get; set; } = "";
         string IApi.SecretKey { get; set; } = "";
         internal string BaseUrl { get; set; } = "https://api.bithumb.com";
@@ -49,6 +50,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         /// </summary>
         public event MetaFrmEventHandler? Action;
 
+        private static bool IsRunTickerFromWebSocket = false;
+
+        private bool IsDispose = false;
+
         /// <summary>
         /// BithumbAPI
         /// </summary>
@@ -56,13 +61,15 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         {
             this.CreateHttpClient(null);
 
-            if (runTickerFromWebSocket)
+            if (runTickerFromWebSocket && !IsRunTickerFromWebSocket)
+            {
+                IsRunTickerFromWebSocket = true;
                 this.RunTickerFromWebSocket();
+            }
 
             if (runOrderResultFromWebSocket && false)
                 this.RunOrderResultFromWebSocket();
         }
-
         private void CreateHttpClient(TimeSpan? timeSpan)
         {
             this.HttpClient?.Dispose();
@@ -71,6 +78,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             if (timeSpan != null)
                 this.HttpClient.Timeout = (TimeSpan)timeSpan;
         }
+
         private string CallAPI_Public(string url, NameValueCollection? nvc, int reTryCount = 2)
         {
             string? result = "";
@@ -98,7 +106,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
 
                 if (this.HttpClient != null)
                     this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds + 100));//오류 발생하면 100 Milliseconds 증가
@@ -139,7 +147,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
 
                 if (this.HttpClient != null)
                     this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds + 100));//오류 발생하면 100 Milliseconds 증가
@@ -223,9 +231,22 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
             return dtDateTime;
         }
-        private static Models.Error? GetError(string methodName, string? code, string? customMessage)
+        private static Models.Error? GetError(string? code, string? customMessage, [CallerMemberName] string methodName = "")
         {
-            Console.WriteLine($"{methodName} : {code} {customMessage}");
+            customMessage = code switch
+            {
+                "5100" => "Bad Request",
+                "5200" => "Not Member",
+                "5300" => "Invalid Apikey",
+                "5302" => "Method Not Allowed",
+                "5400" => "Database Fail",
+                "5500" => "Invalid Parameter",
+                "5600" => customMessage,
+                "5900" => "Unknown Error",
+                _ => "",
+            };
+
+            $"{methodName} : {code} {customMessage}".WriteMessage();
 
             return new Models.Error()
             {
@@ -246,10 +267,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         }
         private Models.Error GetError(Exception ex, bool isDetail)
         {
-            if (isDetail)
-                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} {ex}");
-            else
-                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} {ex.Message}");
+            ex.WriteMessage(isDetail, ((IApi)this).ExchangeID);
 
             return new() { Message = ex.Message, Code = ex.ToString() };
         }
@@ -277,7 +295,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         //    list = JsonSerializer.Deserialize<BithumbData>(tmp);
 
         //    if (list == null) return;
-        //    if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return; }
+        //    if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return; }
         //    if (list.Data == null) return;
 
         //    accountInfo = new();
@@ -337,10 +355,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbData>(tmp);
+                list = JsonSerializer.Deserialize<BithumbData>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
 
                 result.AccountList = new();
@@ -431,10 +449,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbData>(tmp);
+                list = JsonSerializer.Deserialize<BithumbData>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
 
                 accountInfo = new();
@@ -544,10 +562,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 //";
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp);
+                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
 
                 result.UUID = uuid;
@@ -662,6 +680,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             Models.Account account;
             List<Models.Order> orderList;
             Models.Order order;
+            Models.Markets? markets;
 
             if (market == "ALL")
             {
@@ -670,16 +689,20 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 orderList = new List<Models.Order>();
 
                 if (account.AccountList != null)
+                {
+                    markets = ((IApi)this).Markets();
+
                     foreach (Models.Account account1 in account.AccountList)
                     {
-                        if (account1.Currency != "KRW")
+                        if (account1.Currency != "KRW" && (markets.MarketList != null && markets.MarketList.Any(x=> x.Market == $"KRW-{account1.Currency}")))
                         {
-                            order = ((IApi)this).AllOrder($"KRW-{account1.Currency}", 0 , "");
+                            order = ((IApi)this).AllOrder($"KRW-{account1.Currency}", 0, "");
 
                             if (order != null && order.OrderList != null && order.OrderList.Count > 0)
                                 orderList.AddRange(order.OrderList);
                         }
                     }
+                }
 
                 return new Models.Order()
                 {
@@ -705,14 +728,14 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 marketGroup = tmps[0];
                 market = tmps[1];
 
-                tmp = CallAPI_Private_WithParam($"{this.BaseUrl}/info/orders", new NameValueCollection { { "order_id", "" }, { "order_currency", market }, { "payment_currency", marketGroup } });
+                tmp = CallAPI_Private_WithParam($"{this.BaseUrl}/info/orders", new NameValueCollection { { "order_id", "" }, { "count", "1000" }, { "order_currency", market }, { "payment_currency", marketGroup } });
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDatas>(tmp);
+                list = JsonSerializer.Deserialize<BithumbDatas>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if ((list.Code != "5600" && list.Message != "거래 진행중인 내역이 존재하지 않습니다.") && list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Datas == null) return result;
 
                 result.OrderList = new();
@@ -780,10 +803,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbData>(tmp);
+                list = JsonSerializer.Deserialize<BithumbData>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
             }
             catch (Exception ex)
@@ -832,13 +855,13 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                     if (ticker == null)
                     {
-                        result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", "5600", "Ticker error");
+                        result.Error = GetError("5600", "Ticker error");
                         return result;
                     }
 
                     if (ticker.TickerList == null)
                     {
-                        result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", "5600", "TickerList error");
+                        result.Error = GetError("5600", "TickerList error");
                         return result;
                     }
 
@@ -846,7 +869,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                     if (ticker1 == null)
                     {
-                        result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", "5600", "Ticker1 error");
+                        result.Error = GetError("5600", "Ticker1 error");
                         return result;
                     }
 
@@ -865,10 +888,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbData>(tmp);
+                list = JsonSerializer.Deserialize<BithumbData>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
 
                 result.Market = $"{marketGroup}-{market}";
                 result.Side = side.ToString();
@@ -901,10 +924,12 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 }
 
                 this.RunOrderResultFromWebSocketDateTime = DateTime.Now;
-                Console.WriteLine($"{this.RunOrderResultFromWebSocketDateTime:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} Start : RunOrderResultFromWebSocket");
+                $"Start : RunOrderResultFromWebSocket".WriteMessage(((IApi)this).ExchangeID);
                 while (true)
                 {
                     await Task.Delay(2000);
+
+                    if (this.IsDispose) break;
 
                     if (this.WebSocketOrder == null)
                     {
@@ -916,7 +941,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     if ((DateTime.Now - this.RunOrderResultFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
                     {
                         this.OrderResultFromWebSocketClose();
-                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocketClose(RunOrderResultFromWebSocket)");
+                        $"OrderResultFromWebSocketClose(RunOrderResultFromWebSocket)\"".WriteMessage(((IApi)this).ExchangeID);
                     }
                 }
             });
@@ -951,7 +976,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     if ((DateTime.Now - dateTime.AddSeconds(10)).TotalSeconds >= this.SocketCloseTimeOutSeconds)
                     {
                         this.OrderResultFromWebSocketClose();
-                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocketClose");
+                        $"OrderResultFromWebSocketClose".WriteMessage(((IApi)this).ExchangeID);
                         break;
                     }
 
@@ -991,7 +1016,8 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             catch (Exception ex)
             {
                 this.Action?.Invoke(this, new() { Action = "OrderExecution", Value = null });
-                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocket {ex.Message}");
+
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
                 this.OrderResultFromWebSocketClose();
             }
         }
@@ -1007,7 +1033,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"{ex.Message} : {ex}");
+                    ex.WriteMessage(false, ((IApi)this).ExchangeID);
                     this.WebSocketOrder = null;
                 }
             }
@@ -1043,10 +1069,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDatas>(tmp);
+                list = JsonSerializer.Deserialize<BithumbDatas>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Datas == null) return result;
 
                 result.DepositsList = new();
@@ -1134,14 +1160,14 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                         ticker1 = this.TickerAll("KRW");
                         if (ticker1.Error != null)
                         {
-                            GetError(MethodBase.GetCurrentMethod()?.Name ?? "", ticker1.Error.Code, ticker1.Error.Message);
+                            GetError(ticker1.Error.Code, ticker1.Error.Message);
                             return MarketsDB;
                         }
 
                         ticker2 = this.TickerAll("BTC");
                         if (ticker2.Error != null)
                         {
-                            GetError(MethodBase.GetCurrentMethod()?.Name ?? "", ticker2.Error.Code, ticker2.Error.Message);
+                            GetError(ticker2.Error.Code, ticker2.Error.Message);
                             return MarketsDB;
                         }
 
@@ -1203,16 +1229,16 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     _ => "",
                 };
 
-                if (unitString == "") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", "5600", "unit error"); return result; }
+                if (unitString == "") { result.Error = GetError("5600", "unit error"); return result; }
 
                 tmp = CallAPI_Public($"{this.BaseUrl}/public/candlestick/{market}_{marketGroup}/{unitString}", null);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDataJsonElementList>(tmp);
+                list = JsonSerializer.Deserialize<BithumbDataJsonElementList>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
 
                 result.CandlesMinuteList = new();
@@ -1298,10 +1324,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDataJsonElementList>(tmp);
+                list = JsonSerializer.Deserialize<BithumbDataJsonElementList>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
 
                 result.CandlesDayList = new();
@@ -1402,7 +1428,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 list = JsonSerializer.Deserialize<BithumbDatas>(tmp);
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Datas == null) return result;
 
                 result.TicksList = new();
@@ -1473,13 +1499,13 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     ticker1 = this.TickerAll("KRW");
                     if (ticker1.Error != null)
                     {
-                        GetError(MethodBase.GetCurrentMethod()?.Name ?? "", ticker1.Error.Code, ticker1.Error.Message);
+                        GetError(ticker1.Error.Code, ticker1.Error.Message);
                     }
 
                     ticker2 = this.TickerAll("BTC");
                     if (ticker2.Error != null)
                     {
-                        GetError(MethodBase.GetCurrentMethod()?.Name ?? "", ticker2.Error.Code, ticker2.Error.Message);
+                        GetError(ticker2.Error.Code, ticker2.Error.Message);
                     }
 
                     if (ticker2.TickerList != null && ticker2.TickerList.Count > 0)
@@ -1538,13 +1564,13 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     ticker1 = this.TickerAll("KRW");
                     if (ticker1.Error != null)
                     {
-                        GetError(MethodBase.GetCurrentMethod()?.Name ?? "", ticker1.Error.Code, ticker1.Error.Message);
+                        GetError(ticker1.Error.Code, ticker1.Error.Message);
                     }
 
                     ticker2 = this.TickerAll("BTC");
                     if (ticker2.Error != null)
                     {
-                        GetError(MethodBase.GetCurrentMethod()?.Name ?? "", ticker2.Error.Code, ticker2.Error.Message);
+                        GetError(ticker2.Error.Code, ticker2.Error.Message);
                     }
 
                     if (ticker2.TickerList != null && ticker2.TickerList.Count > 0)
@@ -1594,7 +1620,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{ex.Message} : {ex}");
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
             }
 
             Models.Ticker result = new();
@@ -1623,10 +1649,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp);
+                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
 
                 dateTime = DateTime.Now;
@@ -1739,13 +1765,21 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         {
             await Task.Run(async () =>
             {
-                await Task.Delay(5000);
+                while (true)
+                {
+                    await Task.Delay(5000);
+
+                    if (!((IApi)this).AccessKey.IsNullOrEmpty() && !((IApi)this).SecretKey.IsNullOrEmpty())
+                        break;
+                }
 
                 RunTickerFromWebSocketDateTime = DateTime.Now;
-                Console.WriteLine($"{RunTickerFromWebSocketDateTime:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} Start : RunTickerFromWebSocket");
+                $"Start : RunTickerFromWebSocket".WriteMessage(((IApi)this).ExchangeID);
                 while (true)
                 {
                     await Task.Delay(2000);
+
+                    if (this.IsDispose) break;
 
                     if (WebSocketTickerDB == null)
                     {
@@ -1757,7 +1791,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     if ((DateTime.Now - RunTickerFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
                     {
                         TickerFromWebSocketClose();
-                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} OrderResultFromWebSocketClose(RunTickerFromWebSocket)");
+                        $"OrderResultFromWebSocketClose(RunTickerFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
                     }
                 }
             });
@@ -1797,7 +1831,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     if ((DateTime.Now - dateTime1.AddSeconds(15)).TotalSeconds >= this.SocketCloseTimeOutSeconds)
                     {
                         TickerFromWebSocketClose();
-                        Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} TickerFromWebSocketClose");
+                        $"TickerFromWebSocketClose".WriteMessage(((IApi)this).ExchangeID);
                         break;
                     }
 
@@ -1958,7 +1992,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID.{((IApi)this).ExchangeID} TickerFromWebSocket {ex.Message}");
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
                 TickerFromWebSocketClose();
             }
         }
@@ -1974,7 +2008,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"{ex.Message} : {ex}");
+                    ex.WriteMessage(false);
                     WebSocketTickerDB = null;
                 }
             }
@@ -2003,10 +2037,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp);
+                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
                 if (list == null) return result;
-                if (list.Code != "0000") { result.Error = GetError(MethodBase.GetCurrentMethod()?.Name ?? "", list.Code, list.Message); return result; }
+                if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
 
                 result.OrderbookList = new();
@@ -2084,11 +2118,18 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 this.HttpClient?.Dispose();
                 this.HttpClient = null;
 
+                this.OrderResultFromWebSocketClose();
+                TickerFromWebSocketClose();
+
                 GC.SuppressFinalize(this);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                ex.WriteMessage(false);
+            }
+            finally
+            {
+                this.IsDispose = true;
             }
         }
     }
