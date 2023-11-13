@@ -11,7 +11,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>MetaFrm.Stock.Utility.net7.0</PackageId>
     <Title>Meta Framework Stock Utility</Title>
-    <Version>7.0.1.4</Version>
+    <Version>7.0.1.5</Version>
     <Authors>dsun</Authors>
     <Company>Meta Framework</Company>
     <Product>Meta Framework Stock Utility</Product>
@@ -36,8 +36,14 @@
     <Compile Include="..\src\Exchange\Bithumb\BithumbDatas.cs" Link="Exchange\Bithumb\BithumbDatas.cs" />
     <Compile Include="..\src\Exchange\Bithumb\ResultStatus.cs" Link="Exchange\Bithumb\ResultStatus.cs" />
     <Compile Include="..\src\Exchange\Exchanger.cs" Link="Exchange\Exchanger.cs" />
+    <Compile Include="..\src\Exchange\ISettingAction.cs" Link="Exchange\ISettingAction.cs" />
+    <Compile Include="..\src\Exchange\Loss.cs" Link="Exchange\Loss.cs" />
     <Compile Include="..\src\Exchange\Setting.cs" Link="Exchange\Setting.cs" />
+    <Compile Include="..\src\Exchange\SettingGridMartingaleShortTrading.cs" Link="Exchange\SettingGridMartingaleShortTrading.cs" />
     <Compile Include="..\src\Exchange\SettingGridTrading.cs" Link="Exchange\SettingGridTrading.cs" />
+    <Compile Include="..\src\Exchange\SettingMartingaleLongTrading.cs" Link="Exchange\SettingMartingaleLongTrading.cs" />
+    <Compile Include="..\src\Exchange\SettingMartingaleShortTrading.cs" Link="Exchange\SettingMartingaleShortTrading.cs" />
+    <Compile Include="..\src\Exchange\SmartType.cs" Link="Exchange\SmartType.cs" />
     <Compile Include="..\src\Exchange\Upbit\Account.cs" Link="Exchange\Upbit\Account.cs" />
     <Compile Include="..\src\Exchange\Upbit\ApiKyes.cs" Link="Exchange\Upbit\ApiKyes.cs" />
     <Compile Include="..\src\Exchange\Upbit\Ask.cs" Link="Exchange\Upbit\Ask.cs" />
@@ -70,6 +76,7 @@
     <Compile Include="..\src\Exchange\Upbit\UpbitApi.cs" Link="Exchange\Upbit\UpbitApi.cs" />
     <Compile Include="..\src\Exchange\Upbit\WithdrawsCoin.cs" Link="Exchange\Upbit\WithdrawsCoin.cs" />
     <Compile Include="..\src\Exchange\User.cs" Link="Exchange\User.cs" />
+    <Compile Include="..\src\Exchange\WorkData.cs" Link="Exchange\WorkData.cs" />
     <Compile Include="..\src\IApi.cs" Link="IApi.cs" />
     <Compile Include="..\src\Models\Account.cs" Link="Models\Account.cs" />
     <Compile Include="..\src\Models\ApiKyes.cs" Link="Models\ApiKyes.cs" />
@@ -106,8 +113,7 @@
 
   <ItemGroup>
     <PackageReference Include="MetaFrm.Core.net7.0" Version="7.0.1.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.2" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.3" />
   </ItemGroup>
 
   <ItemGroup>

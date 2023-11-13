@@ -61,9 +61,16 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Exchange", "Exchange", "{E7B514D8-128A-431F-902B-3B3CFF6AC25A}"
 	ProjectSection(SolutionItems) = preProject
 		src\Exchange\Exchanger.cs = src\Exchange\Exchanger.cs
+		src\Exchange\ISettingAction.cs = src\Exchange\ISettingAction.cs
+		src\Exchange\Loss.cs = src\Exchange\Loss.cs
 		src\Exchange\Setting.cs = src\Exchange\Setting.cs
+		src\Exchange\SettingGridMartingaleShortTrading.cs = src\Exchange\SettingGridMartingaleShortTrading.cs
 		src\Exchange\SettingGridTrading.cs = src\Exchange\SettingGridTrading.cs
+		src\Exchange\SettingMartingaleLongTrading.cs = src\Exchange\SettingMartingaleLongTrading.cs
+		src\Exchange\SettingMartingaleShortTrading.cs = src\Exchange\SettingMartingaleShortTrading.cs
+		src\Exchange\SmartType.cs = src\Exchange\SmartType.cs
 		src\Exchange\User.cs = src\Exchange\User.cs
+		src\Exchange\WorkData.cs = src\Exchange\WorkData.cs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Upbit", "Upbit", "{90B9E3E6-AF7E-4E77-BF9B-77100ACA430E}"

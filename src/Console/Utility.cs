@@ -33,7 +33,7 @@ namespace MetaFrm.Stock.Console
             }
 
             commandParaString = "";
-            return false;
+            return true;
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace MetaFrm.Stock.Console
         public static void WriteList(this List<string> strings)
         {
             System.Console.WriteLine();
-            System.Console.ForegroundColor = ConsoleColor.Blue;
+            System.Console.ForegroundColor = ConsoleColor.Yellow;
             System.Console.Write($"  {DateTime.Now:dd HH:mm:ss}");
             foreach (string s in strings)
                 System.Console.WriteLine($"  {s}");
@@ -90,11 +90,18 @@ namespace MetaFrm.Stock.Console
         /// <param name="userID"></param>
         /// <param name="settingID"></param>
         /// <param name="market"></param>
-        public static void WriteMessage(this string message, int? exchangeID = null, int? userID = null, int? settingID = null, string? market = null)
+        /// <param name="consoleColor"></param>
+        public static void WriteMessage(this string message, int? exchangeID = null, int? userID = null, int? settingID = null, string? market = null, ConsoleColor consoleColor = ConsoleColor.White)
         {
+            if (consoleColor != ConsoleColor.White)
+                System.Console.ForegroundColor = consoleColor;
+
             if (lastString == "> ")
                 System.Console.Write("\r");
             System.Console.WriteLine($"{DateTime.Now:dd HH:mm:ss}{(exchangeID == null ? "": $" ExID:{exchangeID}")}{(userID == null ? "" : $" UID:{userID}")}{(settingID == null ? "" : $" SetID:{settingID}")}{(market == null ? "" : $" MK:{market}")} {message}");
+
+            if (consoleColor != ConsoleColor.White)
+                System.Console.ResetColor();
         }
 
         /// <summary>

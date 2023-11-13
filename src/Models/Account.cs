@@ -3,12 +3,12 @@
     /// <summary>
     /// 계좌
     /// </summary>
-    public class Account : ICore
+    public class Account : ICore, IEquatable<Account?>
     {
         /// <summary>
         /// AccountList
         /// </summary>
-        public List<Account>? AccountList { get; set; }
+        public List<Account> AccountList { get; set; } = new();
 
         /// <summary>
         /// 화폐를 의미하는 영문 대문자 코드
@@ -56,5 +56,31 @@
         /// 에러
         /// </summary>
         public Error? Error { get; set; }
+
+        /// <summary>
+        /// Equals
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public bool Equals(Account? obj)
+        {
+            if (obj is null)
+                return false;
+
+            return this.Balance == obj.Balance && this.Locked == obj.Locked;
+        }
+
+        /// <summary>
+        /// Equals
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public override bool Equals(object? obj) => Equals(obj as Order);
+
+        /// <summary>
+        /// GetHashCode
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode() => (this.Balance, this.Locked).GetHashCode();
     }
 }

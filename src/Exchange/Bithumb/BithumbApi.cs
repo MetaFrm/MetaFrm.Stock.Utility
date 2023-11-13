@@ -53,6 +53,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         private static bool IsRunTickerFromWebSocket = false;
 
         private bool IsDispose = false;
+        private readonly bool IsRunOrderResultFromWebSocket = false;
 
         /// <summary>
         /// BithumbAPI
@@ -66,6 +67,8 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 IsRunTickerFromWebSocket = true;
                 this.RunTickerFromWebSocket();
             }
+
+            this.IsRunOrderResultFromWebSocket = runOrderResultFromWebSocket;
 
             if (runOrderResultFromWebSocket && false)
                 this.RunOrderResultFromWebSocket();
@@ -165,7 +168,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             if (nvc == null) { return ""; }
 
             var array = (from key in nvc.AllKeys
-                         from value in nvc.GetValues(key)
+                         from value in nvc.GetValues(key) ?? Array.Empty<string>()
                          select string.Format("{0}={1}", key, value))
                 .ToArray();
 
@@ -361,7 +364,6 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
 
-                result.AccountList = new();
                 foreach (var item in list.Data)
                 {
                     tmps = item.Key.Split('_');
@@ -525,6 +527,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             return result;
         }
 
+        private readonly List<BithumbOrder> BithumbOrders = new();
         Models.Order IApi.Order(string market, string sideName, string uuid)
         {
             string? tmp;
@@ -665,6 +668,8 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                             break;
                     }
                 }
+
+                this.OrderExecuteActionInvoke(result);
             }
             catch (Exception ex)
             {
@@ -773,7 +778,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                 break;
                         }
                     }
+                    order.State = "wait";
                     result.OrderList.Add(order);
+
+                    this.OrderExecuteActionInvoke(order);
                 }
             }
             catch (Exception ex)
@@ -782,6 +790,67 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             }
 
             return result;
+        }
+
+        private void OrderExecuteActionInvoke(Models.Order result)
+        {
+            if (result.ExecutedVolume > 0 && this.IsRunOrderResultFromWebSocket)
+            {
+                lock (this.BithumbOrders)
+                {
+                    if (result.State != "done" && result.State != "cancel")
+                        if (!this.BithumbOrders.Any(x => x.Order.UUID == result.UUID))
+                        {
+                            this.BithumbOrders.Add(new(result));
+                            this.Action?.Invoke(this, new() { Action = "OrderExecution", Value = result });
+                            System.Console.ForegroundColor = ConsoleColor.Red;
+                            System.Console.WriteLine($"if (!this.BithumbOrders.Any(x => x.Order.UUID == result.UUID)) {result.State} {result.UUID} {result.ExecutedVolume}");
+                            System.Console.ResetColor();
+                        }
+                        else
+                        {
+                            var item = this.BithumbOrders.SingleOrDefault(x => x.Order.UUID == result.UUID && x.Order.ExecutedVolume != result.ExecutedVolume);
+                            if (item != null)
+                            {
+                                this.BithumbOrders.Remove(item);
+                                this.BithumbOrders.Add(new(result));
+
+                                this.Action?.Invoke(this, new()
+                                {
+                                    Action = "OrderExecution",
+                                    Value = new Models.Order()
+                                    {
+                                        UUID = result.UUID,
+                                        Side = result.Side,
+                                        Price = result.Price,
+                                        State = result.State,
+                                        Market = result.Market,
+                                        ExecutedVolume = result.ExecutedVolume - item.Order.ExecutedVolume,
+                                    }
+                                });
+
+                                System.Console.ForegroundColor = ConsoleColor.Red;
+                                System.Console.WriteLine($"if (item != null) {result.State} {result.UUID} {result.ExecutedVolume}");
+                                System.Console.ResetColor();
+                            }
+                        }
+
+                    List<BithumbOrder> delete = new();
+                    foreach (var item in this.BithumbOrders)
+                    {
+                        if ((item.Order.State == "done" || item.Order.State == "cancel") || item.InsertDateTime < DateTime.Now.AddDays(-15))
+                            delete.Add(item);
+                    }
+
+                    foreach (var item in delete)
+                    {
+                        this.BithumbOrders.Remove(item);
+                        System.Console.ForegroundColor = ConsoleColor.Red;
+                        System.Console.WriteLine($"this.BithumbOrders.Remove(item); {item.Order.State} {item.InsertDateTime} {item.Order.UUID} {item.Order.ExecutedVolume}");
+                        System.Console.ResetColor();
+                    }
+                }
+            }
         }
 
 
@@ -1812,7 +1881,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 if (markets == null || markets.MarketList == null || !markets.MarketList.Any())
                     return;
 
-                codes = string.Join(',', markets.MarketList.Select(x => $"\"{x.Market.Split('-')[1]}_{x.Market.Split('-')[0]}\""));
+                codes = string.Join(',', markets.MarketList.Select(x => $"\"{(x.Market ?? "-").Split('-')[1]}_{(x.Market ?? "-").Split('-')[0]}\""));
 
                 await WebSocketTickerDB.ConnectAsync(new(this.BaseWebSocketUrl), CancellationToken.None);
 
@@ -1883,10 +1952,13 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                             break;
                                         case "date":
                                             ticker.TradeDate = item.Value;
-                                            ticker.TradeTimeStamp = ((DateTimeOffset)DateTime.Parse($"{ticker.TradeDate[..4]}-{ticker.TradeDate.Substring(4, 2)}-{ticker.TradeDate.Substring(6, 2)} {ticker.TradeTime[..2]}:{ticker.TradeTime.Substring(2, 2)}:{ticker.TradeTime.Substring(4, 2)}")).ToUnixTimeSeconds();
+                                            if (ticker.TradeTime != null)
+                                                ticker.TradeTimeStamp = ((DateTimeOffset)DateTime.Parse($"{ticker.TradeDate[..4]}-{ticker.TradeDate.Substring(4, 2)}-{ticker.TradeDate.Substring(6, 2)} {ticker.TradeTime[..2]}:{ticker.TradeTime.Substring(2, 2)}:{ticker.TradeTime.Substring(4, 2)}")).ToUnixTimeSeconds();
                                             break;
                                         case "time":
                                             ticker.TradeTime = item.Value;
+                                            if (ticker.TradeDate != null)
+                                                ticker.TradeTimeStamp = ((DateTimeOffset)DateTime.Parse($"{ticker.TradeDate[..4]}-{ticker.TradeDate.Substring(4, 2)}-{ticker.TradeDate.Substring(6, 2)} {ticker.TradeTime[..2]}:{ticker.TradeTime.Substring(2, 2)}:{ticker.TradeTime.Substring(4, 2)}")).ToUnixTimeSeconds();
                                             break;
                                         case "openPrice":
                                             ticker.OpeningPrice = item.Value.ToDecimal();
@@ -2131,6 +2203,23 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             {
                 this.IsDispose = true;
             }
+        }
+    }
+
+    internal class BithumbOrder
+    {
+        /// <summary>
+        /// Order
+        /// </summary>
+        public Models.Order Order { get; set; }
+        /// <summary>
+        /// 주문 생성 시간
+        /// </summary>
+        public DateTime InsertDateTime { get; set; } = DateTime.Now;
+
+        public BithumbOrder(Models.Order order)
+        {
+            this.Order = order;
         }
     }
 }

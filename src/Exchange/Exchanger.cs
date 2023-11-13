@@ -1,12 +1,18 @@
 ﻿using MetaFrm.Stock.Console;
+using Microsoft.AspNetCore.Components.Authorization;
 
-namespace MetaFrm.Stock
+namespace MetaFrm.Stock.Exchange
 {
     /// <summary>
     /// Exchanger
     /// </summary>
     public class Exchanger : ICore
     {
+        /// <summary>
+        /// AuthState
+        /// </summary>
+        private Task<AuthenticationState> AuthState { get; set; }
+
         /// <summary>
         /// ExchangeID
         /// </summary>
@@ -19,9 +25,11 @@ namespace MetaFrm.Stock
         /// <summary>
         /// Exchange
         /// </summary>
+        /// <param name="authState"></param>
         /// <param name="exchangeID"></param>
-        public Exchanger(int exchangeID)
+        public Exchanger(Task<AuthenticationState> authState, int exchangeID)
         { 
+            this.AuthState = authState;
             this.ExchangeID = exchangeID;
         }
 
@@ -39,14 +47,14 @@ namespace MetaFrm.Stock
             if (user != null)
                 return user;
 
-            user = new()
+            user = new(this.AuthState)
             {
                 ExchangeID = this.ExchangeID,
                 UserID = userID,
                 Api = this.ExchangeID switch
                 {
                     1 => new Stock.Exchange.Upbit.UpbitApi(true, true),
-                    2 => new Stock.Exchange.Bithumb.BithumbApi(true, false),
+                    2 => new Stock.Exchange.Bithumb.BithumbApi(true, true),
                     _ => null
                 }
             };
@@ -73,13 +81,14 @@ namespace MetaFrm.Stock
         /// RemoveUser
         /// </summary>
         /// <param name="userID"></param>
+        /// <param name="saveWorkDataList"></param>
         /// <returns></returns>
-        public async Task<bool> RemoveUser(int userID)
+        public async Task<bool> RemoveUser(int userID, bool saveWorkDataList)
         {
             var sel = this.Users.SingleOrDefault(x => x.UserID == userID);
 
             if (sel != null)
-                return await this.RemoveUser(sel);
+                return await this.RemoveUser(sel, saveWorkDataList  );
 
             return false;
         }
@@ -87,11 +96,13 @@ namespace MetaFrm.Stock
         /// RemoveUser
         /// </summary>
         /// <param name="user"></param>
+        /// <param name="saveWorkDataList"></param>
         /// <returns></returns>
-        public async Task<bool> RemoveUser(User user)
+        public async Task<bool> RemoveUser(User user, bool saveWorkDataList)
         {
             if (this.Users.Contains(user))
             {
+                user.SaveWorkDataList = saveWorkDataList;
                 user.IsStopped = true;
 
                 while (true)
@@ -127,8 +138,9 @@ namespace MetaFrm.Stock
         /// <summary>
         /// Exit
         /// </summary>
+        /// <param name="saveWorkDataList"></param>
         /// <returns></returns>
-        public async Task<bool> Exit()
+        public async Task<bool> Exit(bool saveWorkDataList)
         {
             List<User> users = new();
 
@@ -137,7 +149,7 @@ namespace MetaFrm.Stock
                     users.Add(user);
 
             foreach (var user in users)
-                if (this.RemoveUser(user).Result)
+                if (this.RemoveUser(user, saveWorkDataList).Result)
                     continue;
 
             while (true)

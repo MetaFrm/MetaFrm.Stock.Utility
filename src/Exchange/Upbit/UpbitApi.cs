@@ -140,7 +140,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         private static string ToQueryString(NameValueCollection nameValueCollection)
         {
             var array = (from key in nameValueCollection.AllKeys
-                         from value in nameValueCollection.GetValues(key)
+                         from value in nameValueCollection.GetValues(key) ?? Array.Empty<string>()
                          select string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(value ?? ""))).ToArray();
 
             //return "?" + string.Join("&", array);
@@ -221,7 +221,6 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 if (list == null) return result;
 
-                result.AccountList = new();
                 foreach (var item in list)
                     result.AccountList.Add(new()
                     {
@@ -375,7 +374,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                         result.Trades = new();
                         foreach (var tradeItem in order.Trades)
                         {
-                            order.Trades.Add(new()
+                            result.Trades.Add(new()
                             {
                                 Market = tradeItem.Market,
                                 UUID = tradeItem.UUID,
@@ -745,6 +744,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                             Price = orderWebSocket.Price,
                             State = "wait",
                             Market = orderWebSocket.Code,
+                            ExecutedVolume = orderWebSocket.Volume,
                         };
 
                         this.Action?.Invoke(this, new() { Action = "OrderExecution", Value = order });
