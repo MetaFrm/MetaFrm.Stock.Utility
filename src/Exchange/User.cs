@@ -406,7 +406,7 @@ namespace MetaFrm.Stock.Exchange
         {
             if (e.Action == "OrderExecution" && e.Value != null && e.Value is Models.Order order)
             {
-                $"OrderExecution {order.Side} {order.Price} {order.Volume} {order.UUID}".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Cyan);
+                $"OrderExecution {order.Side} {order.Price} {order.ExecutedVolume} {order.UUID}".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Cyan);
                 //this.Run(new List<Models.Order>() { { new() { UUID = order.UUID, Side = order.Side, OrdType = order.OrdType, Price = order.Price, State = order.State, Market = order.Market, Volume = order.Volume } } });
 
                 lock (this.Settings)
