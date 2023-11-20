@@ -105,7 +105,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                         }
                     }
 
-                return result;
+                if (result.Contains("빗썸 서비스 점검 중"))
+                    return "";
+                else
+                    return result;
             }
             catch (Exception ex)
             {
@@ -146,7 +149,10 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                         }
                     }
 
-                return result;
+                if (result.Contains("빗썸 서비스 점검 중"))
+                    return "";
+                else
+                    return result;
             }
             catch (Exception ex)
             {
@@ -798,8 +804,8 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             {
                 lock (this.BithumbOrders)
                 {
-                    if (result.State != "done" && result.State != "cancel")
-                        if (!this.BithumbOrders.Any(x => x.Order.UUID == result.UUID))
+                    if (result.State != "cancel")
+                        if (!this.BithumbOrders.Any(x => x.Order.UUID == result.UUID) && result.State != "done")
                         {
                             this.BithumbOrders.Add(new(result));
                             this.Action?.Invoke(this, new() { Action = "OrderExecution", Value = result });
@@ -813,7 +819,9 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                             if (item != null)
                             {
                                 this.BithumbOrders.Remove(item);
-                                this.BithumbOrders.Add(new(result));
+
+                                if (result.State != "done")
+                                    this.BithumbOrders.Add(new(result));
 
                                 this.Action?.Invoke(this, new()
                                 {

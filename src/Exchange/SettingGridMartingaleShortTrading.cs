@@ -17,10 +17,24 @@ namespace MetaFrm.Stock.Exchange
         /// </summary>
         public SettingMartingaleShortTrading SettingMartingaleShortTrading { get; set; }
 
+        private Setting? settingCurrent;
         /// <summary>
         /// SettingCurrent
         /// </summary>
-        public Setting? SettingCurrent { get; set; }
+        public Setting? SettingCurrent 
+        {
+            get 
+            {
+                return this.settingCurrent;
+            }
+            set
+            {
+                if (this.settingCurrent != null && value != null)
+                    this.ChangeSettingMessage(this.settingCurrent, value);
+
+                this.settingCurrent = value;
+            }
+        }
 
         /// <summary>
         /// SettingGridMartingaleShortTrading
@@ -65,12 +79,12 @@ namespace MetaFrm.Stock.Exchange
                     this.SettingMartingaleShortTrading.LossStack = this.LossStack;
                 }
 
-                //this.SettingGridTrading.Market = this.Market;
-                //this.SettingGridTrading.SettingID = this.SettingID;
-                //this.SettingGridTrading.TopPrice = this.CurrentInfo.TradePrice;
-                //this.SettingGridTrading.BasePrice = this.GetBasePrice(this.CurrentInfo.TradePrice, this.SettingGridTrading.Rate, this.SettingGridTrading.ListMin);
-                //this.SettingGridTrading.Invest = this.Invest;
-                this.SetSettingGridTrading(this.CurrentInfo.TradePrice, this.Invest);
+                ////this.SettingGridTrading.Market = this.Market;
+                ////this.SettingGridTrading.SettingID = this.SettingID;
+                ////this.SettingGridTrading.TopPrice = this.CurrentInfo.TradePrice;
+                ////this.SettingGridTrading.BasePrice = this.GetBasePrice(this.CurrentInfo.TradePrice, this.SettingGridTrading.Rate, this.SettingGridTrading.ListMin);
+                ////this.SettingGridTrading.Invest = this.Invest;
+                //this.SetSettingGridTrading(this.CurrentInfo.TradePrice, this.Invest);
 
                 //user.AddSetting(new SettingGridTrading(user)
                 //{
@@ -109,7 +123,16 @@ namespace MetaFrm.Stock.Exchange
                 ////    FirstFix = false,
                 ////});
 
-                this.SettingCurrent = this.SettingGridTrading;
+                if (this.LossStack.Count % 2 == 0)
+                {
+                    this.SetSettingGridTrading(this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
+                    this.SettingCurrent = this.SettingGridTrading;
+                }
+                else
+                {
+                    this.SetSettingMartingaleShortTrading(this.CurrentInfo.TradePrice, this.LossStack.Peek().Invest);
+                    this.SettingCurrent = this.SettingMartingaleShortTrading;
+                }
             }
 
             try
@@ -206,7 +229,7 @@ namespace MetaFrm.Stock.Exchange
                 this.SetSettingMartingaleShortTrading(this.CurrentInfo.TradePrice, qty);
 
                 if (isPush)
-                    this.LossStack.Push(new() { AccProfit = 0 });
+                    this.LossStack.Push(new() { AccProfit = 0, Invest = qty });
                 else
                     this.LossStack.Pop();
 
@@ -285,9 +308,11 @@ namespace MetaFrm.Stock.Exchange
                     //this.SettingGridTrading.TopPrice = this.CurrentInfo.TradePrice;
                     //this.SettingGridTrading.BasePrice = this.GetBasePrice(this.CurrentInfo.TradePrice, this.SettingGridTrading.Rate, this.SettingGridTrading.ListMin);
                     //this.SettingGridTrading.Invest = this.Invest;
-                    this.SetSettingGridTrading(this.CurrentInfo.TradePrice, this.Invest);
 
                     this.LossStack.Pop();
+
+                    this.SetSettingGridTrading(this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
+
 
                     $"전환 SettingMartingaleShortTrading->SettingGridTrading IsPush:{false}TradePrice:{this.CurrentInfo.TradePrice}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market, ConsoleColor.DarkGreen);
                     this.SettingCurrent = this.SettingGridTrading;
@@ -320,13 +345,14 @@ namespace MetaFrm.Stock.Exchange
             {
                 //this.SettingGridTrading.Invest = askAmount;
                 this.SetSettingGridTrading(this.CurrentInfo.TradePrice, askAmount);
-                this.LossStack.Push(new() { AccProfit = 0 });
+                this.LossStack.Push(new() { AccProfit = 0, Invest = askAmount });
             }
             else
             {
-                //this.SettingGridTrading.Invest = this.Invest;
-                this.SetSettingGridTrading(this.CurrentInfo.TradePrice, this.Invest);
                 this.LossStack.Pop();
+
+                //this.SettingGridTrading.Invest = this.Invest;
+                this.SetSettingGridTrading(this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
             }
 
             $"전환 SettingMartingaleShortTrading->SettingGridTrading IsPush:{isPush} TradePrice:{this.CurrentInfo.TradePrice}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market, ConsoleColor.DarkGreen);

@@ -95,14 +95,14 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="setting"></param>
         public void AddSetting(Setting setting)
         {
-            if (setting.ListMin < 4)
-            {
-                $"ListMin 값이 4 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                return;
-            }
-
             if (setting is SettingGridTrading settingGrid)
             {
+                if (setting.ListMin < 4)
+                {
+                    $"ListMin 값이 4 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                    return;
+                }
+
                 decimal tmp = settingGrid.BasePrice * (1 + (((settingGrid.Rate + Setting.DefaultFees(this.ExchangeID)) / 100)) * setting.ListMin);
                 if (tmp > settingGrid.TopPrice)
                 {
@@ -110,9 +110,30 @@ namespace MetaFrm.Stock.Exchange
                     return;
                 }
             }
+            if (setting is SettingMartingaleLongTrading settingMartingaleLongTrading)
+            {
+                if (settingMartingaleLongTrading.ListMin < 2)
+                {
+                    $"ListMin 값이 2 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                    return;
+                }
+            }
+            if (setting is SettingMartingaleShortTrading settingMartingaleShortTrading)
+            {
+                if (settingMartingaleShortTrading.ListMin < 2)
+                {
+                    $"ListMin 값이 2 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                    return;
+                }
+            }
 
             if (setting is SettingGridMartingaleShortTrading settingGridMartingaleShortTrading)
             {
+                if (settingGridMartingaleShortTrading.SettingGridTrading.ListMin < 4)
+                {
+                    $"ListMin 값이 4 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                    return;
+                }
                 if (settingGridMartingaleShortTrading.SettingGridTrading.StopLoss)
                 {
                     $"Grid.StopLoss 는 False만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
@@ -129,6 +150,11 @@ namespace MetaFrm.Stock.Exchange
                     return;
                 }
 
+                if (settingGridMartingaleShortTrading.SettingMartingaleShortTrading.ListMin < 4)
+                {
+                    $"ListMin 값이 4 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                    return;
+                }
                 if (settingGridMartingaleShortTrading.SettingMartingaleShortTrading.IsProfitStop)
                 {
                     $"MartingaleShort.IsProfitStop 는 False만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
@@ -182,6 +208,8 @@ namespace MetaFrm.Stock.Exchange
         {
             Task.Run(async () =>
             {
+                //await Task.Delay(30000);
+
                 int cnt = 0;
                 int mod = 0;
                 while (true)
@@ -213,10 +241,10 @@ namespace MetaFrm.Stock.Exchange
                                     {
                                         if (this.SaveWorkDataList)
                                         {
-                                            if (setting is SettingGridMartingaleShortTrading set)
+                                            if (setting is SettingGridMartingaleShortTrading set1)
                                             {
                                                 setting.SaveLossStack();
-                                                (set.SettingCurrent as ISettingAction)?.Organized(setting.SettingID, false, false, false, true);
+                                                (set1.SettingCurrent as ISettingAction)?.Organized(setting.SettingID, false, false, false, true);
                                             }
                                             else
                                                 (setting as ISettingAction).Organized(setting.SettingID, false, false, false, true);
@@ -225,6 +253,14 @@ namespace MetaFrm.Stock.Exchange
                                         {
                                             if (setting is SettingMartingaleShortTrading)
                                                 (setting as ISettingAction).Organized(setting.SettingID, false, true, false, true);
+
+                                            else if (setting is SettingGridMartingaleShortTrading set2)
+                                            {
+                                                if (set2.SettingCurrent is SettingMartingaleShortTrading)
+                                                    (set2.SettingCurrent as ISettingAction).Organized(setting.SettingID, false, true, false, true);
+                                                else if (set2.SettingCurrent is SettingGridTrading)
+                                                    (set2.SettingCurrent as ISettingAction).Organized(setting.SettingID, true, false, false, true);
+                                            }
                                             else
                                                 (setting as ISettingAction).Organized(setting.SettingID, true, false, false, true);
                                         }
@@ -414,24 +450,31 @@ namespace MetaFrm.Stock.Exchange
                     {
                         try
                         {
-                            var aa = this.Settings.Where(x => x.WorkDataList != null).SingleOrDefault(z => z.WorkDataList != null && z.WorkDataList.SingleOrDefault(y => (y.BidOrder != null && y.BidOrder.UUID == order.UUID) || (y.AskOrder != null && y.AskOrder.UUID == order.UUID)) != null);
+                            var a1 = this.Settings.Where(x => x is not SettingGridMartingaleShortTrading);
+                            var a2 = this.Settings.Where(x => x is SettingGridMartingaleShortTrading).Select(x => (x as SettingGridMartingaleShortTrading)?.SettingCurrent);
+
+                            var aa = a1.Union(a2).Where(x => x != null && x.WorkDataList != null).SingleOrDefault(z => z != null && z.WorkDataList != null && z.WorkDataList.SingleOrDefault(y => (y.BidOrder != null && y.BidOrder.UUID == order.UUID) || (y.AskOrder != null && y.AskOrder.UUID == order.UUID)) != null);
 
                             if (aa != null)
                             {
                                 if (aa is SettingGridTrading settingGrid && order.Side == "bid")
-                                    this.OrderExecution(null, order);
+                                    this.OrderExecution(aa, order);
 
                                 if (aa is SettingMartingaleLongTrading settingMartingaleLong && order.Side == "bid")
-                                    this.OrderExecution(null, order);
+                                    this.OrderExecution(aa, order);
 
                                 if (aa is SettingMartingaleShortTrading settingMartingaleShort && order.Side == "ask")
-                                    this.OrderExecution(null, order);
+                                    this.OrderExecution(aa, order);
 
                                 if (aa is SettingGridMartingaleShortTrading set1 && set1.SettingCurrent is SettingGridTrading && order.Side == "bid")
-                                    this.OrderExecution(null, order);
+                                    this.OrderExecution(set1.SettingCurrent,order);
 
                                 if (aa is SettingGridMartingaleShortTrading set2 && set2.SettingCurrent is SettingMartingaleShortTrading && order.Side == "ask")
-                                    this.OrderExecution(null, order);
+                                    this.OrderExecution(set2.SettingCurrent, order);
+                            }
+                            else
+                            {
+                                $"if (aa != null)".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Red);
                             }
                         }
                         catch (Exception ex)
@@ -443,12 +486,16 @@ namespace MetaFrm.Stock.Exchange
                         this.Orders = this.Api.AllOrder("ALL", "");
                         this.Run(new List<Models.Order>() { { new() { Market = order.Market } } }, this.Orders);
                     }
+                    else
+                    {
+                        $"if (this.Api != null && this.Settings.Any(x => x.Market == order.Market) && !this.RemoveSettingQueue.Any(x => x.Market == order.Market))".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Red);
+                    }
             }
 
             this.StartRunDelay = 10000;
         }
 
-        internal void OrderExecution(int? SETTING_ID, Models.Order order)
+        internal void OrderExecution(Setting setting, Models.Order order)
         {
             StringBuilder stringBuilder = new();
             ServiceData data = new()
@@ -458,35 +505,34 @@ namespace MetaFrm.Stock.Exchange
                 Token = this.AuthState.Token(),
             };
             data["1"].CommandText = "Batch.[dbo].[USP_TRADING_ORDER_EXECUTION]";
-            data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
+            data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, setting.SettingID);
             data["1"].AddParameter("MARKET_ID", Database.DbType.NVarChar, 20, order.Market);
             data["1"].AddParameter("SIDE", Database.DbType.NVarChar, 20, order.Side);
             data["1"].AddParameter("ORDER_TYPE", Database.DbType.NVarChar, 20, order.OrdType);
             data["1"].AddParameter("PRICE", Database.DbType.Decimal, 18, order.Price);
             data["1"].AddParameter("EXECUTE_QTY", Database.DbType.Decimal, 18, order.ExecutedVolume);
             data["1"].AddParameter(nameof(order.UUID), Database.DbType.NVarChar, 100, order.UUID);
-            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.AuthState.UserID());
+            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, setting.User.UserID);
 
             stringBuilder.Append($"{this.ExchangeName()} {(order.Side == "bid" ? "매수" : "매도")} 체결");
             data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
             stringBuilder.Clear();
-            stringBuilder.AppendLine("");
             stringBuilder.AppendLine($"{order.Market}");
 
-            //if (order.ExecutedVolume >= 100)
-            //    stringBuilder.Append($"거래수량: {order.ExecutedVolume:N0}");
-            //else if (order.ExecutedVolume >= 10)
-            //    stringBuilder.Append($"거래수량: {order.ExecutedVolume:N2}");
-            //else
-            stringBuilder.Append($"거래수량: {order.ExecutedVolume:N4}");
+            string[]? tmps = order.Market?.Split('-');
+
+            stringBuilder.Append($"{order.ExecutedVolume:N4} {tmps?[1]}");
 
             if (order.Price >= 100)
-                stringBuilder.AppendLine($" / 거래단가: {order.Price:N0}");
-            else if (order.Price >= 1)
-                stringBuilder.AppendLine($" / 거래단가: {order.Price:N2}");
-            else
-                stringBuilder.AppendLine($" / 거래단가: {order.Price:N4}");
+                stringBuilder.Append($" | {order.Price:N0} {tmps?[0]}");
+            else if (order.Price >= 1)  
+                stringBuilder.Append($" | {order.Price:N2} {tmps?[0]}");
+            else                        
+                stringBuilder.Append($" | {order.Price:N4} {tmps?[0]}");
+
+            decimal tmp = order.Price * order.ExecutedVolume;
+            stringBuilder.Append($" | {tmp + tmp * (order.Side == "bid" ? setting.Fees / 100M : -setting.Fees / 100M):N0}원");
 
             data["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
@@ -497,7 +543,7 @@ namespace MetaFrm.Stock.Exchange
                 response = this.ServiceRequest(data);
 
                 if (response.Status != Status.OK)
-                    response.Message?.WriteMessage(this.ExchangeID, this.UserID, SETTING_ID, order.Market);
+                    response.Message?.WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, order.Market);
             });
         }
 

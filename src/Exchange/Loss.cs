@@ -5,24 +5,20 @@
     /// </summary>
     public class Loss
     {
-        ///// <summary>
-        ///// 평균가격
-        ///// </summary>
-        //public decimal AvgPrice { get; set; }
-        ///// <summary>
-        ///// 총수량
-        ///// </summary>
-        //public decimal TotalQty { get; set; }
-        ///// <summary>
-        ///// 총평가금액
-        ///// </summary>
-        //public decimal TotalKrwValue { get; set; }
+        /// <summary>
+        /// DateTime
+        /// </summary>
+        public DateTime DateTime { get; } = DateTime.Now;
+
+        /// <summary>
+        /// 투자 수량
+        /// </summary>
+        public decimal Invest { get; set; }
 
         /// <summary>
         /// 누적 수익금
         /// </summary>
         public decimal AccProfit { get; set; }
-
 
         private decimal currentKrwValue;
         /// <summary>

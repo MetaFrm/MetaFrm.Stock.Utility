@@ -46,7 +46,6 @@ namespace MetaFrm.Stock.Exchange
                     $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingMartingaleShortTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
 
                 this.CurrentInfo = this.GetCurrentInfo();
-
                 if (this.CurrentInfo == null)
                     return;
 
@@ -73,6 +72,12 @@ namespace MetaFrm.Stock.Exchange
 
                     this.WorkDataList ??= this.GetWorkData(this.CurrentInfo.TradePrice);
                 }
+                //else
+                //{
+                //    this.CurrentInfo = this.GetCurrentInfo();
+                //    if (this.CurrentInfo == null)
+                //        return;
+                //}
 
                 if (this.WorkDataList == null || this.WorkDataList.Count < 1) return;
 
@@ -210,7 +215,7 @@ namespace MetaFrm.Stock.Exchange
                         decimal ASK = (item.BidOrder.Volume * item.AskAvgPrice) - item.AskTotalFee - item.AskOrder.PaidFee;
                         decimal BID = (item.BidOrder.Volume * item.BidOrder.Price) + item.BidOrder.PaidFee;
 
-                        this.Profit(this.SettingID
+                        this.Profit(this.SettingID, this.User.UserID
                             , item.BidOrder.Price, item.BidOrder.Volume, item.BidOrder.PaidFee
                             , item.AskAvgPrice, item.BidOrder.Volume, item.AskTotalFee + item.AskOrder.PaidFee
                             , ASK - BID

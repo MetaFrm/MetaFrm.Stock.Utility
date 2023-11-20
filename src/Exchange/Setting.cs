@@ -128,8 +128,8 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="BID_CANCEL"></param>
         /// <param name="ASK_CANCEL"></param>
         /// <param name="ASK_CURRENT_PRICE"></param>
-        /// <param name="IS_PROFIT_STOP"></param>
-        public void Organized(int SETTING_ID, bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool IS_PROFIT_STOP)
+        /// <param name="REMOVE_SETTING"></param>
+        public void Organized(int SETTING_ID, bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool REMOVE_SETTING)
         {
             this.CurrentInfo ??= this.GetCurrentInfo();
 
@@ -138,17 +138,17 @@ namespace MetaFrm.Stock.Exchange
 
             this.OrganizedRun(BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, this.CurrentInfo);
 
-            if (IS_PROFIT_STOP)
-                this.Clear(SETTING_ID, BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, IS_PROFIT_STOP);
+            if (REMOVE_SETTING)
+                this.Clear(SETTING_ID, BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, REMOVE_SETTING);
 
             if (this.ParentSetting != null)
             {
-                if (this.User.Settings.Contains(this.ParentSetting) && IS_PROFIT_STOP)
+                if (this.User.Settings.Contains(this.ParentSetting) && REMOVE_SETTING)
                     this.User.RemoveSetting(this.ParentSetting);
             }
             else
             {
-                if (this.User.Settings.Contains(this) && IS_PROFIT_STOP)
+                if (this.User.Settings.Contains(this) && REMOVE_SETTING)
                     this.User.RemoveSetting(this);
             }
         }
@@ -313,7 +313,7 @@ namespace MetaFrm.Stock.Exchange
                     response.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
             });
         }
-        internal void Profit(int SETTING_ID, decimal BID_PRICE, decimal BID_QTY, decimal BID_FEE, decimal ASK_PRICE, decimal ASK_QTY, decimal ASK_FEE, decimal PROFIT, string MARKET_ID)
+        internal void Profit(int SETTING_ID, int USER_ID, decimal BID_PRICE, decimal BID_QTY, decimal BID_FEE, decimal ASK_PRICE, decimal ASK_QTY, decimal ASK_FEE, decimal PROFIT, string MARKET_ID)
         {
             if (this.LossStack.Count > 0)
                 this.LossStack.Peek().AccProfit += PROFIT;
@@ -334,52 +334,88 @@ namespace MetaFrm.Stock.Exchange
             data["1"].AddParameter(nameof(ASK_QTY), Database.DbType.Decimal, 18, ASK_QTY);
             data["1"].AddParameter(nameof(ASK_FEE), Database.DbType.Decimal, 18, ASK_FEE);
             data["1"].AddParameter(nameof(PROFIT), Database.DbType.Decimal, 18, PROFIT);
-            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.User.AuthState.UserID());
+            data["1"].AddParameter(nameof(USER_ID), Database.DbType.Int, 3, USER_ID);
 
             stringBuilder.Append($"{this.User.ExchangeName()} 수익 발생");
             data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
             stringBuilder.Clear();
-            stringBuilder.AppendLine("");
             stringBuilder.Append($"{MARKET_ID}");
-            stringBuilder.AppendLine(PROFIT >= 1 ? $" 수익: {PROFIT:N0}" : $" 수익: {PROFIT:N2}");
-            stringBuilder.AppendLine("");
-            stringBuilder.AppendLine("[매도]");
+            stringBuilder.AppendLine(PROFIT >= 1 ? $" {PROFIT:N0}원 수익" : $" {PROFIT:N2}원 수익");
 
-            //if (ASK_QTY >= 100)
-            //    stringBuilder.Append($"거래수량: {ASK_QTY:N0}");
-            //else if (ASK_QTY >= 10)
-            //    stringBuilder.Append($"거래수량: {ASK_QTY:N2}");
-            //else
-            stringBuilder.Append($"거래수량: {ASK_QTY:N4}");
+            string[]? tmps = MARKET_ID?.Split('-');
+
+            //stringBuilder.Append("S ");
+            stringBuilder.Append($"{ASK_QTY:N4} {tmps?[1]}");
 
             if (ASK_PRICE >= 100)
-                stringBuilder.AppendLine($" / 거래단가: {ASK_PRICE:N0}");
-            else if (ASK_PRICE >= 1)
-                stringBuilder.AppendLine($" / 거래단가: {ASK_PRICE:N2}");
-            else
-                stringBuilder.AppendLine($" / 거래단가: {ASK_PRICE:N4}");
+                stringBuilder.Append($" | {ASK_PRICE:N0} {tmps?[0]}");
+            else if (ASK_PRICE >= 1)    
+                stringBuilder.Append($" | {ASK_PRICE:N2} {tmps?[0]}");
+            else                        
+                stringBuilder.Append($" | {ASK_PRICE:N4} {tmps?[0]}");
+                                        
+            stringBuilder.AppendLine($" | {(ASK_PRICE * ASK_QTY) - ASK_FEE:N0}원");
 
-            stringBuilder.AppendLine($"정산금액: {(ASK_PRICE * ASK_QTY) - ASK_FEE:N0} / 수수료: {ASK_FEE:N2}");
 
-            //stringBuilder.AppendLine("");
-            stringBuilder.AppendLine("[매수]");
-
-            //if (ASK_QTY >= 100)
-            //    stringBuilder.Append($"거래수량: {BID_QTY:N0}");
-            //else if (ASK_QTY >= 10)
-            //    stringBuilder.Append($"거래수량: {BID_QTY:N2}");
-            //else
-            stringBuilder.Append($"거래수량: {BID_QTY:N4}");
+            //stringBuilder.Append("B ");
+            stringBuilder.Append($"{BID_QTY:N4} {tmps?[1]}");
 
             if (BID_PRICE >= 100)
-                stringBuilder.AppendLine($" / 거래단가: {BID_PRICE:N0}");
-            else if (BID_PRICE >= 1)
-                stringBuilder.AppendLine($" / 거래단가: {BID_PRICE:N2}");
-            else
-                stringBuilder.AppendLine($" / 거래단가: {BID_PRICE:N4}");
+                stringBuilder.Append($" | {BID_PRICE:N0} {tmps?[0]}");
+            else if (BID_PRICE >= 1)    
+                stringBuilder.Append($" | {BID_PRICE:N2} {tmps?[0]}");
+            else                        
+                stringBuilder.Append($" | {BID_PRICE:N4} {tmps?[0]}");
 
-            stringBuilder.AppendLine($"정산금액: {(BID_PRICE * BID_QTY) + BID_FEE:N0} / 수수료: {BID_FEE:N2}");
+            stringBuilder.Append($" | {(BID_PRICE * BID_QTY) + BID_FEE:N0}원");
+
+
+            data["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+
+            Task.Run(() =>
+            {
+                Response response;
+
+                response = this.ServiceRequest(data);
+
+                if (response.Status != Status.OK)
+                    response.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+            });
+        }
+        internal void ChangeSettingMessage(Setting before, Setting after)
+        {
+            StringBuilder stringBuilder = new();
+            ServiceData data = new()
+            {
+                ServiceName = "",
+                TransactionScope = false,
+                Token = this.User.AuthState.Token(),
+            };
+            data["1"].CommandText = "Batch.[dbo].[USP_TRADING_CHANGE_SETTING]";
+            data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, before.SettingID);
+            data["1"].AddParameter("BEFORE", Database.DbType.NVarChar, 50, before is SettingGridTrading ? "Grid" : "MartingaleShort");
+            data["1"].AddParameter("AFTER", Database.DbType.NVarChar, 50, after is SettingGridTrading ? "Grid" : "MartingaleShort");
+            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, before.User.UserID);
+
+            stringBuilder.Append($"{this.User.ExchangeName()} 세팅 전환");
+            data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+
+            stringBuilder.Clear();
+            stringBuilder.Append($"{before.Market}");
+            stringBuilder.AppendLine($" {(before is SettingGridTrading ? "그리드" : "마틴게일 숏")} -> {(after is SettingGridTrading ? "그리드" : "마틴게일 숏")}");
+
+            if (this.LossStack.Count > 0)
+            {
+                int i = this.LossStack.Count - 1;
+                foreach(var item in this.LossStack)
+                {
+                    if (i % 2 == 0)
+                        stringBuilder.Append($"마틴게일 숏({item.DateTime:MM-dd HH:mm}) ");
+                    else
+                        stringBuilder.Append($"그리드({item.DateTime:MM-dd HH:mm}) ");
+                }
+            }
 
             data["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 

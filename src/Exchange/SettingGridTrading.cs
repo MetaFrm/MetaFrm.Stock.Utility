@@ -77,7 +77,6 @@ namespace MetaFrm.Stock.Exchange
                 if (this.WorkDataList == null || this.WorkDataList.Count < 1) return;
 
                 this.CurrentInfo = this.GetCurrentInfo();
-
                 if (this.CurrentInfo == null)
                     return;
 
@@ -274,7 +273,7 @@ namespace MetaFrm.Stock.Exchange
 
                             decimal BID = (dataRow.BidOrder.Volume * dataRow.BidOrder.Price) + dataRow.BidOrder.PaidFee;
 
-                            this.Profit(this.SettingID
+                            this.Profit(this.SettingID, this.User.UserID
                                 , dataRow.BidOrder.Price, dataRow.BidOrder.Volume, dataRow.BidOrder.PaidFee
                                 , dataRow.AskOrder.Price, dataRow.AskOrder.Volume, dataRow.AskOrder.PaidFee
                                 , ASK - BID
