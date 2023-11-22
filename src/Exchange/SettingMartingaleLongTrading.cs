@@ -22,7 +22,10 @@ namespace MetaFrm.Stock.Exchange
         /// SettingMartingaleLongTrading
         /// </summary>
         /// <param name="user"></param>
-        public SettingMartingaleLongTrading(User user) : base(user) { }
+        public SettingMartingaleLongTrading(User user) : base(user)
+        {
+            this.SettingType = SettingType.MartingaleLong;
+        }
 
         /// <summary>
         /// Run
@@ -61,9 +64,6 @@ namespace MetaFrm.Stock.Exchange
                 this.WorkDataList ??= this.GetWorkData(this.CurrentInfo.TradePrice);
 
                 if (this.WorkDataList == null || this.WorkDataList.Count < 1) return;
-
-
-                if (this.WorkDataList == null) return;
 
                 allOrder ??= this.User.Api.AllOrder(this.Market, "desc");
 

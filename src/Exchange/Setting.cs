@@ -11,6 +11,11 @@ namespace MetaFrm.Stock.Exchange
     public class Setting : ISettingAction
     {
         /// <summary>
+        /// SettingType
+        /// </summary>
+        public SettingType SettingType { get; set; } = SettingType.None;
+
+        /// <summary>
         /// User
         /// </summary>
         public User User { get; set; }
@@ -394,8 +399,8 @@ namespace MetaFrm.Stock.Exchange
             };
             data["1"].CommandText = "Batch.[dbo].[USP_TRADING_CHANGE_SETTING]";
             data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, before.SettingID);
-            data["1"].AddParameter("BEFORE", Database.DbType.NVarChar, 50, before is SettingGridTrading ? "Grid" : "MartingaleShort");
-            data["1"].AddParameter("AFTER", Database.DbType.NVarChar, 50, after is SettingGridTrading ? "Grid" : "MartingaleShort");
+            data["1"].AddParameter("BEFORE", Database.DbType.NVarChar, 50, before.SettingType == SettingType.Grid ? "Grid" : "MartingaleShort");
+            data["1"].AddParameter("AFTER", Database.DbType.NVarChar, 50, after.SettingType == SettingType.Grid ? "Grid" : "MartingaleShort");
             data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, before.User.UserID);
 
             stringBuilder.Append($"{this.User.ExchangeName()} 세팅 전환");
@@ -403,7 +408,7 @@ namespace MetaFrm.Stock.Exchange
 
             stringBuilder.Clear();
             stringBuilder.Append($"{before.Market}");
-            stringBuilder.AppendLine($" {(before is SettingGridTrading ? "그리드" : "마틴게일 숏")} -> {(after is SettingGridTrading ? "그리드" : "마틴게일 숏")}");
+            stringBuilder.AppendLine($" {(before.SettingType == SettingType.Grid ? "그리드" : "마틴게일 숏")} -> {(after.SettingType == SettingType.Grid ? "그리드" : "마틴게일 숏")}");
 
             if (this.LossStack.Count > 0)
             {

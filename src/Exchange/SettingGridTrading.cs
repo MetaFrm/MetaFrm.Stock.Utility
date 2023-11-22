@@ -40,7 +40,10 @@ namespace MetaFrm.Stock.Exchange
         /// SettingGridTrading
         /// </summary>
         /// <param name="user"></param>
-        public SettingGridTrading(User user) : base(user) { }
+        public SettingGridTrading(User user) : base(user)
+        {
+            this.SettingType = SettingType.Grid;
+        }
 
         private decimal Amount = 0;
         /// <summary>

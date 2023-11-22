@@ -47,6 +47,10 @@
         /// </summary>
         public decimal AskTotalFee { get; set; } = 0;
         /// <summary>
+        /// TargetAskPrice
+        /// </summary>
+        public decimal TargetAskPrice { get; set; } = 0;
+        /// <summary>
         /// AskOrderChecked
         /// </summary>
         public bool AskOrderChecked { get; set; }

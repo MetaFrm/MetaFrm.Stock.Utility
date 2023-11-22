@@ -22,7 +22,10 @@ namespace MetaFrm.Stock.Exchange
         /// SettingMartingaleLongTrading
         /// </summary>
         /// <param name="user"></param>
-        public SettingMartingaleShortTrading(User user) : base(user) { }
+        public SettingMartingaleShortTrading(User user) : base(user)
+        {
+            this.SettingType = SettingType.MartingaleShort;
+        }
 
         /// <summary>
         /// Run

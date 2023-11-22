@@ -44,6 +44,8 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="settingMartingaleShortTrading"></param>
         public SettingGridMartingaleShortTrading(User user, SettingGridTrading settingGridTrading, SettingMartingaleShortTrading settingMartingaleShortTrading) : base(user) 
         {
+            this.SettingType = SettingType.GridMartingaleShort;
+
             this.SettingGridTrading = settingGridTrading;
             this.SettingMartingaleShortTrading = settingMartingaleShortTrading;
 
@@ -137,11 +139,11 @@ namespace MetaFrm.Stock.Exchange
 
             try
             {
-                if (this.SettingCurrent is SettingGridTrading gridTrading)
-                    this.GridTradingRun(allOrder, gridTrading);
+                if (this.SettingCurrent.SettingType == SettingType.Grid && this.SettingCurrent is SettingGridTrading set1)
+                    this.GridTradingRun(allOrder, set1);
 
-                if (this.SettingCurrent is SettingMartingaleShortTrading settingMartingaleShortTrading)
-                    this.MartingaleShortTradingRun(allOrder, settingMartingaleShortTrading);
+                if (this.SettingCurrent.SettingType == SettingType.MartingaleShort && this.SettingCurrent is SettingMartingaleShortTrading set2)
+                    this.MartingaleShortTradingRun(allOrder, set2);
             }
             catch (Exception ex)
             {
