@@ -34,17 +34,17 @@
     <Compile Include="..\src\Exchange\Bithumb\BithumbDatas.cs" Link="Exchange\Bithumb\BithumbDatas.cs" />
     <Compile Include="..\src\Exchange\Bithumb\ResultStatus.cs" Link="Exchange\Bithumb\ResultStatus.cs" />
     <Compile Include="..\src\Exchange\Exchanger.cs" Link="Exchange\Exchanger.cs" />
+    <Compile Include="..\src\Exchange\Grid.cs" Link="Exchange\Grid.cs" />
+    <Compile Include="..\src\Exchange\GridMartingaleLong.cs" Link="Exchange\GridMartingaleLong.cs" />
+    <Compile Include="..\src\Exchange\GridMartingaleShort.cs" Link="Exchange\GridMartingaleShort.cs" />
     <Compile Include="..\src\Exchange\ISettingAction.cs" Link="Exchange\ISettingAction.cs" />
     <Compile Include="..\src\Exchange\Loss.cs" Link="Exchange\Loss.cs" />
+    <Compile Include="..\src\Exchange\MartingaleLong.cs" Link="Exchange\MartingaleLong.cs" />
+    <Compile Include="..\src\Exchange\MartingaleShort.cs" Link="Exchange\MartingaleShort.cs" />
     <Compile Include="..\src\Exchange\Setting.cs" Link="Exchange\Setting.cs" />
-    <Compile Include="..\src\Exchange\SettingGridMartingaleLongTrading.cs" Link="Exchange\SettingGridMartingaleLongTrading.cs" />
-    <Compile Include="..\src\Exchange\SettingGridMartingaleShortTrading.cs" Link="Exchange\SettingGridMartingaleShortTrading.cs" />
-    <Compile Include="..\src\Exchange\SettingGridTrading.cs" Link="Exchange\SettingGridTrading.cs" />
-    <Compile Include="..\src\Exchange\SettingMartingaleLongTrading.cs" Link="Exchange\SettingMartingaleLongTrading.cs" />
-    <Compile Include="..\src\Exchange\SettingMartingaleShortTrading.cs" Link="Exchange\SettingMartingaleShortTrading.cs" />
-    <Compile Include="..\src\Exchange\SettingTraillingStop.cs" Link="Exchange\SettingTraillingStop.cs" />
     <Compile Include="..\src\Exchange\SettingType.cs" Link="Exchange\SettingType.cs" />
     <Compile Include="..\src\Exchange\SmartType.cs" Link="Exchange\SmartType.cs" />
+    <Compile Include="..\src\Exchange\TraillingStop.cs" Link="Exchange\TraillingStop.cs" />
     <Compile Include="..\src\Exchange\Upbit\Account.cs" Link="Exchange\Upbit\Account.cs" />
     <Compile Include="..\src\Exchange\Upbit\ApiKyes.cs" Link="Exchange\Upbit\ApiKyes.cs" />
     <Compile Include="..\src\Exchange\Upbit\Ask.cs" Link="Exchange\Upbit\Ask.cs" />

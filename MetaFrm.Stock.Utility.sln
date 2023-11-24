@@ -62,17 +62,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Exchange", "Exchange", "{E7
 	ProjectSection(SolutionItems) = preProject
 		src\Exchange\Exchanger.cs = src\Exchange\Exchanger.cs
 		src\Exchange\ISettingAction.cs = src\Exchange\ISettingAction.cs
+		src\Exchange\Grid.cs = src\Exchange\Grid.cs
+		src\Exchange\GridMartingaleShort.cs = src\Exchange\GridMartingaleShort.cs
+		src\Exchange\GridMartingaleLong.cs = src\Exchange\GridMartingaleLong.cs
 		src\Exchange\Loss.cs = src\Exchange\Loss.cs
 		src\Exchange\Setting.cs = src\Exchange\Setting.cs
-		src\Exchange\SettingGridMartingaleLongTrading.cs = src\Exchange\SettingGridMartingaleLongTrading.cs
-		src\Exchange\SettingGridMartingaleShortTrading.cs = src\Exchange\SettingGridMartingaleShortTrading.cs
-		src\Exchange\SettingGridTrading.cs = src\Exchange\SettingGridTrading.cs
-		src\Exchange\SettingMartingaleLongTrading.cs = src\Exchange\SettingMartingaleLongTrading.cs
-		src\Exchange\SettingMartingaleShortTrading.cs = src\Exchange\SettingMartingaleShortTrading.cs
-		src\Exchange\SettingTraillingStop.cs = src\Exchange\SettingTraillingStop.cs
+		src\Exchange\MartingaleShort.cs = src\Exchange\MartingaleShort.cs
+		src\Exchange\MartingaleLong.cs = src\Exchange\MartingaleLong.cs
 		src\Exchange\SettingType.cs = src\Exchange\SettingType.cs
 		src\Exchange\SmartType.cs = src\Exchange\SmartType.cs
 		src\Exchange\User.cs = src\Exchange\User.cs
+		src\Exchange\TraillingStop.cs = src\Exchange\TraillingStop.cs
 		src\Exchange\WorkData.cs = src\Exchange\WorkData.cs
 	EndProjectSection
 EndProject

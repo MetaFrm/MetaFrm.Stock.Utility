@@ -466,7 +466,7 @@ namespace MetaFrm.Stock.Exchange
             {
                 if (this.WorkDataList != null)
                 {
-                    string path = $"WorkDataList_{this.SettingID}.txt";
+                    string path = $"S_WDL_{this.SettingID}.txt";
                     using StreamWriter streamWriter = File.CreateText(path);
                     streamWriter.Write(JsonSerializer.Serialize(this.WorkDataList, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString }));
                 }
@@ -481,7 +481,7 @@ namespace MetaFrm.Stock.Exchange
             try
             {
                 List<WorkData>? result = null;
-                string path = $"WorkDataList_{this.SettingID}.txt";
+                string path = $"S_WDL_{this.SettingID}.txt";
 
                 if (File.Exists(path))
                 {
@@ -504,7 +504,7 @@ namespace MetaFrm.Stock.Exchange
         {
             try
             {
-                string path = $"LossStack_{this.SettingID}.txt";
+                string path = $"S_LS_{this.SettingID}.txt";
                 using StreamWriter streamWriter = File.CreateText(path);
                 streamWriter.Write(JsonSerializer.Serialize(this.LossStack, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString }));
             }
@@ -518,7 +518,7 @@ namespace MetaFrm.Stock.Exchange
             try
             {
                 Stack<Loss>? result = null;
-                string path = $"LossStack_{this.SettingID}.txt";
+                string path = $"S_LS_{this.SettingID}.txt";
 
                 if (File.Exists(path))
                 {
