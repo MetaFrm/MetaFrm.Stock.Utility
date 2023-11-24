@@ -1,9 +1,4 @@
-﻿using MetaFrm.Service;
-using MetaFrm.Stock.Console;
-using System.Text;
-using System.Text.Json;
-
-namespace MetaFrm.Stock.Exchange
+﻿namespace MetaFrm.Stock.Exchange
 {
     /// <summary>
     /// SettingType
@@ -14,6 +9,11 @@ namespace MetaFrm.Stock.Exchange
         /// None
         /// </summary>
         None,
+
+        /// <summary>
+        /// GridMartingaleLong
+        /// </summary>
+        GridMartingaleLong,
 
         /// <summary>
         /// GridMartingaleShort

@@ -4,9 +4,9 @@ using MetaFrm.Stock.Console;
 namespace MetaFrm.Stock.Exchange
 {
     /// <summary>
-    /// SettingMartingaleLongTrading
+    /// MartingaleLong
     /// </summary>
-    public class SettingMartingaleLongTrading : Setting, ISettingAction
+    public class MartingaleLong : Setting, ISettingAction
     {
         /// <summary>
         /// GapRate
@@ -22,7 +22,7 @@ namespace MetaFrm.Stock.Exchange
         /// SettingMartingaleLongTrading
         /// </summary>
         /// <param name="user"></param>
-        public SettingMartingaleLongTrading(User user) : base(user)
+        public MartingaleLong(User user) : base(user)
         {
             this.SettingType = SettingType.MartingaleLong;
         }
@@ -51,8 +51,8 @@ namespace MetaFrm.Stock.Exchange
                 if (this.TopPrice <= 0 || this.BasePrice >= this.TopPrice) return;
                 if (this.Rate <= 0.1M) return;
 
-                if (allOrder != null && allOrder.OrderList != null)
-                    $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingMartingaleLongTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                //if (allOrder != null && allOrder.OrderList != null)
+                //    $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingMartingaleLongTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
 
 
                 this.WorkDataList ??= this.ReadWorkDataList();

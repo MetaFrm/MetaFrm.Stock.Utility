@@ -42,31 +42,28 @@ namespace MetaFrm.Stock.Exchange
         /// <returns></returns>
         public User? AddUser(int userID, string accessKey, string secretKey)
         {
-            User? user = this.Users.SingleOrDefault(x => x.UserID == userID);
+            User? user;
 
-            if (user != null)
-                return user;
-
-            user = new(this.AuthState)
+            lock (this.Users)
             {
-                ExchangeID = this.ExchangeID,
-                UserID = userID,
-                Api = this.ExchangeID switch
+                user = this.Users.SingleOrDefault(x => x.UserID == userID);
+
+                if (user != null)
+                    return user;
+
+                user = new(this.AuthState)
                 {
-                    1 => new Stock.Exchange.Upbit.UpbitApi(true, true),
-                    2 => new Stock.Exchange.Bithumb.BithumbApi(true, true),
-                    _ => null
-                }
-            };
+                    ExchangeID = this.ExchangeID,
+                    UserID = userID,
+                    Api = CreateApi()
+                };
 
-            if (user.Api == null)
-                return null;
+                if (user.Api == null)
+                    return null;
 
-            user.Api.AccessKey = accessKey;
-            user.Api.SecretKey = secretKey;
+                user.Api.AccessKey = accessKey;
+                user.Api.SecretKey = secretKey;
 
-            lock (Users)
-            {
                 user.IsFirstUser = (this.Users.Count == 0);
                 this.Users.Add(user);
             }
@@ -75,6 +72,31 @@ namespace MetaFrm.Stock.Exchange
             $"Added User".WriteMessage(this.ExchangeID, user.UserID);
 
             return user;
+        }
+        /// <summary>
+        /// CreateApi
+        /// </summary>
+        /// <returns></returns>
+        public IApi? CreateApi()
+        {
+            lock (this.Users)
+                return CreateApi(this.ExchangeID, this.Users.Count, true);
+        }
+        /// <summary>
+        /// CreateApi
+        /// </summary>
+        /// <param name="exchangeID"></param>
+        /// <param name="userCount"></param>
+        /// <param name="runOrderResultFromWebSocket"></param>
+        /// <returns></returns>
+        public static IApi? CreateApi(int exchangeID, int userCount, bool runOrderResultFromWebSocket)
+        {
+            return exchangeID switch
+            {
+                1 => new Stock.Exchange.Upbit.UpbitApi(userCount == 0, runOrderResultFromWebSocket),
+                2 => new Stock.Exchange.Bithumb.BithumbApi(userCount == 0, runOrderResultFromWebSocket),
+                _ => null
+            };
         }
 
         /// <summary>

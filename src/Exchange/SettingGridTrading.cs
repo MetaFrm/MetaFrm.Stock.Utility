@@ -4,9 +4,9 @@ using MetaFrm.Stock.Console;
 namespace MetaFrm.Stock.Exchange
 {
     /// <summary>
-    /// SettingGridTrading
+    /// Grid
     /// </summary>
-    public class SettingGridTrading : Setting, ISettingAction
+    public class Grid : Setting, ISettingAction
     {
         /// <summary>
         /// SmartType
@@ -40,7 +40,7 @@ namespace MetaFrm.Stock.Exchange
         /// SettingGridTrading
         /// </summary>
         /// <param name="user"></param>
-        public SettingGridTrading(User user) : base(user)
+        public Grid(User user) : base(user)
         {
             this.SettingType = SettingType.Grid;
         }
@@ -71,8 +71,8 @@ namespace MetaFrm.Stock.Exchange
                 if (this.TopPrice <= 0 || this.BasePrice >= this.TopPrice) return;
                 if (this.Rate <= 0.1M) return;
 
-                if (allOrder != null && allOrder.OrderList != null)
-                    $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingGridTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                //if (allOrder != null && allOrder.OrderList != null)
+                //    $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingGridTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
 
                 this.WorkDataList ??= this.ReadWorkDataList();
                 this.WorkDataList ??= this.GetWorkData(null, null, null);

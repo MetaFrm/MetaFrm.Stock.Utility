@@ -64,6 +64,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Exchange", "Exchange", "{E7
 		src\Exchange\ISettingAction.cs = src\Exchange\ISettingAction.cs
 		src\Exchange\Loss.cs = src\Exchange\Loss.cs
 		src\Exchange\Setting.cs = src\Exchange\Setting.cs
+		src\Exchange\SettingGridMartingaleLongTrading.cs = src\Exchange\SettingGridMartingaleLongTrading.cs
 		src\Exchange\SettingGridMartingaleShortTrading.cs = src\Exchange\SettingGridMartingaleShortTrading.cs
 		src\Exchange\SettingGridTrading.cs = src\Exchange\SettingGridTrading.cs
 		src\Exchange\SettingMartingaleLongTrading.cs = src\Exchange\SettingMartingaleLongTrading.cs

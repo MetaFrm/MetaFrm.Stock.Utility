@@ -37,6 +37,7 @@
     <Compile Include="..\src\Exchange\ISettingAction.cs" Link="Exchange\ISettingAction.cs" />
     <Compile Include="..\src\Exchange\Loss.cs" Link="Exchange\Loss.cs" />
     <Compile Include="..\src\Exchange\Setting.cs" Link="Exchange\Setting.cs" />
+    <Compile Include="..\src\Exchange\SettingGridMartingaleLongTrading.cs" Link="Exchange\SettingGridMartingaleLongTrading.cs" />
     <Compile Include="..\src\Exchange\SettingGridMartingaleShortTrading.cs" Link="Exchange\SettingGridMartingaleShortTrading.cs" />
     <Compile Include="..\src\Exchange\SettingGridTrading.cs" Link="Exchange\SettingGridTrading.cs" />
     <Compile Include="..\src\Exchange\SettingMartingaleLongTrading.cs" Link="Exchange\SettingMartingaleLongTrading.cs" />

@@ -5,9 +5,9 @@ using System.Text;
 namespace MetaFrm.Stock.Exchange
 {
     /// <summary>
-    /// SettingGridTrading
+    /// TraillingStop
     /// </summary>
-    public class SettingTraillingStop : Setting, ISettingAction
+    public class TraillingStop : Setting, ISettingAction
     {
         /// <summary>
         /// GapRate
@@ -35,10 +35,10 @@ namespace MetaFrm.Stock.Exchange
         public decimal ReturnPrice { get; set; }
 
         /// <summary>
-        /// SettingGridTrading
+        /// TraillingStop
         /// </summary>
         /// <param name="user"></param>
-        public SettingTraillingStop(User user) : base(user)
+        public TraillingStop(User user) : base(user)
         {
             this.SettingType = SettingType.TraillingStop;
         }
@@ -65,8 +65,8 @@ namespace MetaFrm.Stock.Exchange
                 //if (this.TopPrice <= 0 || this.BasePrice >= this.TopPrice) return;
                 if (this.Rate <= 0.1M) return;
 
-                if (allOrder != null && allOrder.OrderList != null)
-                    $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingGridTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                //if (allOrder != null && allOrder.OrderList != null)
+                //    $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingGridTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
 
                 this.WorkDataList ??= this.ReadWorkDataList();
 
@@ -180,11 +180,11 @@ namespace MetaFrm.Stock.Exchange
                 {
                     var minBidPrice = workDataList.Min(x => x.BidPrice);
 
-                    workDataList = workDataList.Where(x => x.BidOrder != null && x.BidOrder.UUID != null && x.BidOrder.UUID != "" && x.BidOrder.State == "done" && x.BidPrice == minBidPrice);
+                    var workDataListMin = workDataList.Where(x => x.BidOrder != null && x.BidOrder.UUID != null && x.BidOrder.UUID != "" && x.BidOrder.State == "done" && x.BidPrice == minBidPrice);
 
-                    if (workDataList != null && workDataList.Count() == 1)
+                    if (workDataListMin != null && workDataListMin.Count() == 1)
                     {
-                        var item = workDataList.ToArray()[0];
+                        var item = workDataListMin.ToArray()[0];
 
                         if (this.CurrentInfo.TradePrice > item.TargetAskPrice)
                         {
@@ -207,11 +207,12 @@ namespace MetaFrm.Stock.Exchange
                                     this.WorkDataList.ForEach(x => x.BidTotalFee += bidOrder.BidOrder?.PaidFee ?? 0);
 
                                 decimal ASK = order.Trades != null && order.Trades.Count > 0 ? order.Trades.Sum(x => x.Volume * x.Price) - order.PaidFee : (order.Price * order.ExecutedVolume) - order.PaidFee;
-                                decimal BID = (item.BidQty * item.BidAvgPrice) + item.BidTotalFee;
+                                decimal BID = (workDataList.Sum(x => x.BidOrder?.ExecutedVolume ?? 0) * item.BidAvgPrice) + item.BidTotalFee;
+                                decimal ASK_AvgPrice = order.Trades != null && order.Trades.Count > 0 ? order.Trades.Sum(x => x.Volume * x.Price) / order.Trades.Sum(x => x.Volume) : order.Price;
 
                                 this.Profit(this.SettingID, this.User.UserID
                                     , item.BidAvgPrice, item.BidOrder.Volume, item.BidTotalFee
-                                    , order.AvgPrice, order.ExecutedVolume, order.PaidFee
+                                    , ASK_AvgPrice, order.ExecutedVolume, order.PaidFee
                                     , ASK - BID
                                     , this.Market);
 
@@ -234,14 +235,6 @@ namespace MetaFrm.Stock.Exchange
             }
         }
 
-        private decimal IsBuyingAskQty(decimal bidPrice, decimal bidQty, decimal askPrice)
-        {
-            var BidKrw = (bidPrice * bidQty) + (bidPrice * bidQty * (this.Fees / 99.9M));
-            var AskQty = BidKrw / (askPrice - (askPrice * (this.Fees / 99.9M)));
-            AskQty = Math.Ceiling(AskQty * Point(this.User.ExchangeID)) / Point(this.User.ExchangeID);
-
-            return AskQty;
-        }
         private List<WorkData>? GetWorkData(decimal? TRADE_PRICE)
         {
             Response response;

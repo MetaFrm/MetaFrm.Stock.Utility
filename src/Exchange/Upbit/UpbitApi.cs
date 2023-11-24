@@ -675,7 +675,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     if ((DateTime.Now - this.RunOrderResultFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
                     {
                         this.OrderResultFromWebSocketClose();
-                        $"OrderResultFromWebSocketClose(RunOrderResultFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
+                        //$"OrderResultFromWebSocketClose(RunOrderResultFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
                     }
                 }
             });
@@ -713,7 +713,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     if ((DateTime.Now - dateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds)
                     {
                         this.OrderResultFromWebSocketClose();
-                        $"OrderResultFromWebSocketClose".WriteMessage(((IApi)this).ExchangeID);
+                        //$"OrderResultFromWebSocketClose".WriteMessage(((IApi)this).ExchangeID);
                         break;
                     }
 
@@ -755,7 +755,8 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 this.Action?.Invoke(this, new() { Action = "OrderExecution", Value = null });
 
-                ex.WriteMessage(false, ((IApi)this).ExchangeID);
+                if (ex.Message != "Aborted")
+                    ex.WriteMessage(false, ((IApi)this).ExchangeID);
                 this.OrderResultFromWebSocketClose();
             }
         }
@@ -1332,7 +1333,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     if ((DateTime.Now - RunTickerFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
                     {
                         TickerFromWebSocketClose();
-                        $"OrderResultFromWebSocketClose(RunTickerFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
+                        //$"TickerFromWebSocketClose(RunTickerFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
                     }
                 }
             });
@@ -1380,7 +1381,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     if ((DateTime.Now - dateTime1.AddSeconds(5)).TotalSeconds >= this.SocketCloseTimeOutSeconds)
                     {
                         TickerFromWebSocketClose();
-                        $"TickerFromWebSocketClose".WriteMessage(((IApi)this).ExchangeID);
+                        //$"TickerFromWebSocketClose".WriteMessage(((IApi)this).ExchangeID);
                         break;
                     }
 

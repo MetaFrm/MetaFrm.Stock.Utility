@@ -1,7 +1,7 @@
 ﻿namespace MetaFrm.Stock.Exchange
 {
     /// <summary>
-    /// ISetting
+    /// ISettingAction
     /// </summary>
     public interface ISettingAction : ICore
     {

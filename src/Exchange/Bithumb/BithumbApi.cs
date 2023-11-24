@@ -1208,8 +1208,8 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 {
                     new()
                     {
-                        AccessKey = "",
-                        ExpireAt = DateTime.Now.AddYears(1),
+                        AccessKey = ((IApi)this).AccessKey,
+                        ExpireAt = DateTime.Now.AddYears(10),
                     }
                 }
             };
@@ -1868,7 +1868,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     if ((DateTime.Now - RunTickerFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
                     {
                         TickerFromWebSocketClose();
-                        $"OrderResultFromWebSocketClose(RunTickerFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
+                        //$"TickerFromWebSocketClose(RunTickerFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
                     }
                 }
             });
@@ -1908,7 +1908,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     if ((DateTime.Now - dateTime1.AddSeconds(15)).TotalSeconds >= this.SocketCloseTimeOutSeconds)
                     {
                         TickerFromWebSocketClose();
-                        $"TickerFromWebSocketClose".WriteMessage(((IApi)this).ExchangeID);
+                        //$"TickerFromWebSocketClose".WriteMessage(((IApi)this).ExchangeID);
                         break;
                     }
 

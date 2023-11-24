@@ -3,57 +3,57 @@
 namespace MetaFrm.Stock.Exchange
 {
     /// <summary>
-    /// SettingGridMartingaleShortTrading
+    /// GridMartingaleShort
     /// </summary>
-    public class SettingGridMartingaleShortTrading : Setting, ISettingAction
+    public class GridMartingaleShort : Setting, ISettingAction
     {
         /// <summary>
-        /// SettingGridTrading
+        /// Grid
         /// </summary>
-        public SettingGridTrading SettingGridTrading { get; set; }
+        public Grid Grid { get; set; }
 
         /// <summary>
-        /// SettingMartingaleShortTrading
+        /// MartingaleShort
         /// </summary>
-        public SettingMartingaleShortTrading SettingMartingaleShortTrading { get; set; }
+        public MartingaleShort MartingaleShort { get; set; }
 
-        private Setting? settingCurrent;
+        private Setting? current;
         /// <summary>
-        /// SettingCurrent
+        /// Current
         /// </summary>
-        public Setting? SettingCurrent 
+        public Setting? Current 
         {
             get 
             {
-                return this.settingCurrent;
+                return this.current;
             }
             set
             {
-                if (this.settingCurrent != null && value != null)
-                    this.ChangeSettingMessage(this.settingCurrent, value);
+                if (this.current != null && value != null)
+                    this.ChangeSettingMessage(this.current, value);
 
-                this.settingCurrent = value;
+                this.current = value;
             }
         }
 
         /// <summary>
-        /// SettingGridMartingaleShortTrading
+        /// GridMartingaleShort
         /// </summary>
         /// <param name="user"></param>
-        /// <param name="settingGridTrading"></param>
-        /// <param name="settingMartingaleShortTrading"></param>
-        public SettingGridMartingaleShortTrading(User user, SettingGridTrading settingGridTrading, SettingMartingaleShortTrading settingMartingaleShortTrading) : base(user) 
+        /// <param name="grid"></param>
+        /// <param name="martingaleShort"></param>
+        public GridMartingaleShort(User user, Grid grid, MartingaleShort martingaleShort) : base(user) 
         {
             this.SettingType = SettingType.GridMartingaleShort;
 
-            this.SettingGridTrading = settingGridTrading;
-            this.SettingMartingaleShortTrading = settingMartingaleShortTrading;
+            this.Grid = grid;
+            this.MartingaleShort = martingaleShort;
 
-            this.SettingGridTrading.ParentSetting = this;
-            this.SettingGridTrading.LossStack = this.LossStack;
+            this.Grid.ParentSetting = this;
+            this.Grid.LossStack = this.LossStack;
 
-            this.SettingMartingaleShortTrading.ParentSetting = this;
-            this.SettingMartingaleShortTrading.LossStack = this.LossStack;
+            this.MartingaleShort.ParentSetting = this;
+            this.MartingaleShort.LossStack = this.LossStack;
         }
 
         /// <summary>
@@ -71,14 +71,14 @@ namespace MetaFrm.Stock.Exchange
             if (this.CurrentInfo == null) return;
 
             //처음 시작시 그리드 매매로 시작
-            if (this.SettingCurrent == null)
+            if (this.Current == null)
             {
                 var lossStack = this.ReadLossStack();
                 if (lossStack != null)
                 {
                     this.LossStack = lossStack;
-                    this.SettingGridTrading.LossStack = this.LossStack;
-                    this.SettingMartingaleShortTrading.LossStack = this.LossStack;
+                    this.Grid.LossStack = this.LossStack;
+                    this.MartingaleShort.LossStack = this.LossStack;
                 }
 
                 ////this.SettingGridTrading.Market = this.Market;
@@ -128,21 +128,21 @@ namespace MetaFrm.Stock.Exchange
                 if (this.LossStack.Count % 2 == 0)
                 {
                     this.SetSettingGridTrading(this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
-                    this.SettingCurrent = this.SettingGridTrading;
+                    this.Current = this.Grid;
                 }
                 else
                 {
                     this.SetSettingMartingaleShortTrading(this.CurrentInfo.TradePrice, this.LossStack.Peek().Invest);
-                    this.SettingCurrent = this.SettingMartingaleShortTrading;
+                    this.Current = this.MartingaleShort;
                 }
             }
 
             try
             {
-                if (this.SettingCurrent.SettingType == SettingType.Grid && this.SettingCurrent is SettingGridTrading set1)
+                if (this.Current.SettingType == SettingType.Grid && this.Current is Grid set1)
                     this.GridTradingRun(allOrder, set1);
 
-                if (this.SettingCurrent.SettingType == SettingType.MartingaleShort && this.SettingCurrent is SettingMartingaleShortTrading set2)
+                if (this.Current.SettingType == SettingType.MartingaleShort && this.Current is MartingaleShort set2)
                     this.MartingaleShortTradingRun(allOrder, set2);
             }
             catch (Exception ex)
@@ -151,7 +151,7 @@ namespace MetaFrm.Stock.Exchange
                 this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
             }
         }
-        private void GridTradingRun(Models.Order? allOrder, SettingGridTrading gridTrading)
+        private void GridTradingRun(Models.Order? allOrder, Grid gridTrading)
         {
             if (this.User == null) return;
             if (this.User.Api == null) return;
@@ -183,7 +183,7 @@ namespace MetaFrm.Stock.Exchange
                 }
             }
         }
-        private void GridTradingRun(SettingGridTrading gridTrading, bool isPush)
+        private void GridTradingRun(Grid gridTrading, bool isPush)
         {
             decimal qty = 0;
             decimal bidKrw = 0;
@@ -236,13 +236,13 @@ namespace MetaFrm.Stock.Exchange
                     this.LossStack.Pop();
 
                 $"전환 SettingGridTrading->SettingMartingaleShortTrading IsPush:{isPush} TradePrice:{this.CurrentInfo.TradePrice}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market, ConsoleColor.DarkGreen);
-                this.SettingCurrent = this.SettingMartingaleShortTrading;
+                this.Current = this.MartingaleShort;
                 gridTrading.WorkDataList = null;
                 return;
             }
         }
 
-        private void MartingaleShortTradingRun(Models.Order? allOrder, SettingMartingaleShortTrading settingMartingaleShortTrading)
+        private void MartingaleShortTradingRun(Models.Order? allOrder, MartingaleShort settingMartingaleShortTrading)
         {
             if (this.User == null) return;
             if (this.User.Api == null) return;
@@ -317,13 +317,13 @@ namespace MetaFrm.Stock.Exchange
 
 
                     $"전환 SettingMartingaleShortTrading->SettingGridTrading IsPush:{false}TradePrice:{this.CurrentInfo.TradePrice}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market, ConsoleColor.DarkGreen);
-                    this.SettingCurrent = this.SettingGridTrading;
+                    this.Current = this.Grid;
                     settingMartingaleShortTrading.WorkDataList = null;
                     return;
                 }
             }
         }
-        private void MartingaleShortTradingRun(SettingMartingaleShortTrading settingMartingaleShortTrading, bool isPush)
+        private void MartingaleShortTradingRun(MartingaleShort settingMartingaleShortTrading, bool isPush)
         {
             decimal askAmount = 0;
 
@@ -358,26 +358,26 @@ namespace MetaFrm.Stock.Exchange
             }
 
             $"전환 SettingMartingaleShortTrading->SettingGridTrading IsPush:{isPush} TradePrice:{this.CurrentInfo.TradePrice}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market, ConsoleColor.DarkGreen);
-            this.SettingCurrent = this.SettingGridTrading;
+            this.Current = this.Grid;
             settingMartingaleShortTrading.WorkDataList = null;
             return;
         }
 
         private void SetSettingGridTrading(decimal tradePrice, decimal invest)
         {
-            this.SettingGridTrading.Market = this.Market;
-            this.SettingGridTrading.SettingID = this.SettingID;
-            this.SettingGridTrading.TopPrice = tradePrice;
-            this.SettingGridTrading.BasePrice = this.GetBasePrice(tradePrice, this.SettingGridTrading.Rate, this.SettingGridTrading.ListMin);
-            this.SettingGridTrading.Invest = invest;
+            this.Grid.Market = this.Market;
+            this.Grid.SettingID = this.SettingID;
+            this.Grid.TopPrice = tradePrice;
+            this.Grid.BasePrice = this.GetBasePrice(tradePrice, this.Grid.Rate, this.Grid.ListMin);
+            this.Grid.Invest = invest;
         }
         private void SetSettingMartingaleShortTrading(decimal tradePrice, decimal invest)
         {
-            this.SettingMartingaleShortTrading.Market = this.Market;
-            this.SettingMartingaleShortTrading.SettingID = this.SettingID;
-            this.SettingMartingaleShortTrading.BasePrice = tradePrice;
-            this.SettingMartingaleShortTrading.TopPrice = this.GetTopPrice(tradePrice, this.SettingMartingaleShortTrading.Rate, this.SettingMartingaleShortTrading.ListMin);
-            this.SettingMartingaleShortTrading.Invest = invest;
+            this.MartingaleShort.Market = this.Market;
+            this.MartingaleShort.SettingID = this.SettingID;
+            this.MartingaleShort.BasePrice = tradePrice;
+            this.MartingaleShort.TopPrice = this.GetTopPrice(tradePrice, this.MartingaleShort.Rate, this.MartingaleShort.ListMin);
+            this.MartingaleShort.Invest = invest;
         }
     }
 }
