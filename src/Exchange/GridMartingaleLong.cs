@@ -17,36 +17,21 @@ namespace MetaFrm.Stock.Exchange
         /// </summary>
         public MartingaleLong MartingaleLong { get; set; }
 
-        private Setting? current;
-        /// <summary>
-        /// Current
-        /// </summary>
-        public Setting? Current 
-        {
-            get 
-            {
-                return this.current;
-            }
-            set
-            {
-                if (this.current != null && value != null)
-                    this.ChangeSettingMessage(this.current, value);
-
-                this.current = value;
-            }
-        }
-
         /// <summary>
         /// GridMartingaleLong
         /// </summary>
         /// <param name="user"></param>
         /// <param name="grid"></param>
         /// <param name="martingaleLong"></param>
-        public GridMartingaleLong(User user, Grid grid, MartingaleLong martingaleLong) : base(user) 
+        public GridMartingaleLong(User? user, Grid grid, MartingaleLong martingaleLong) : base(user) 
         {
             this.SettingType = SettingType.GridMartingaleLong;
 
             this.Grid = grid;
+            this.Grid.SmartType = SmartType.TrailingMoveTop;
+            this.Grid.IsBuying = false;
+            this.Grid.BidOrderAll = true;
+
             this.MartingaleLong = martingaleLong;
 
             this.Grid.ParentSetting = this;
@@ -73,7 +58,7 @@ namespace MetaFrm.Stock.Exchange
             //처음 시작시 그리드 매매로 시작
             if (this.Current == null)
             {
-                var lossStack = this.ReadLossStack();
+                var lossStack = this.ReadLossStack(this.User);
                 if (lossStack != null)
                 {
                     this.LossStack = lossStack;
@@ -127,12 +112,12 @@ namespace MetaFrm.Stock.Exchange
 
                 if (this.LossStack.Count % 2 == 0)
                 {
-                    this.SetGrid(this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
+                    this.SetGrid(this.User.ExchangeID, this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().CurrentInvest);
                     this.Current = this.Grid;
                 }
                 else
                 {
-                    this.SetMartingaleLong(this.CurrentInfo.TradePrice, this.LossStack.Peek().Invest);
+                    this.SetMartingaleLong(this.User.ExchangeID, this.CurrentInfo.TradePrice, this.LossStack.Peek().CurrentInvest);
                     this.Current = this.MartingaleLong;
                 }
             }
@@ -187,7 +172,8 @@ namespace MetaFrm.Stock.Exchange
         {
             decimal krw = 0;
             decimal askKrw = 0;
-            
+
+            if (this.User == null) return;
             if (gridTrading.WorkDataList == null) return;
             if (this.CurrentInfo == null) return;
 
@@ -208,7 +194,7 @@ namespace MetaFrm.Stock.Exchange
                 var askAmount = askWorkData.Sum(x => x.AskOrder?.RemainingVolume) ?? 0;
                 if (askAmount > 0 && gridTrading.Market != null)
                 {
-                    gridTrading.Organized(gridTrading.SettingID, true, true, false, false);
+                    gridTrading.Organized(gridTrading.SettingID, true, true, false, false, false, false);
 
                     var order = this.MakeOrderAskMarket(gridTrading.Market, askAmount);
 
@@ -237,7 +223,7 @@ namespace MetaFrm.Stock.Exchange
                 //남아 있는 매수 주문의 금액
                 bidWorkData = gridTrading.WorkDataList.Where(x => x.BidOrder != null && x.BidOrder.State == "wait" && x.BidOrder.RemainingVolume > 0);
                 if (bidWorkData.Any())
-                    krw = bidWorkData.Sum(x => (x.BidOrder?.Price * x.BidOrder?.RemainingVolume) + (x.BidOrder?.Price * x.BidOrder?.RemainingVolume * (gridTrading.Fees / 100M))) ?? 0;
+                    krw += bidWorkData.Sum(x => (x.BidOrder?.Price * x.BidOrder?.RemainingVolume) + (x.BidOrder?.Price * x.BidOrder?.RemainingVolume * (gridTrading.Fees / 100M))) ?? 0;
 
                 //SettingMartingaleLongTrading으로 전환
                 //this.SettingMartingaleLongTrading.Market = this.Market;
@@ -245,10 +231,10 @@ namespace MetaFrm.Stock.Exchange
                 //this.SettingMartingaleLongTrading.BasePrice = this.CurrentInfo.TradePrice;
                 //this.SettingMartingaleLongTrading.TopPrice = this.GetTopPrice(this.CurrentInfo.TradePrice, this.SettingMartingaleLongTrading.Rate, this.SettingMartingaleLongTrading.ListMin);
                 //this.SettingMartingaleLongTrading.Invest = qty;
-                this.SetMartingaleLong(this.CurrentInfo.TradePrice, krw);
+                this.SetMartingaleLong(this.User.ExchangeID, this.CurrentInfo.TradePrice, krw);
 
                 if (isPush)
-                    this.LossStack.Push(new() { AccProfit = 0, Invest = askKrw });
+                    this.LossStack.Push(new() { AccProfit = 0, Invest = askKrw, CurrentInvest = krw });
                 else
                     this.LossStack.Pop();
 
@@ -272,7 +258,7 @@ namespace MetaFrm.Stock.Exchange
             if (martingaleLong.WorkDataList == null)
                 return;
 
-            decimal minBidPrice = martingaleLong.WorkDataList.Max(x => x.BidPrice);
+            decimal minBidPrice = martingaleLong.WorkDataList.Min(x => x.BidPrice);
 
             //마틴게일롱 -> 그리드 전환
             //매수한 총금액 보다 커야 전환 가능
@@ -310,7 +296,7 @@ namespace MetaFrm.Stock.Exchange
                             this.MakeOrderAskMarket(martingaleLong.Market, qty);
                     }
 
-                    martingaleLong.Organized(martingaleLong.SettingID, true, true, false, false);
+                    martingaleLong.Organized(martingaleLong.SettingID, true, true, false, false, false, false);
 
                     //매도 안된 수량만큼 시장가로 매도 한다
                     var askWorkData = martingaleLong.WorkDataList.Where(x => x.AskOrder != null && x.AskOrder.State == "wait" && x.AskOrder.RemainingVolume > 0);
@@ -330,7 +316,7 @@ namespace MetaFrm.Stock.Exchange
 
                     this.LossStack.Pop();
 
-                    this.SetGrid(this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
+                    this.SetGrid(this.User.ExchangeID, this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
 
 
                     $"전환 SettingMartingaleLongTrading->SettingGridTrading IsPush:{false}TradePrice:{this.CurrentInfo.TradePrice}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market, ConsoleColor.DarkGreen);
@@ -346,17 +332,17 @@ namespace MetaFrm.Stock.Exchange
             decimal krw = 0;
             decimal bidKrw = 0;
 
-
+            if (this.User == null) return;
             if (this.CurrentInfo == null) return;
             if (martingaleLong.WorkDataList == null) return;
 
             if (isPush)
             {
-                var askExecutedVolumeWorkData = martingaleLong.WorkDataList.Where(x => x.BidOrder != null && x.BidOrder.State == "done" && x.BidOrder.ExecutedVolume > 0);
-                bidQty = askExecutedVolumeWorkData.Sum(x => x.AskOrder?.ExecutedVolume) ?? 0;
+                var askExecutedVolumeWorkData = martingaleLong.WorkDataList.Where(x => x.BidOrder != null && x.BidOrder.ExecutedVolume > 0);
+                bidQty = askExecutedVolumeWorkData.Sum(x => x.BidOrder?.ExecutedVolume) ?? 0;
             }
 
-            martingaleLong.Organized(martingaleLong.SettingID, true, true, false, false);
+            martingaleLong.Organized(martingaleLong.SettingID, true, true, false, false, false, false);
 
             //매수된 수량 시장가 매도를 한다
             if (bidQty > 0 && martingaleLong.Market != null)
@@ -374,21 +360,26 @@ namespace MetaFrm.Stock.Exchange
 
             if (isPush)
             {
-                //총 매수 금액
-                var askVolumeWorkData = martingaleLong.WorkDataList.Where(x => x.BidOrder != null && x.BidOrder.State == "done");
+                //매수 금액
+                var askVolumeWorkData = martingaleLong.WorkDataList.Where(x => x.BidOrder != null && x.BidOrder.State != "done");
                 if (askVolumeWorkData.Any())
-                    bidKrw += askVolumeWorkData.Sum(x => (x.BidOrder?.Price * x.BidOrder?.Volume) - (x.BidOrder?.Price * x.BidOrder?.Volume * (martingaleLong.Fees / 100M))) ?? 0;
+                    krw += askVolumeWorkData.Sum(x => (x.BidOrder?.Price * x.BidOrder?.RemainingVolume) - (x.BidOrder?.Price * x.BidOrder?.RemainingVolume * (martingaleLong.Fees / 100M))) ?? 0;
+
+                //총 매수 금액
+                askVolumeWorkData = martingaleLong.WorkDataList.Where(x => x.BidOrder != null);
+                if (askVolumeWorkData.Any())
+                    bidKrw = askVolumeWorkData.Sum(x => (x.BidOrder?.Price * x.BidOrder?.Volume) - (x.BidOrder?.Price * x.BidOrder?.Volume * (martingaleLong.Fees / 100M))) ?? 0;
 
                 //this.SettingGridTrading.Invest = askAmount;
-                this.SetGrid(this.CurrentInfo.TradePrice, krw);
-                this.LossStack.Push(new() { AccProfit = 0, Invest = bidKrw });
+                this.SetGrid(this.User.ExchangeID, this.CurrentInfo.TradePrice, krw);
+                this.LossStack.Push(new() { AccProfit = 0, Invest = bidKrw, CurrentInvest = krw });
             }
             else
             {
                 this.LossStack.Pop();
 
                 //this.SettingGridTrading.Invest = this.Invest;
-                this.SetGrid(this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
+                this.SetGrid(this.User.ExchangeID, this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
             }
 
             $"전환 SettingMartingaleLongTrading->SettingGridTrading IsPush:{isPush} TradePrice:{this.CurrentInfo.TradePrice}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market, ConsoleColor.DarkGreen);
@@ -397,20 +388,20 @@ namespace MetaFrm.Stock.Exchange
             return;
         }
 
-        private void SetGrid(decimal tradePrice, decimal invest)
+        private void SetGrid(int exchangeID, decimal tradePrice, decimal invest)
         {
             this.Grid.Market = this.Market;
             this.Grid.SettingID = this.SettingID;
             this.Grid.TopPrice = tradePrice;
-            this.Grid.BasePrice = this.GetBasePrice(tradePrice, this.Grid.Rate, this.Grid.ListMin);
+            this.Grid.BasePrice = GetBasePrice(exchangeID, tradePrice, this.Grid.Rate, this.Grid.ListMin);
             this.Grid.Invest = invest;
         }
-        private void SetMartingaleLong(decimal tradePrice, decimal invest)
+        private void SetMartingaleLong(int exchangeID, decimal tradePrice, decimal invest)
         {
             this.MartingaleLong.Market = this.Market;
             this.MartingaleLong.SettingID = this.SettingID;
             this.MartingaleLong.BasePrice = tradePrice;
-            this.MartingaleLong.TopPrice = this.GetTopPrice(tradePrice, this.MartingaleLong.Rate, this.MartingaleLong.ListMin);
+            this.MartingaleLong.TopPrice = GetTopPrice(exchangeID, tradePrice, this.MartingaleLong.Rate, this.MartingaleLong.ListMin);
             this.MartingaleLong.Invest = invest;
         }
     }

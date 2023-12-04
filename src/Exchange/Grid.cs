@@ -1,4 +1,5 @@
-﻿using MetaFrm.Service;
+﻿using MetaFrm.Extensions;
+using MetaFrm.Service;
 using MetaFrm.Stock.Console;
 
 namespace MetaFrm.Stock.Exchange
@@ -12,6 +13,21 @@ namespace MetaFrm.Stock.Exchange
         /// SmartType
         /// </summary>
         public SmartType SmartType { get; set; } = SmartType.None;
+
+        /// <summary>
+        /// SmartTypeString
+        /// </summary>
+        public string SmartTypeString 
+        {
+            get
+            {
+                return this.SmartType.ToString();
+            }
+            set
+            {
+                this.SmartType = value.EnumParse<SmartType>();
+            }
+        }
 
         /// <summary>
         /// IsBuying
@@ -40,7 +56,7 @@ namespace MetaFrm.Stock.Exchange
         /// SettingGridTrading
         /// </summary>
         /// <param name="user"></param>
-        public Grid(User user) : base(user)
+        public Grid(User? user) : base(user)
         {
             this.SettingType = SettingType.Grid;
         }
@@ -56,9 +72,10 @@ namespace MetaFrm.Stock.Exchange
             List<WorkData>? tmpWorkDataList = null;
             Models.OrderChance? orderChance = null;
 
+            if (this.User == null) return;
+
             try
             {
-                if (this.User == null) return;
                 if (this.User.Api == null) return;
                 if (this.Market == null) return;
                 if (this.Invest < this.User.ExchangeID switch
@@ -74,7 +91,7 @@ namespace MetaFrm.Stock.Exchange
                 //if (allOrder != null && allOrder.OrderList != null)
                 //    $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingGridTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
 
-                this.WorkDataList ??= this.ReadWorkDataList();
+                this.WorkDataList ??= this.ReadWorkDataList(this.User);
                 this.WorkDataList ??= this.GetWorkData(null, null, null);
 
                 if (this.WorkDataList == null || this.WorkDataList.Count < 1) return;
@@ -154,7 +171,7 @@ namespace MetaFrm.Stock.Exchange
                     }
 
                     //세팅 업데이트
-                    this.Update(this.SettingID, this.WorkDataList[^1].BidPrice, this.WorkDataList[0].BidPrice);
+                    this.Update(this.User, this.SettingID, this.WorkDataList[^1].BidPrice, this.WorkDataList[0].BidPrice);
                 }
 
                 if (this.WorkDataList == null) return;
@@ -176,7 +193,7 @@ namespace MetaFrm.Stock.Exchange
                         dataRow.BidOrder = bidOrder;
 
                     var askOrder = allOrderList.SingleOrDefault(x => x.Side == "ask" && x.Price == dataRow.AskPrice
-                                                                && x.Volume == (this.IsBuying ? this.IsBuyingAskQty(dataRow.BidPrice, dataRow.BidPrice, dataRow.AskPrice)//매집인 경우
+                                                                && x.Volume == (this.IsBuying ? this.IsBuyingAskQty(this.User.ExchangeID, dataRow.BidPrice, dataRow.BidPrice, dataRow.AskPrice)//매집인 경우
                                                                                                 : dataRow.AskQty));
                     if (askOrder != null)
                         dataRow.AskOrder = askOrder;
@@ -276,7 +293,7 @@ namespace MetaFrm.Stock.Exchange
 
                             decimal BID = (dataRow.BidOrder.Volume * dataRow.BidOrder.Price) + dataRow.BidOrder.PaidFee;
 
-                            this.Profit(this.SettingID, this.User.UserID
+                            this.Profit(this.User, this.SettingID, this.User.UserID
                                 , dataRow.BidOrder.Price, dataRow.BidOrder.Volume, dataRow.BidOrder.PaidFee
                                 , dataRow.AskOrder.Price, dataRow.AskOrder.Volume, dataRow.AskOrder.PaidFee
                                 , ASK - BID
@@ -343,14 +360,14 @@ namespace MetaFrm.Stock.Exchange
                 //자동매매 종료 및 손실제한 처리
                 if (this.CurrentInfo.TradePrice < minPrice && this.StopLoss)
                 {
-                    this.Organized(this.SettingID, true, true, true, true);
+                    this.Organized(this.SettingID, true, true, true, false, false, true);
                     return;
                 }
 
                 //종료호가 터치 중지
                 if (this.CurrentInfo.TradePrice > this.TopPrice && this.TopStop)
                 {
-                    this.Organized(this.SettingID, true, false, false, true);
+                    this.Organized(this.SettingID, true, false, false, false, false, true);
                     return;
                 }
 
@@ -419,7 +436,7 @@ namespace MetaFrm.Stock.Exchange
                             //var AskQty = BidKrw / (dataRow.AskPrice - (dataRow.AskPrice * (this.Fees / 100M)));
                             //AskQty = Math.Ceiling(AskQty * Point(this.User.ExchangeID)) / Point(this.User.ExchangeID);
 
-                            order = this.User.Api.MakeOrder(this.Market, Models.OrderSide.ask, this.IsBuyingAskQty(dataRow.BidOrder.Price, dataRow.BidOrder.ExecutedVolume, dataRow.AskPrice), dataRow.AskPrice);
+                            order = this.User.Api.MakeOrder(this.Market, Models.OrderSide.ask, this.IsBuyingAskQty(this.User.ExchangeID, dataRow.BidOrder.Price, dataRow.BidOrder.ExecutedVolume, dataRow.AskPrice), dataRow.AskPrice);
                         }
                         else
                             order = this.User.Api.MakeOrder(this.Market, Models.OrderSide.ask, dataRow.AskQty, dataRow.AskPrice);
@@ -499,15 +516,15 @@ namespace MetaFrm.Stock.Exchange
             }
             finally
             {
-                this.UpdateMessage(this.SettingID, this.Message ??"");
+                this.UpdateMessage(this.User, this.SettingID, this.Message ??"");
             }
         }
 
-        private decimal IsBuyingAskQty(decimal bidPrice, decimal bidQty, decimal askPrice)
+        private decimal IsBuyingAskQty(int ExchangeID, decimal bidPrice, decimal bidQty, decimal askPrice)
         {
             var BidKrw = (bidPrice * bidQty) + (bidPrice * bidQty * (this.Fees / 99.9M));
             var AskQty = BidKrw / (askPrice - (askPrice * (this.Fees / 99.9M)));
-            AskQty = Math.Ceiling(AskQty * Point(this.User.ExchangeID)) / Point(this.User.ExchangeID);
+            AskQty = Math.Ceiling(AskQty * Point(ExchangeID)) / Point(ExchangeID);
 
             return AskQty;
         }
@@ -568,7 +585,7 @@ namespace MetaFrm.Stock.Exchange
                     return null;
                 else
                 {
-                    $"SettingGridTrading".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    $"SettingGrid".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
                     foreach (var workData in workDatas)
                     {
                         if (workData == null) continue;
@@ -586,13 +603,13 @@ namespace MetaFrm.Stock.Exchange
                 return null;
             }
         }
-        private void Update(int SETTING_ID, decimal BID_PRICE_MIN, decimal BID_PRICE_MAX)
+        private void Update(User user, int SETTING_ID, decimal BID_PRICE_MIN, decimal BID_PRICE_MAX)
         {
             ServiceData data = new()
             {
                 ServiceName = "",
                 TransactionScope = false,
-                Token = this.User.AuthState.Token(),
+                Token = user.AuthState.Token(),
             };
             data["1"].CommandText = "Batch.[dbo].[USP_WORK_DATA_GRID_TRADING_UPD]";
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
@@ -606,7 +623,7 @@ namespace MetaFrm.Stock.Exchange
                 response = this.ServiceRequest(data);
 
                 if (response.Status != Status.OK)
-                    response.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    response.Message?.WriteMessage(user.ExchangeID, user.UserID, this.SettingID, this.Market);
             });
         }
     }

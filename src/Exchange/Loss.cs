@@ -16,6 +16,11 @@
         public decimal Invest { get; set; }
 
         /// <summary>
+        /// CurrentInvest
+        /// </summary>
+        public decimal CurrentInvest { get; set; }
+
+        /// <summary>
         /// 누적 수익금
         /// </summary>
         public decimal AccProfit { get; set; }

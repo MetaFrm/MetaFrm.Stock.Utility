@@ -11,14 +11,9 @@ namespace MetaFrm.Stock.Exchange
     public class Setting : ISettingAction
     {
         /// <summary>
-        /// SettingType
-        /// </summary>
-        public SettingType SettingType { get; set; } = SettingType.None;
-
-        /// <summary>
         /// User
         /// </summary>
-        public User User { get; set; }
+        public User? User { get; set; }
 
         /// <summary>
         /// SettingID
@@ -26,36 +21,26 @@ namespace MetaFrm.Stock.Exchange
         public int SettingID { get; set; }
 
         /// <summary>
+        /// SettingType
+        /// </summary>
+        public SettingType SettingType { get; set; } = SettingType.None;
+
+
+        /// <summary>
+        /// SettingTypeString
+        /// </summary>
+        public string SettingTypeString 
+        {
+            get
+            {
+                return $"{this.SettingType}{(this.Current != null ? $"-{this.Current.SettingType}" : "")}";
+            }
+        }
+
+        /// <summary>
         /// 마켓의 유일키
         /// </summary>
         public string? Market { get; set; }
-
-        /// <summary>
-        /// StopType
-        /// </summary>
-        public string? StopType { get; set; }
-
-        /// <summary>
-        /// Fees
-        /// </summary>
-        public decimal Fees { get; set; }
-
-
-        private string? message;
-        /// <summary>
-        /// Message
-        /// </summary>
-        public string? Message 
-        {
-            get
-            { 
-                return message;
-            }
-            set
-            {
-                message = $"{DateTime.Now:dd HH:mm:ss} {value}";
-            }
-        }
 
         /// <summary>
         /// Invest
@@ -75,12 +60,17 @@ namespace MetaFrm.Stock.Exchange
         /// <summary>
         /// Rate
         /// </summary>
-        public decimal Rate { get; set; }
+        public decimal Rate { get; set; } = 0.8M;
 
         /// <summary>
         /// ListMin
         /// </summary>
         public int ListMin { get; set; } = 4;
+
+        /// <summary>
+        /// Fees
+        /// </summary>
+        public decimal Fees { get; set; }
 
         /// <summary>
         /// TopStop
@@ -94,6 +84,35 @@ namespace MetaFrm.Stock.Exchange
         /// </summary>
         public bool IsProfitStop { get; set; }
 
+        private string? message;
+        /// <summary>
+        /// Message
+        /// </summary>
+        public string? Message
+        {
+            get
+            {
+                return message;
+            }
+            set
+            {
+                message = $"{DateTime.Now:dd HH:mm:ss} {value}";
+            }
+        }
+        /// <summary>
+        /// MessageString
+        /// </summary>
+        public string? MessageString
+        {
+            get
+            {
+                return message;
+            }
+            set
+            {
+                message = value;
+            }
+        }
 
         internal List<WorkData>? WorkDataList { get; set; }
 
@@ -117,11 +136,47 @@ namespace MetaFrm.Stock.Exchange
         /// </summary>
         public Setting? ParentSetting { get; set; }
 
+        private Setting? current;
+        /// <summary>
+        /// Current
+        /// </summary>
+        public Setting? Current
+        {
+            get
+            {
+                return this.current;
+            }
+            set
+            {
+                if (this.current != null && value != null && this.User != null)
+                    this.ChangeSettingMessage(this.User, this.current, value);
+
+                this.current = value;
+            }
+        }
+
+        /// <summary>
+        /// BidCancel
+        /// </summary>
+        public bool BidCancel { get; set; }
+        /// <summary>
+        /// AskCancel
+        /// </summary>
+        public bool AskCancel { get; set; }
+        /// <summary>
+        /// AskCurrentPrice
+        /// </summary>
+        public bool AskCurrentPrice { get; set; }
+        /// <summary>
+        /// BidCurrentPrice
+        /// </summary>
+        public bool BidCurrentPrice { get; set; }
+
         /// <summary>
         /// Setting
         /// </summary>
         /// <param name="user"></param>
-        public Setting(User user)
+        public Setting(User? user)
         { 
             this.User = user;
         }
@@ -133,18 +188,23 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="BID_CANCEL"></param>
         /// <param name="ASK_CANCEL"></param>
         /// <param name="ASK_CURRENT_PRICE"></param>
+        /// <param name="BID_CURRENT_PRICE"></param>
+        /// <param name="SAVE_WORKDATA"></param>
         /// <param name="REMOVE_SETTING"></param>
-        public void Organized(int SETTING_ID, bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool REMOVE_SETTING)
+        public void Organized(int SETTING_ID, bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool BID_CURRENT_PRICE, bool SAVE_WORKDATA, bool REMOVE_SETTING)
         {
             this.CurrentInfo ??= this.GetCurrentInfo();
 
-            if (!BID_CANCEL && !ASK_CANCEL && !ASK_CURRENT_PRICE)
-                this.SaveWorkDataList();
+            if (this.User == null)
+                return;
 
-            this.OrganizedRun(BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, this.CurrentInfo);
+            if (!BID_CANCEL && !ASK_CANCEL && SAVE_WORKDATA)
+                this.SaveWorkDataList(this.User);
+
+            this.OrganizedRun(BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, BID_CURRENT_PRICE, this.CurrentInfo);
 
             if (REMOVE_SETTING)
-                this.Clear(SETTING_ID, BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, REMOVE_SETTING);
+                this.Clear(this.User, SETTING_ID, BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, BID_CURRENT_PRICE, REMOVE_SETTING);
 
             if (this.ParentSetting != null)
             {
@@ -157,10 +217,13 @@ namespace MetaFrm.Stock.Exchange
                     this.User.RemoveSetting(this);
             }
         }
-        private void OrganizedRun(bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, Models.Ticker? ticker)
+        private void OrganizedRun(bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool BID_CURRENT_PRICE, Models.Ticker? ticker)
         {
             Models.Order order;
             decimal ASK;
+            decimal BID_KRW;
+            decimal Price;
+            decimal RemainingFee;
             decimal RemainingVolume;
 
             if (this.WorkDataList == null || this.WorkDataList.Count < 1) return;
@@ -171,6 +234,7 @@ namespace MetaFrm.Stock.Exchange
             if (ticker == null) return;
 
             ASK = 0;
+            BID_KRW = 0;
 
             foreach (WorkData dataRow in this.WorkDataList)
             {
@@ -178,12 +242,28 @@ namespace MetaFrm.Stock.Exchange
                 {
                     try
                     {
-                        order = this.User.Api.CancelOrder(this.Market, Models.OrderSide.bid.ToString(), dataRow.BidOrder.UUID);
+                        order = this.User.Api.Order(this.Market, Models.OrderSide.ask.ToString(), dataRow.BidOrder.UUID);
 
                         if (order.Error != null)
                         {
                             this.Message = order.Error.Message;
                             this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                        }
+                        else
+                        {
+                            RemainingVolume = order.RemainingVolume;
+                            Price = order.Price;
+                            RemainingFee = order.RemainingFee;
+
+                            order = this.User.Api.CancelOrder(this.Market, Models.OrderSide.bid.ToString(), dataRow.BidOrder.UUID);
+
+                            if (order.Error != null)
+                            {
+                                this.Message = order.Error.Message;
+                                this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                            }
+                            else
+                                BID_KRW += (RemainingVolume * Price) + RemainingFee;
                         }
                     }
                     catch (Exception ex)
@@ -227,11 +307,22 @@ namespace MetaFrm.Stock.Exchange
 
             if (ASK > 0 && ASK_CURRENT_PRICE)
             {
-                order = this.User.Api.MakeOrder(this.Market, Models.OrderSide.ask, ASK, ticker.TradePrice, Models.OrderType.market);
+                var order1 = this.MakeOrderAskMarket(this.Market, ASK);
 
-                if (order.Error != null)
+                if (order1 != null && order1.Error != null)
                 {
-                    this.Message = order.Error.Message;
+                    this.Message = order1.Error.Message;
+                    this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                }
+            }
+
+            if (BID_KRW > 0 && BID_CURRENT_PRICE)
+            {
+                var order1 = this.MakeOrderBidPrice(this.Market, BID_KRW);
+
+                if (order1 != null && order1.Error != null)
+                {
+                    this.Message = order1.Error.Message;
                     this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
                 }
             }
@@ -275,24 +366,25 @@ namespace MetaFrm.Stock.Exchange
         /// <summary>
         /// GetBasePrice
         /// </summary>
+        /// <param name="exchangeID"></param>
         /// <param name="tradePrice"></param>
         /// <param name="rate"></param>
         /// <param name="listMin"></param>
         /// <returns></returns>
-        internal decimal GetBasePrice(decimal tradePrice, decimal rate, decimal listMin)
+        internal static decimal GetBasePrice(int exchangeID, decimal tradePrice, decimal rate, decimal listMin)
         {
-            decimal basePrice = tradePrice * (1 - ((rate + Setting.DefaultFees(this.User.ExchangeID)) / 99.8M) * listMin);
+            decimal basePrice = tradePrice * (1 - ((rate + Setting.DefaultFees(exchangeID)) / 99.8M) * listMin);
             return Math.Round(basePrice);
         }
-        internal decimal GetTopPrice(decimal tradePrice, decimal rate, decimal listMin)
+        internal static decimal GetTopPrice(int exchangeID, decimal tradePrice, decimal rate, decimal listMin)
         {
-            decimal basePrice = tradePrice * (1 + ((rate + Setting.DefaultFees(this.User.ExchangeID)) / 99.8M) * listMin);
+            decimal basePrice = tradePrice * (1 + ((rate + Setting.DefaultFees(exchangeID)) / 99.8M) * listMin);
             return Math.Round(basePrice);
         }
 
 
         private string LastMessage = "";
-        internal void UpdateMessage(int SETTING_ID, string MESSAGE)
+        internal void UpdateMessage(User user, int SETTING_ID, string MESSAGE)
         {
             if (this.LastMessage.Equals(MESSAGE)) return;
 
@@ -302,7 +394,7 @@ namespace MetaFrm.Stock.Exchange
             {
                 ServiceName = "",
                 TransactionScope = false,
-                Token = this.User.AuthState.Token(),
+                Token = user.AuthState.Token(),
             };
             data["1"].CommandText = "Batch.[dbo].[USP_TRADING_MESSAGE_UPD]";
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
@@ -315,10 +407,10 @@ namespace MetaFrm.Stock.Exchange
                 response = this.ServiceRequest(data);
 
                 if (response.Status != Status.OK)
-                    response.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    response.Message?.WriteMessage(user.ExchangeID, user.UserID, this.SettingID, this.Market);
             });
         }
-        internal void Profit(int SETTING_ID, int USER_ID, decimal BID_PRICE, decimal BID_QTY, decimal BID_FEE, decimal ASK_PRICE, decimal ASK_QTY, decimal ASK_FEE, decimal PROFIT, string MARKET_ID)
+        internal void Profit(User user, int SETTING_ID, int USER_ID, decimal BID_PRICE, decimal BID_QTY, decimal BID_FEE, decimal ASK_PRICE, decimal ASK_QTY, decimal ASK_FEE, decimal PROFIT, string MARKET_ID)
         {
             if (this.LossStack.Count > 0)
                 this.LossStack.Peek().AccProfit += PROFIT;
@@ -328,7 +420,7 @@ namespace MetaFrm.Stock.Exchange
             {
                 ServiceName = "",
                 TransactionScope = false,
-                Token = this.User.AuthState.Token(),
+                Token = user.AuthState.Token(),
             };
             data["1"].CommandText = "Batch.[dbo].[USP_TRADING_PROFIT_UPD]";
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
@@ -341,7 +433,7 @@ namespace MetaFrm.Stock.Exchange
             data["1"].AddParameter(nameof(PROFIT), Database.DbType.Decimal, 18, PROFIT);
             data["1"].AddParameter(nameof(USER_ID), Database.DbType.Int, 3, USER_ID);
 
-            stringBuilder.Append($"{this.User.ExchangeName()} 수익 발생");
+            stringBuilder.Append($"{user.ExchangeName()} 수익 발생");
             data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
             stringBuilder.Clear();
@@ -385,30 +477,32 @@ namespace MetaFrm.Stock.Exchange
                 response = this.ServiceRequest(data);
 
                 if (response.Status != Status.OK)
-                    response.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    response.Message?.WriteMessage(user.ExchangeID, user.UserID, this.SettingID, this.Market);
             });
         }
-        internal void ChangeSettingMessage(Setting before, Setting after)
+        internal void ChangeSettingMessage(User user, Setting before, Setting after)
         {
             StringBuilder stringBuilder = new();
             ServiceData data = new()
             {
                 ServiceName = "",
                 TransactionScope = false,
-                Token = this.User.AuthState.Token(),
+                Token = user.AuthState.Token(),
             };
             data["1"].CommandText = "Batch.[dbo].[USP_TRADING_CHANGE_SETTING]";
             data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, before.SettingID);
-            data["1"].AddParameter("BEFORE", Database.DbType.NVarChar, 50, before.SettingType == SettingType.Grid ? "Grid" : "MartingaleShort");
-            data["1"].AddParameter("AFTER", Database.DbType.NVarChar, 50, after.SettingType == SettingType.Grid ? "Grid" : "MartingaleShort");
-            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, before.User.UserID);
+            data["1"].AddParameter("BEFORE", Database.DbType.NVarChar, 50, before.SettingType.ToString());
+            data["1"].AddParameter("AFTER", Database.DbType.NVarChar, 50, after.SettingType.ToString());
+            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, user.UserID);
 
-            stringBuilder.Append($"{this.User.ExchangeName()} 세팅 전환");
+            stringBuilder.Append($"{user.ExchangeName()} 세팅 전환");
             data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
             stringBuilder.Clear();
             stringBuilder.Append($"{before.Market}");
-            stringBuilder.AppendLine($" {(before.SettingType == SettingType.Grid ? "그리드" : "마틴게일 숏")} -> {(after.SettingType == SettingType.Grid ? "그리드" : "마틴게일 숏")}");
+            stringBuilder.AppendLine($" {(before.SettingType == SettingType.Grid ? "그리드" : (before.SettingType == SettingType.MartingaleLong ? "마틴게일 롱" : "마틴게일 숏"))
+                } -> {
+                (after.SettingType == SettingType.Grid ? "그리드" : (after.SettingType == SettingType.MartingaleLong ? "마틴게일 롱" : "마틴게일 숏"))}");
 
             if (this.LossStack.Count > 0)
             {
@@ -416,9 +510,10 @@ namespace MetaFrm.Stock.Exchange
                 foreach(var item in this.LossStack)
                 {
                     if (i % 2 == 0)
-                        stringBuilder.Append($"마틴게일 숏({item.DateTime:MM-dd HH:mm}) ");
+                        stringBuilder.Append($"마틴게일({item.DateTime:MM-dd HH:mm}) ");
                     else
                         stringBuilder.Append($"그리드({item.DateTime:MM-dd HH:mm}) ");
+                    i++;
                 }
             }
 
@@ -431,22 +526,23 @@ namespace MetaFrm.Stock.Exchange
                 response = this.ServiceRequest(data);
 
                 if (response.Status != Status.OK)
-                    response.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    response.Message?.WriteMessage(user.ExchangeID, user.UserID, this.SettingID, this.Market);
             });
         }
-        internal void Clear(int SETTING_ID, bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool IS_PROFIT_STOP)
+        internal void Clear(User user, int SETTING_ID, bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool BID_CURRENT_PRICE, bool IS_PROFIT_STOP)
         {
             ServiceData data = new()
             {
                 ServiceName = "",
                 TransactionScope = false,
-                Token = this.User.AuthState.Token(),
+                Token = user.AuthState.Token(),
             };
             data["1"].CommandText = "Batch.[dbo].[USP_TRADING_CLEAR_UPD]";
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
             data["1"].AddParameter(nameof(BID_CANCEL), Database.DbType.NVarChar, 1, BID_CANCEL ? "Y" : "N");
             data["1"].AddParameter(nameof(ASK_CANCEL), Database.DbType.NVarChar, 1, ASK_CANCEL ? "Y" : "N");
             data["1"].AddParameter(nameof(ASK_CURRENT_PRICE), Database.DbType.NVarChar, 1, ASK_CURRENT_PRICE ? "Y" : "N");
+            data["1"].AddParameter(nameof(BID_CURRENT_PRICE), Database.DbType.NVarChar, 1, BID_CURRENT_PRICE ? "Y" : "N");
             data["1"].AddParameter(nameof(IS_PROFIT_STOP), Database.DbType.NVarChar, 1, IS_PROFIT_STOP ? "Y" : "N");
 
             Task.Run(() =>
@@ -456,11 +552,11 @@ namespace MetaFrm.Stock.Exchange
                 response = this.ServiceRequest(data);
 
                 if (response.Status != Status.OK)
-                    response.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    response.Message?.WriteMessage(user.ExchangeID, user.UserID, this.SettingID, this.Market);
             });
         }
 
-        internal void SaveWorkDataList()
+        internal void SaveWorkDataList(User user)
         {
             try
             {
@@ -473,10 +569,10 @@ namespace MetaFrm.Stock.Exchange
             }
             catch (Exception ex)
             {
-                ex.WriteMessage(true, this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                ex.WriteMessage(true, user.ExchangeID, user.UserID, this.SettingID, this.Market);
             }
         }
-        internal List<WorkData>? ReadWorkDataList()
+        internal List<WorkData>? ReadWorkDataList(User user)
         {
             try
             {
@@ -495,12 +591,12 @@ namespace MetaFrm.Stock.Exchange
             }
             catch (Exception ex)
             {
-                ex.WriteMessage(true, this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                ex.WriteMessage(true, user.ExchangeID, user.UserID, this.SettingID, this.Market);
             }
 
             return null;
         }
-        internal void SaveLossStack()
+        internal void SaveLossStack(User user)
         {
             try
             {
@@ -510,10 +606,10 @@ namespace MetaFrm.Stock.Exchange
             }
             catch (Exception ex)
             {
-                ex.WriteMessage(true, this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                ex.WriteMessage(true, user.ExchangeID, user.UserID, this.SettingID, this.Market);
             }
         }
-        internal Stack<Loss>? ReadLossStack()
+        internal Stack<Loss>? ReadLossStack(User user)
         {
             try
             {
@@ -532,7 +628,7 @@ namespace MetaFrm.Stock.Exchange
             }
             catch (Exception ex)
             {
-                ex.WriteMessage(true, this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                ex.WriteMessage(true, user.ExchangeID, user.UserID, this.SettingID, this.Market);
             }
 
             return null;
@@ -545,6 +641,7 @@ namespace MetaFrm.Stock.Exchange
         /// <returns></returns>
         internal Models.Order? MakeOrderBidPrice(string market, decimal bidAmount)
         {
+            if (this.User == null) return null;
             if (this.User.Api == null) return null;
 
             var order = this.User.Api.MakeOrder(market, Models.OrderSide.bid, 0, (decimal)bidAmount, Models.OrderType.price);
@@ -580,6 +677,7 @@ namespace MetaFrm.Stock.Exchange
         /// <returns></returns>
         internal Models.Order? MakeOrderAskMarket(string market, decimal qty)
         {
+            if (this.User == null) return null;
             if (this.User.Api == null) return null;
 
             var order = this.User.Api.MakeOrder(market, Models.OrderSide.ask, qty, 0, Models.OrderType.market);

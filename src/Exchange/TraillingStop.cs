@@ -12,7 +12,7 @@ namespace MetaFrm.Stock.Exchange
         /// <summary>
         /// GapRate
         /// </summary>
-        public decimal GapRate { get; set; }
+        public decimal GapRate { get; set; } = 5M;
 
         /// <summary>
         /// ReturnRate
@@ -38,7 +38,7 @@ namespace MetaFrm.Stock.Exchange
         /// TraillingStop
         /// </summary>
         /// <param name="user"></param>
-        public TraillingStop(User user) : base(user)
+        public TraillingStop(User? user) : base(user)
         {
             this.SettingType = SettingType.TraillingStop;
         }
@@ -50,9 +50,10 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="allOrder"></param>
         public new void Run(Models.Order? allOrder)
         {
+            if (this.User == null) return;
+
             try
             {
-                if (this.User == null) return;
                 if (this.User.Api == null) return;
                 if (this.Market == null) return;
                 if (this.Invest < this.User.ExchangeID switch
@@ -68,7 +69,7 @@ namespace MetaFrm.Stock.Exchange
                 //if (allOrder != null && allOrder.OrderList != null)
                 //    $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingGridTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
 
-                this.WorkDataList ??= this.ReadWorkDataList();
+                this.WorkDataList ??= this.ReadWorkDataList(this.User);
 
                 this.CurrentInfo = this.GetCurrentInfo();
                 if (this.CurrentInfo == null)
@@ -192,7 +193,7 @@ namespace MetaFrm.Stock.Exchange
                             item.TargetAskPrice = this.CurrentInfo.TradePrice;
                             this.ReturnPrice = item.TargetAskPrice * (1 - (this.ReturnRate / 100M));
 
-                            this.Update(this.SettingID, item.BidAvgPrice, item.TargetAskPrice, this.ReturnPrice);
+                            this.Update(this.User, this.SettingID, item.BidAvgPrice, item.TargetAskPrice, this.ReturnPrice);
                         }
 
                         //목표 터치 후 리턴 가격에 오면 익절 !!
@@ -210,13 +211,13 @@ namespace MetaFrm.Stock.Exchange
                                 decimal BID = (workDataList.Sum(x => x.BidOrder?.ExecutedVolume ?? 0) * item.BidAvgPrice) + item.BidTotalFee;
                                 decimal ASK_AvgPrice = order.Trades != null && order.Trades.Count > 0 ? order.Trades.Sum(x => x.Volume * x.Price) / order.Trades.Sum(x => x.Volume) : order.Price;
 
-                                this.Profit(this.SettingID, this.User.UserID
+                                this.Profit(this.User, this.SettingID, this.User.UserID
                                     , item.BidAvgPrice, item.BidOrder.Volume, item.BidTotalFee
                                     , ASK_AvgPrice, order.ExecutedVolume, order.PaidFee
                                     , ASK - BID
                                     , this.Market);
 
-                                this.Organized(this.SettingID, true, false, false, true);
+                                this.Organized(this.SettingID, true, false, false, false, false, true);
                                 this.WorkDataList = null;
                                 return;
                             }
@@ -231,7 +232,7 @@ namespace MetaFrm.Stock.Exchange
             }
             finally
             {
-                this.UpdateMessage(this.SettingID, this.Message ??"");
+                this.UpdateMessage(this.User, this.SettingID, this.Message ??"");
             }
         }
 
@@ -282,7 +283,7 @@ namespace MetaFrm.Stock.Exchange
                     return null;
                 else
                 {
-                    $"SettingMartingaleLongTrading".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    $"SettingTraillingStop".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
                     foreach (var workData in workDatas)
                     {
                         if (workData == null) continue;
@@ -300,23 +301,23 @@ namespace MetaFrm.Stock.Exchange
                 return null;
             }
         }
-        private void Update(int SETTING_ID, decimal BID_PRICE_AVG, decimal TARGET_PRICE, decimal RETURN_PRICE)
+        private void Update(User user, int SETTING_ID, decimal BID_PRICE_AVG, decimal TARGET_PRICE, decimal RETURN_PRICE)
         {
             StringBuilder stringBuilder = new();
             ServiceData data = new()
             {
                 ServiceName = "",
                 TransactionScope = false,
-                Token = this.User.AuthState.Token(),
+                Token = user.AuthState.Token(),
             };
             data["1"].CommandText = "Batch.[dbo].[USP_WORK_DATA_TRAILLING_STOP_TRADING_UPD]";
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
             data["1"].AddParameter(nameof(BID_PRICE_AVG), Database.DbType.Decimal, 18, BID_PRICE_AVG);
             data["1"].AddParameter(nameof(TARGET_PRICE), Database.DbType.Decimal, 18, TARGET_PRICE);
             data["1"].AddParameter(nameof(RETURN_PRICE), Database.DbType.Decimal, 18, RETURN_PRICE);
-            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.User.UserID);
+            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, user.UserID);
 
-            stringBuilder.Append($"{this.User.ExchangeName()} 트레일링 스탑 타겟 알림");
+            stringBuilder.Append($"{user.ExchangeName()} 트레일링 스탑 타겟 알림");
             data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
             stringBuilder.Clear();
@@ -347,7 +348,7 @@ namespace MetaFrm.Stock.Exchange
                 response = this.ServiceRequest(data);
 
                 if (response.Status != Status.OK)
-                    response.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    response.Message?.WriteMessage(user.ExchangeID, user.UserID, this.SettingID, this.Market);
             });
         }
     }

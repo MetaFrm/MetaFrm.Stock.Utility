@@ -95,147 +95,8 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="setting"></param>
         public void AddSetting(Setting setting)
         {
-            switch (setting.SettingType)
-            {
-                case SettingType.Grid:
-                    if (setting.ListMin < 4)
-                    {
-                        $"ListMin 값이 4 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-
-                    decimal tmp = setting.BasePrice * (1 + (((setting.Rate + Setting.DefaultFees(this.ExchangeID)) / 100)) * setting.ListMin);
-                    if (tmp > setting.TopPrice)
-                    {
-                        $"TopPrice 값이 너무 낮음 BasePrice:{setting.BasePrice}\tRate{setting.Rate}\tFees:{Setting.DefaultFees(this.ExchangeID)}\tListMin{setting.ListMin}\tBasePrice*(((1+Rate+Fees)/100)*ListMin):{tmp}\tTopPrice:{setting.TopPrice}".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    break;
-
-                case SettingType.MartingaleLong:
-                    if (setting.ListMin < 2)
-                    {
-                        $"ListMin 값이 2 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    break;
-
-                case SettingType.MartingaleShort:
-                    if (setting.ListMin < 2)
-                    {
-                        $"ListMin 값이 2 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    break;
-
-                case SettingType.TraillingStop:
-                    TraillingStop settingTraillingStop = (TraillingStop)setting;
-
-                    if ((settingTraillingStop.ReturnRate + Setting.DefaultFees(this.ExchangeID)) > settingTraillingStop.Rate)
-                    {
-                        $"Rate 값이 ReturnRate 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-
-                    if (settingTraillingStop.GapRate < 1.6M)
-                    {
-                        $"SettingTraillingStop.GapRate 는 1.6 이상만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    break;
-
-                case SettingType.GridMartingaleLong:
-                    GridMartingaleLong settingGridMartingaleLongTrading = (GridMartingaleLong)setting;
-
-                    if (settingGridMartingaleLongTrading.Grid.ListMin < 4)
-                    {
-                        $"ListMin 값이 4 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleLongTrading.Grid.StopLoss)
-                    {
-                        $"Grid.StopLoss 는 False만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleLongTrading.Grid.Rate < 0.8M)
-                    {
-                        $"Grid.Rate 0.8 이상만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleLongTrading.Grid.SmartType != SmartType.TrailingMoveTop)
-                    {
-                        $"Grid.SmartType 는 TrailingMoveTop만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-
-                    if (settingGridMartingaleLongTrading.MartingaleLong.ListMin < 4)
-                    {
-                        $"ListMin 값이 4 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleLongTrading.MartingaleLong.IsProfitStop)
-                    {
-                        $"MartingaleLong.IsProfitStop 는 False만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleLongTrading.MartingaleLong.Rate < 0.8M)
-                    {
-                        $"MartingaleLong.Rate 는 0.8 이상만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleLongTrading.MartingaleLong.GapRate < 1.6M)
-                    {
-                        $"MartingaleLong.GapRate 는 1.6 이상만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    break;
-
-                case SettingType.GridMartingaleShort:
-                    GridMartingaleShort settingGridMartingaleShortTrading = (GridMartingaleShort)setting;
-
-                    if (settingGridMartingaleShortTrading.Grid.ListMin < 4)
-                    {
-                        $"ListMin 값이 4 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleShortTrading.Grid.StopLoss)
-                    {
-                        $"Grid.StopLoss 는 False만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleShortTrading.Grid.Rate < 0.8M)
-                    {
-                        $"Grid.Rate 0.8 이상만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleShortTrading.Grid.SmartType != SmartType.TrailingMoveTop)
-                    {
-                        $"Grid.SmartType 는 TrailingMoveTop만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-
-                    if (settingGridMartingaleShortTrading.MartingaleShort.ListMin < 4)
-                    {
-                        $"ListMin 값이 4 보다 작음".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleShortTrading.MartingaleShort.IsProfitStop)
-                    {
-                        $"MartingaleShort.IsProfitStop 는 False만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleShortTrading.MartingaleShort.Rate < 0.8M)
-                    {
-                        $"MartingaleShort.Rate 는 0.8 이상만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    if (settingGridMartingaleShortTrading.MartingaleShort.GapRate < 1.6M)
-                    {
-                        $"MartingaleShort.GapRate 는 1.6 이상만 됩니다.".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return;
-                    }
-                    break;
-            }
+            if (!SettingValidation(this.ExchangeID, this.UserID, setting, out _))
+                return;
 
             lock (this.Settings)
                 if (this.IsFirstUser && this.IsStopped && this.Settings.Count == 0)
@@ -243,6 +104,287 @@ namespace MetaFrm.Stock.Exchange
 
             if (!Settings.Any(x => x.SettingID == setting.SettingID))
                 this.AddSettingQueue.Enqueue(setting);
+        }
+
+        /// <summary>
+        /// SettingValidation
+        /// </summary>
+        /// <param name="ExchangeID"></param>
+        /// <param name="UserID"></param>
+        /// <param name="setting"></param>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        public static bool SettingValidation(int ExchangeID, int UserID, Setting setting, out string? message)
+        {
+            if (setting.Market == null || setting.Market.IsNullOrEmpty() || setting.Market.Length < 4)
+            {
+                message = "'종목'을 입력하세요.";
+                $"종목을 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                return false;
+            }
+
+            if (setting.Invest < 10000 && setting.SettingType != SettingType.MartingaleShort)
+            {
+                message = "'투자금액'(10,000이상)을 입력하세요.";
+                $"'투자금액'(10,000이상)을 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                return false;
+            }
+
+            switch (setting.SettingType)
+            {
+                case SettingType.Grid:
+                    Grid grid = (Grid)setting;
+
+                    if (setting.BasePrice <= 0.0M)
+                    {
+                        message = "'시작호가'를 입력하세요.";
+                        $"'시작호가'를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.TopPrice <= 0.0M)
+                    {
+                        message = "'종료호가'를 입력하세요.";
+                        $"'종료호가'를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.BasePrice >= setting.TopPrice)
+                    {
+                        message = "'종료호가'는 '시작호가'와 같거나 작을 수 없습니다.";
+                        $"'종료호가'는 '시작호가'와 같거나 작을 수 없습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.Rate < 0.11M)
+                    {
+                        message = "'호가변화%'는 최소 0.11%";
+                        $"'호가변화%'는 최소 0.11%".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.ListMin < 4 || setting.ListMin > 100)
+                    {
+                        message = "'최소 리스트 수'는 4이상 입니다.";
+                        $"'최소 리스트 수'는 4이상 입니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    decimal tmp = setting.BasePrice * (1 + ((setting.Rate + Setting.DefaultFees(ExchangeID)) / 100) * setting.ListMin);
+                    if (tmp > setting.TopPrice)
+                    {
+                        message = $"'종료호가'는 {tmp} 보다 커야 합니다.";
+                        $"'종료호가'는 {tmp} 보다 커야 합니다. BasePrice:{setting.BasePrice}\tRate{setting.Rate}\tFees:{Setting.DefaultFees(ExchangeID)}\tListMin{setting.ListMin}\tBasePrice*(((1+Rate+Fees)/100)*ListMin):{tmp}\tTopPrice:{setting.TopPrice}".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.TopStop && (grid.SmartType == SmartType.TrailingMoveTop || grid.SmartType == SmartType.TrailingMoveTopShorten))
+                    {
+                        message = "'종료호가 터치 중지' 와 '트레일링'을 동시에 사용할 수 없습니다.";
+                        $"'종료호가 터치 중지' 와 '트레일링'을 동시에 사용할 수 없습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    break;
+
+                case SettingType.TraillingStop:
+                    TraillingStop settingTraillingStop = (TraillingStop)setting;
+
+                    if (setting.BasePrice <= 0.0M)
+                    {
+                        message = "'매수호가'를 입력하세요.";
+                        $"'매수호가'를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.Rate <= 0.0M)
+                    {
+                        message = "'목표%'를 입력하세요.";
+                        $"'목표%'를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingTraillingStop.ReturnRate >= 0.0M)
+                    {
+                        message = "'리턴%'(음수)를 입력하세요.";
+                        $"'리턴%'(음수)를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (Math.Abs(settingTraillingStop.ReturnRate) > settingTraillingStop.Rate)
+                    {
+                        message = "'목표%' 값 너무 낮거나 '리턴%' 값니 너무 작습니다.";
+                        $"'목표%' 값 너무 낮거나 '리턴%' 값니 너무 작습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingTraillingStop.ListMin > 1 && settingTraillingStop.GapRate < 5M)
+                    {
+                        message = "'갭%'은 5.0 이상만 됩니다.";
+                        $"SettingTraillingStop.GapRate 는 5.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    break;
+
+                case SettingType.MartingaleLong:
+                    MartingaleLong martingaleLong = (MartingaleLong)setting;
+
+                    if (setting.BasePrice <= 0.0M)
+                    {
+                        message = "'시작호가'를 입력하세요.";
+                        $"'시작호가'를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.TopPrice <= 0.0M)
+                    {
+                        message = "'종료호가'를 입력하세요.";
+                        $"'종료호가'를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.BasePrice >= setting.TopPrice)
+                    {
+                        message = "'종료호가'는 '시작호가'와 같거나 작을 수 없습니다.";
+                        $"'종료호가'는 '시작호가'와 같거나 작을 수 없습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (martingaleLong.GapRate < 5M)
+                    {
+                        message = "'갭%'은 5.0 이상만 됩니다.";
+                        $"SettingTraillingStop.GapRate 는 5.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.ListMin < 2)
+                    {
+                        message = "'리스트 수'는 2 보다 커야 합니다.";
+                        $"'리스트 수'는 2 보다 커야 합니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    break;
+
+
+                case SettingType.MartingaleShort:
+                    MartingaleShort martingaleShort = (MartingaleShort)setting;
+
+                    if (setting.BasePrice <= 0.0M)
+                    {
+                        message = "'시작호가'를 입력하세요.";
+                        $"'시작호가'를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.TopPrice <= 0.0M)
+                    {
+                        message = "'종료호가'를 입력하세요.";
+                        $"'종료호가'를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.BasePrice >= setting.TopPrice)
+                    {
+                        message = "'종료호가'는 '시작호가'와 같거나 작을 수 없습니다.";
+                        $"'종료호가'는 '시작호가'와 같거나 작을 수 없습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (martingaleShort.GapRate < 5M)
+                    {
+                        message = "'갭%'은 5.0 이상만 됩니다.";
+                        $"SettingTraillingStop.GapRate 는 5.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.ListMin < 2)
+                    {
+                        message = "'리스트 수'는 2 보다 커야 합니다.";
+                        $"'리스트 수'는 2 보다 커야 합니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    break;
+
+                case SettingType.GridMartingaleLong:
+                    GridMartingaleLong settingGridMartingaleLongTrading = (GridMartingaleLong)setting;
+
+                    if (settingGridMartingaleLongTrading.Grid.Rate < 0.8M)
+                    {
+                        message = "'그리드 호가변화%'는 최소 0.8%";
+                        $"'그리드 호가변화%'는 최소 0.8%".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.ListMin < 4 || setting.ListMin > 100)
+                    {
+                        message = "'그리드 최소 리스트 수'는 4이상 입니다.";
+                        $"'그리드 최소 리스트 수'는 4이상 입니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingGridMartingaleLongTrading.Grid.StopLoss)
+                    {
+                        message = "'그리드 손절'은 사용 할 수 없습니다.";
+                        $"'그리드 손절'은 사용 할 수 없습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingGridMartingaleLongTrading.Grid.SmartType != SmartType.TrailingMoveTop)
+                    {
+                        message = "'그리드 트레일링'만 사용 할 수 있습니다.";
+                        $"'그리드 트레일링'만 사용 할 수 있습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+
+                    if (settingGridMartingaleLongTrading.MartingaleLong.GapRate < 5M)
+                    {
+                        message = "'마틴게일 롱 갭%'은 5.0 이상만 됩니다.";
+                        $"'마틴게일 롱 갭%'은 5.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingGridMartingaleLongTrading.MartingaleLong.ListMin < 4)
+                    {
+                        message = "'마틴게일 롱 리스트 수'는 4이상 입니다.";
+                        $"'마틴게일 롱 리스트 수'는 4이상 입니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingGridMartingaleLongTrading.MartingaleLong.IsProfitStop)
+                    {
+                        message = "'마틴게일 롱 익절중지'를 사용 할 수 없습니다.";
+                        $"'마틴게일 롱 익절중지'를 사용 할 수 없습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    break;
+
+                case SettingType.GridMartingaleShort:
+                    GridMartingaleShort settingGridMartingaleShortTrading = (GridMartingaleShort)setting;
+
+                    if (settingGridMartingaleShortTrading.Grid.Rate < 0.8M)
+                    {
+                        message = "'그리드 호가변화%'는 최소 0.8%";
+                        $"'그리드 호가변화%'는 최소 0.8%".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (setting.ListMin < 4 || setting.ListMin > 100)
+                    {
+                        message = "'그리드 최소 리스트 수'는 4이상 입니다.";
+                        $"'그리드 최소 리스트 수'는 4이상 입니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingGridMartingaleShortTrading.Grid.StopLoss)
+                    {
+                        message = "'그리드 손절'은 사용 할 수 없습니다.";
+                        $"'그리드 손절'은 사용 할 수 없습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingGridMartingaleShortTrading.Grid.SmartType != SmartType.TrailingMoveTop)
+                    {
+                        message = "'그리드 트레일링'만 사용 할 수 있습니다.";
+                        $"'그리드 트레일링'만 사용 할 수 있습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+
+                    if (settingGridMartingaleShortTrading.MartingaleShort.GapRate < 5M)
+                    {
+                        message = "'마틴게일 숏 갭%'은 5.0 이상만 됩니다.";
+                        $"'마틴게일 숏 갭%'은 5.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingGridMartingaleShortTrading.MartingaleShort.ListMin < 4)
+                    {
+                        message = "'마틴게일 숏 리스트 수'는 4이상 입니다.";
+                        $"'마틴게일 숏 리스트 수'는 4이상 입니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingGridMartingaleShortTrading.MartingaleShort.IsProfitStop)
+                    {
+                        message = "'마틴게일 숏 익절중지'를 사용 할 수 없습니다.";
+                        $"'마틴게일 숏 익절중지'를 사용 할 수 없습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    break;
+            }
+
+            message = "";
+            return true;
         }
         /// <summary>
         /// RemoveSetting
@@ -295,67 +437,87 @@ namespace MetaFrm.Stock.Exchange
                                 {
                                     var setting = this.RemoveSettingQueue.Dequeue();
 
-                                    //세팅 제거 사전 작업
-                                    switch (setting.StopType)
-                                    {
-                                        case "":
-                                            break;
-                                    }
-
                                     if (this.Settings.Contains(setting))
                                     {
-                                        if (this.SaveWorkDataList)
+                                        if (this.SaveWorkDataList)//서버 프로그램 종료시 저장
                                         {
                                             if (setting.SettingType == SettingType.GridMartingaleShort)
                                             {
-                                                setting.SaveLossStack();
+                                                setting.SaveLossStack(this);
 
-                                                (((GridMartingaleShort)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, true);
+                                                (((GridMartingaleShort)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true);
                                             }
                                             else if (setting.SettingType == SettingType.GridMartingaleLong)
                                             {
-                                                setting.SaveLossStack();
+                                                setting.SaveLossStack(this);
 
-                                                (((GridMartingaleLong)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, true);
+                                                (((GridMartingaleLong)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true);
                                             }
                                             else
-                                                (setting as ISettingAction).Organized(setting.SettingID, false, false, false, true);
+                                                (setting as ISettingAction).Organized(setting.SettingID, false, false, false, false, true, true);
                                         }
                                         else
                                         {
-                                            if (setting.SettingType == SettingType.MartingaleShort)
-                                                (setting as ISettingAction).Organized(setting.SettingID, false, true, false, true);
-
-                                            else if (setting.SettingType == SettingType.GridMartingaleShort)
+                                            //사용자 세팅 중지 요청
+                                            if (setting.BidCancel || setting.AskCancel || setting.AskCurrentPrice || setting.BidCurrentPrice)
                                             {
-                                                GridMartingaleShort set2 = (GridMartingaleShort)setting;
+                                                if (setting.SettingType == SettingType.MartingaleShort)
+                                                    (setting as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
 
-                                                if (set2.Current?.SettingType == SettingType.MartingaleShort)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, false, true, false, true);
-                                                else if (set2.Current?.SettingType == SettingType.Grid)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, true);
-                                            }
-                                            else if (setting.SettingType == SettingType.GridMartingaleLong)
-                                            {
-                                                GridMartingaleLong set2 = (GridMartingaleLong)setting;
+                                                else if (setting.SettingType == SettingType.GridMartingaleShort)
+                                                {
+                                                    GridMartingaleShort set2 = (GridMartingaleShort)setting;
 
-                                                if (set2.Current?.SettingType == SettingType.MartingaleLong)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, true);
-                                                else if (set2.Current?.SettingType == SettingType.Grid)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, true);
+                                                    if (set2.Current?.SettingType == SettingType.MartingaleShort)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
+                                                    else if (set2.Current?.SettingType == SettingType.Grid)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
+                                                }
+                                                else if (setting.SettingType == SettingType.GridMartingaleLong)
+                                                {
+                                                    GridMartingaleLong set2 = (GridMartingaleLong)setting;
+
+                                                    if (set2.Current?.SettingType == SettingType.MartingaleLong)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
+                                                    else if (set2.Current?.SettingType == SettingType.Grid)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
+                                                }
+                                                else
+                                                    (setting as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
                                             }
                                             else
-                                                (setting as ISettingAction).Organized(setting.SettingID, true, false, false, true);
+                                            {
+                                                //서버 프로그램에서 개별 세팅 중지
+                                                if (setting.SettingType == SettingType.MartingaleShort)
+                                                    (setting as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true);
+
+                                                else if (setting.SettingType == SettingType.GridMartingaleShort)
+                                                {
+                                                    GridMartingaleShort set2 = (GridMartingaleShort)setting;
+
+                                                    if (set2.Current?.SettingType == SettingType.MartingaleShort)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true);
+                                                    else if (set2.Current?.SettingType == SettingType.Grid)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true);
+                                                }
+                                                else if (setting.SettingType == SettingType.GridMartingaleLong)
+                                                {
+                                                    GridMartingaleLong set2 = (GridMartingaleLong)setting;
+
+                                                    if (set2.Current?.SettingType == SettingType.MartingaleLong)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true);
+                                                    else if (set2.Current?.SettingType == SettingType.Grid)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true);
+                                                }
+                                                else
+                                                    (setting as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true);
+                                            }
                                         }
 
                                         this.Settings.Remove(setting);
                                         $"Removed setting".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
                                     }
                                 }
-
-                            //중지 요청이고 세팅이 모두 제거 되었다면 while 빠져나가기
-                            if (this.IsStopped && this.Settings.Count == 0)
-                                break;
                         }
 
                         if (this.AddSettingQueue.Count > 0)
@@ -364,13 +526,6 @@ namespace MetaFrm.Stock.Exchange
                                 {
                                     var setting = this.AddSettingQueue.Dequeue();
 
-                                    //세팅 추가 사전 작업
-                                    switch (setting.StopType)
-                                    {
-                                        case "":
-                                            break;
-                                    }
-
                                     setting.User = this;
                                     this.Settings.Add(setting);
                                     $"Added setting".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
@@ -378,6 +533,10 @@ namespace MetaFrm.Stock.Exchange
                                     if (setting.Market != null)
                                         addSettingsOrder.Add(new() { Market = setting.Market });
                                 }
+
+                        //중지 요청이고 세팅이 모두 제거 되었다면 while 빠져나가기
+                        if (this.IsStopped && this.Settings.Count == 0)
+                            break;
 
                         if (this.Api != null && this.Settings.Any())
                         {
@@ -600,6 +759,8 @@ namespace MetaFrm.Stock.Exchange
 
         internal void OrderExecution(Setting setting, Models.Order order)
         {
+            if (setting.User == null) return;
+
             StringBuilder stringBuilder = new();
             ServiceData data = new()
             {
@@ -646,7 +807,7 @@ namespace MetaFrm.Stock.Exchange
                 response = this.ServiceRequest(data);
 
                 if (response.Status != Status.OK)
-                    response.Message?.WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, order.Market);
+                    response.Message?.WriteMessage(setting.User.ExchangeID, setting.User.UserID, setting.SettingID, order.Market);
             });
         }
 

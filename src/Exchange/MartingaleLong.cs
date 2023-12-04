@@ -11,7 +11,7 @@ namespace MetaFrm.Stock.Exchange
         /// <summary>
         /// GapRate
         /// </summary>
-        public decimal GapRate { get; set; }
+        public decimal GapRate { get; set; } = 5M;
 
         /// <summary>
         /// FirstFix
@@ -22,7 +22,7 @@ namespace MetaFrm.Stock.Exchange
         /// SettingMartingaleLongTrading
         /// </summary>
         /// <param name="user"></param>
-        public MartingaleLong(User user) : base(user)
+        public MartingaleLong(User? user) : base(user)
         {
             this.SettingType = SettingType.MartingaleLong;
         }
@@ -36,9 +36,10 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="allOrder"></param>
         public new void Run(Models.Order? allOrder)
         {
+            if (this.User == null) return;
+
             try
             {
-                if (this.User == null) return;
                 if (this.User.Api == null) return;
                 if (this.Market == null) return;
                 if (this.Invest < this.User.ExchangeID switch
@@ -55,7 +56,7 @@ namespace MetaFrm.Stock.Exchange
                 //    $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingMartingaleLongTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
 
 
-                this.WorkDataList ??= this.ReadWorkDataList();
+                this.WorkDataList ??= this.ReadWorkDataList(this.User);
 
                 this.CurrentInfo = this.GetCurrentInfo();
                 if (this.CurrentInfo == null)
@@ -197,7 +198,7 @@ namespace MetaFrm.Stock.Exchange
                         decimal ASK = (item.AskOrder.Volume * item.AskOrder.Price) - item.AskOrder.PaidFee;
                         decimal BID = (item.AskOrder.Volume * item.BidAvgPrice) + item.BidTotalFee + item.BidOrder.PaidFee;
 
-                        this.Profit(this.SettingID, this.User.UserID
+                        this.Profit(this.User, this.SettingID, this.User.UserID
                             , item.BidAvgPrice, item.AskOrder.Volume, item.BidTotalFee + item.BidOrder.PaidFee
                             , item.AskOrder.Price, item.AskOrder.Volume, item.AskOrder.PaidFee
                             , ASK - BID
@@ -227,7 +228,7 @@ namespace MetaFrm.Stock.Exchange
                             }
                         }
 
-                        this.Organized(this.SettingID, true, false, false, this.IsProfitStop);
+                        this.Organized(this.SettingID, true, true, false, false, false, this.IsProfitStop);
 
                         //자동전환 일때 원상 복구
                         //if (setting.IsOutChange && setting.OutPrice != 0 && setting.OutQty != 0 && setting.LastTradePrice < (setting.OutPrice * 0.99M))
@@ -268,7 +269,7 @@ namespace MetaFrm.Stock.Exchange
                 //종료호가 터치 중지
                 if (this.CurrentInfo.TradePrice > this.TopPrice && this.TopStop)
                 {
-                    this.Organized(this.SettingID, true, false, false, true);
+                    this.Organized(this.SettingID, true, false, false, false, false, true);
                     this.WorkDataList = null;
                     return;
                 }
@@ -407,7 +408,7 @@ namespace MetaFrm.Stock.Exchange
 
                             if (order1 != null && order1.Error == null)//매도 주문 정상이면 포지션 종료
                             {
-                                this.Organized(this.SettingID, true, false, false, this.IsProfitStop);
+                                this.Organized(this.SettingID, true, true, false, false, false, this.IsProfitStop);
                                 this.WorkDataList = null;
                                 return;
                             }
@@ -438,7 +439,7 @@ namespace MetaFrm.Stock.Exchange
 
                             if (order1 != null && order1.Error == null)//매도 주문 정상이면 포지션 종료
                             {
-                                this.Organized(this.SettingID, true, false, false, this.IsProfitStop);
+                                this.Organized(this.SettingID, true, true, false, false, false, this.IsProfitStop);
                                 this.WorkDataList = null;
                                 return;
                             }
@@ -497,7 +498,7 @@ namespace MetaFrm.Stock.Exchange
                             workDataList = this.WorkDataList.Where(x => x.BidOrder != null && x.BidOrder.UUID != null && x.BidOrder.UUID != "" && x.BidOrder.Volume != x.BidOrder.RemainingVolume);
                             if (!workDataList.Any())
                             {
-                                this.Organized(this.SettingID, true, false, false, false);
+                                this.Organized(this.SettingID, true, true, false, false, false, false);
                                 this.WorkDataList = null;
                                 return;
                             }
@@ -554,7 +555,7 @@ namespace MetaFrm.Stock.Exchange
             }
             finally
             {
-                this.UpdateMessage(this.SettingID, this.Message ??"");
+                this.UpdateMessage(this.User, this.SettingID, this.Message ??"");
             }
         }
 
@@ -603,7 +604,7 @@ namespace MetaFrm.Stock.Exchange
                     return null;
                 else
                 {
-                    $"SettingMartingaleLongTrading".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    $"SettingMartingaleLong".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
                     foreach (var workData in workDatas)
                     {
                         if (workData == null) continue;
