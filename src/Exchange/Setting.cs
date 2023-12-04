@@ -500,9 +500,7 @@ namespace MetaFrm.Stock.Exchange
 
             stringBuilder.Clear();
             stringBuilder.Append($"{before.Market}");
-            stringBuilder.AppendLine($" {(before.SettingType == SettingType.Grid ? "그리드" : (before.SettingType == SettingType.MartingaleLong ? "마틴게일 롱" : "마틴게일 숏"))
-                } -> {
-                (after.SettingType == SettingType.Grid ? "그리드" : (after.SettingType == SettingType.MartingaleLong ? "마틴게일 롱" : "마틴게일 숏"))}");
+            stringBuilder.AppendLine($" {(before.SettingType == SettingType.Grid ? "그리드" : (before.SettingType == SettingType.MartingaleLong ? "마틴게일 롱" : "마틴게일 숏"))} -> {(after.SettingType == SettingType.Grid ? "그리드" : (after.SettingType == SettingType.MartingaleLong ? "마틴게일 롱" : "마틴게일 숏"))}");
 
             if (this.LossStack.Count > 0)
             {
