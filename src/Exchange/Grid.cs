@@ -543,26 +543,26 @@ namespace MetaFrm.Stock.Exchange
                 Token = this.User.AuthState.Token(),
             };
             data["1"].CommandText = "[dbo].[USP_WORK_DATA_GRID_TRADING]";
-            data["1"].AddParameter("EXCHANGE_ID", Database.DbType.Decimal, 18, this.User.ExchangeID);
-            data["1"].AddParameter("INVEST", Database.DbType.Decimal, 18, this.Invest);
+            data["1"].AddParameter("EXCHANGE_ID", Database.DbType.Int, 3, this.User.ExchangeID);
+            data["1"].AddParameter("INVEST", Database.DbType.Decimal, 25, this.Invest);
 
             if (BASE_INVEST == null)
-                data["1"].AddParameter("BASE_INVEST", Database.DbType.Decimal, 18, null);
+                data["1"].AddParameter("BASE_INVEST", Database.DbType.Decimal, 25, null);
             else
-                data["1"].AddParameter("BASE_INVEST", Database.DbType.Decimal, 18, BASE_INVEST);
+                data["1"].AddParameter("BASE_INVEST", Database.DbType.Decimal, 25, BASE_INVEST);
 
             if (BASE_PRICE == null)
-                data["1"].AddParameter("BASE_PRICE", Database.DbType.Decimal, 18, this.BasePrice);
+                data["1"].AddParameter("BASE_PRICE", Database.DbType.Decimal, 25, this.BasePrice);
             else
-                data["1"].AddParameter("BASE_PRICE", Database.DbType.Decimal, 18, BASE_PRICE);
+                data["1"].AddParameter("BASE_PRICE", Database.DbType.Decimal, 25, BASE_PRICE);
 
             if (TOP_PRICE == null)
-                data["1"].AddParameter("TOP_PRICE", Database.DbType.Decimal, 18, this.TopPrice);
+                data["1"].AddParameter("TOP_PRICE", Database.DbType.Decimal, 25, this.TopPrice);
             else
-                data["1"].AddParameter("TOP_PRICE", Database.DbType.Decimal, 18, TOP_PRICE);
+                data["1"].AddParameter("TOP_PRICE", Database.DbType.Decimal, 25, TOP_PRICE);
 
-            data["1"].AddParameter("RATE", Database.DbType.Decimal, 18, this.Rate);
-            data["1"].AddParameter("FEES", Database.DbType.Decimal, 18, this.Fees);
+            data["1"].AddParameter("RATE", Database.DbType.Decimal, 25, this.Rate);
+            data["1"].AddParameter("FEES", Database.DbType.Decimal, 25, this.Fees);
             data["1"].AddParameter("MARKET_ID", Database.DbType.NVarChar, 20, this.Market);
 
             response = this.ServiceRequest(data);
@@ -613,8 +613,8 @@ namespace MetaFrm.Stock.Exchange
             };
             data["1"].CommandText = "Batch.[dbo].[USP_WORK_DATA_GRID_TRADING_UPD]";
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
-            data["1"].AddParameter(nameof(BID_PRICE_MIN), Database.DbType.Decimal, 18, BID_PRICE_MIN);
-            data["1"].AddParameter(nameof(BID_PRICE_MAX), Database.DbType.Decimal, 18, BID_PRICE_MAX);
+            data["1"].AddParameter(nameof(BID_PRICE_MIN), Database.DbType.Decimal, 25, BID_PRICE_MIN);
+            data["1"].AddParameter(nameof(BID_PRICE_MAX), Database.DbType.Decimal, 25, BID_PRICE_MAX);
 
             Task.Run(() =>
             {

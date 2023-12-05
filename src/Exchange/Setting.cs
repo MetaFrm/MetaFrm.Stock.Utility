@@ -424,13 +424,13 @@ namespace MetaFrm.Stock.Exchange
             };
             data["1"].CommandText = "Batch.[dbo].[USP_TRADING_PROFIT_UPD]";
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
-            data["1"].AddParameter(nameof(BID_PRICE), Database.DbType.Decimal, 18, BID_PRICE);
-            data["1"].AddParameter(nameof(BID_QTY), Database.DbType.Decimal, 18, BID_QTY);
-            data["1"].AddParameter(nameof(BID_FEE), Database.DbType.Decimal, 18, BID_FEE);
-            data["1"].AddParameter(nameof(ASK_PRICE), Database.DbType.Decimal, 18, ASK_PRICE);
-            data["1"].AddParameter(nameof(ASK_QTY), Database.DbType.Decimal, 18, ASK_QTY);
-            data["1"].AddParameter(nameof(ASK_FEE), Database.DbType.Decimal, 18, ASK_FEE);
-            data["1"].AddParameter(nameof(PROFIT), Database.DbType.Decimal, 18, PROFIT);
+            data["1"].AddParameter(nameof(BID_PRICE), Database.DbType.Decimal, 25, BID_PRICE);
+            data["1"].AddParameter(nameof(BID_QTY), Database.DbType.Decimal, 25, BID_QTY);
+            data["1"].AddParameter(nameof(BID_FEE), Database.DbType.Decimal, 25, BID_FEE);
+            data["1"].AddParameter(nameof(ASK_PRICE), Database.DbType.Decimal, 25, ASK_PRICE);
+            data["1"].AddParameter(nameof(ASK_QTY), Database.DbType.Decimal, 25, ASK_QTY);
+            data["1"].AddParameter(nameof(ASK_FEE), Database.DbType.Decimal, 25, ASK_FEE);
+            data["1"].AddParameter(nameof(PROFIT), Database.DbType.Decimal, 25, PROFIT);
             data["1"].AddParameter(nameof(USER_ID), Database.DbType.Int, 3, USER_ID);
 
             stringBuilder.Append($"{user.ExchangeName()} 수익 발생");

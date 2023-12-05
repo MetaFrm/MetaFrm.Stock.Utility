@@ -677,20 +677,6 @@ namespace MetaFrm.Stock.Exchange
                     this.IsRun = false;
                 }
         }
-        //private void Run(IEnumerable<Models.Order>? orders, Models.Order? allOrder)
-        //{
-        //    if (this.Api != null)
-        //        lock (this.Settings)
-        //            Task.WhenAll(this.Settings.Select(setting => Task.Run(() =>
-        //            {
-        //                if (setting.Market != null && setting is ISettingAction action && (orders == null || orders.Any(x => x.Market == setting.Market)))
-        //                {
-        //                    action.Run(allOrder);
-        //                    //Stock.Models.Order order = this.Api.AllOrder(settingGridTrading.Market, "");
-        //                    //Console.WriteLine($"{DateTime.Now:MM-dd HH:mm:ss} ExchangeID:{this.Api.ExchangeID}, UserID:{this.UserID}, SettingID:{setting.SettingID} Market:{settingGridTrading.Market} OCNT:{order.OrderList?.Count} - {settingGridTrading.GetType()}");
-        //                }
-        //            })));
-        //}
 
         private void Exchange_Action(ICore sender, MetaFrmEventArgs e)
         {
@@ -773,8 +759,8 @@ namespace MetaFrm.Stock.Exchange
             data["1"].AddParameter("MARKET_ID", Database.DbType.NVarChar, 20, order.Market);
             data["1"].AddParameter("SIDE", Database.DbType.NVarChar, 20, order.Side);
             data["1"].AddParameter("ORDER_TYPE", Database.DbType.NVarChar, 20, order.OrdType);
-            data["1"].AddParameter("PRICE", Database.DbType.Decimal, 18, order.Price);
-            data["1"].AddParameter("EXECUTE_QTY", Database.DbType.Decimal, 18, order.ExecutedVolume);
+            data["1"].AddParameter("PRICE", Database.DbType.Decimal, 25, order.Price);
+            data["1"].AddParameter("EXECUTE_QTY", Database.DbType.Decimal, 25, order.ExecutedVolume);
             data["1"].AddParameter(nameof(order.UUID), Database.DbType.NVarChar, 100, order.UUID);
             data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, setting.User.UserID);
 

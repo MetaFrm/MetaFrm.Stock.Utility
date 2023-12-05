@@ -574,14 +574,14 @@ namespace MetaFrm.Stock.Exchange
                 Token = this.User.AuthState.Token(),
             };
             data["1"].CommandText = "[dbo].[USP_WORK_DATA_MARTINGALE_L_TRADING]";
-            data["1"].AddParameter("EXCHANGE_ID", Database.DbType.Decimal, 18, this.User.ExchangeID);
-            data["1"].AddParameter("BASE_PRICE", Database.DbType.Decimal, 18, this.FirstFix ? this.BasePrice : TRADE_PRICE);
-            data["1"].AddParameter("GAP_RATE", Database.DbType.Decimal, 18, this.GapRate);
-            data["1"].AddParameter("RATE", Database.DbType.Decimal, 18, this.Rate);
-            data["1"].AddParameter("FEES", Database.DbType.Decimal, 18, this.Fees);
-            data["1"].AddParameter("LIST_MIN", Database.DbType.Int, 18, this.ListMin);
+            data["1"].AddParameter("EXCHANGE_ID", Database.DbType.Int, 3, this.User.ExchangeID);
+            data["1"].AddParameter("BASE_PRICE", Database.DbType.Decimal, 25, this.FirstFix ? this.BasePrice : TRADE_PRICE);
+            data["1"].AddParameter("GAP_RATE", Database.DbType.Decimal, 25, this.GapRate);
+            data["1"].AddParameter("RATE", Database.DbType.Decimal, 25, this.Rate);
+            data["1"].AddParameter("FEES", Database.DbType.Decimal, 25, this.Fees);
+            data["1"].AddParameter("LIST_MIN", Database.DbType.Int, 3, this.ListMin);
             data["1"].AddParameter("MARKET_ID", Database.DbType.NVarChar, 20, this.Market);
-            data["1"].AddParameter("INVEST", Database.DbType.Decimal, 18, this.Invest);
+            data["1"].AddParameter("INVEST", Database.DbType.Decimal, 25, this.Invest);
 
             response = this.ServiceRequest(data);
 

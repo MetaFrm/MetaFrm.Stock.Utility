@@ -210,7 +210,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = this.AuthState.Token(),
             };
-            data["1"].CommandText = "[dbo].[USP_SETTING_SEARCH]";
+            data["1"].CommandText = "[dbo].[USP_TRADING_SEARCH]";
             data["1"].AddParameter("EXCHANGE_ID", Database.DbType.Int, 3, this.ExchangeID);
             data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.AuthState.UserID());
 

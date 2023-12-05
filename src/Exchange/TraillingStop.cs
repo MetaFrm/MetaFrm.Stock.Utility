@@ -20,6 +20,24 @@ namespace MetaFrm.Stock.Exchange
         public decimal ReturnRate { get; set; }
 
         /// <summary>
+        /// ReturnRateString
+        /// </summary>
+        public string ReturnRateString
+        {
+            get
+            {
+               return $"{this.ReturnRate}";
+            }
+            set
+            {
+                if (value.ToTryDecimal(out decimal result))
+                {
+                    this.ReturnRate = result;
+                }
+            }
+        }
+
+        /// <summary>
         /// 사용자 매수
         /// </summary>
         public bool IsUserBid { get; set; } = false;
@@ -251,15 +269,15 @@ namespace MetaFrm.Stock.Exchange
                 Token = this.User.AuthState.Token(),
             };
             data["1"].CommandText = "[dbo].[USP_WORK_DATA_TRAILLING_STOP_TRADING]";
-            data["1"].AddParameter("EXCHANGE_ID", Database.DbType.Decimal, 18, this.User.ExchangeID);
-            data["1"].AddParameter("BASE_PRICE", Database.DbType.Decimal, 18, TRADE_PRICE);
-            data["1"].AddParameter("GAP_RATE", Database.DbType.Decimal, 18, this.GapRate);
-            data["1"].AddParameter("RATE", Database.DbType.Decimal, 18, this.Rate);
-            data["1"].AddParameter("RETURN_RATE", Database.DbType.Decimal, 18, this.ReturnRate);
-            data["1"].AddParameter("FEES", Database.DbType.Decimal, 18, this.Fees);
-            data["1"].AddParameter("LIST_MIN", Database.DbType.Int, 18, this.ListMin);
+            data["1"].AddParameter("EXCHANGE_ID", Database.DbType.Int, 3, this.User.ExchangeID);
+            data["1"].AddParameter("BASE_PRICE", Database.DbType.Decimal, 25, TRADE_PRICE);
+            data["1"].AddParameter("GAP_RATE", Database.DbType.Decimal, 25, this.GapRate);
+            data["1"].AddParameter("RATE", Database.DbType.Decimal, 25, this.Rate);
+            data["1"].AddParameter("RETURN_RATE", Database.DbType.Decimal, 25, this.ReturnRate);
+            data["1"].AddParameter("FEES", Database.DbType.Decimal, 25, this.Fees);
+            data["1"].AddParameter("LIST_MIN", Database.DbType.Int, 3, this.ListMin);
             data["1"].AddParameter("MARKET_ID", Database.DbType.NVarChar, 20, this.Market);
-            data["1"].AddParameter("INVEST", Database.DbType.Decimal, 18, this.Invest);
+            data["1"].AddParameter("INVEST", Database.DbType.Decimal, 25, this.Invest);
 
             response = this.ServiceRequest(data);
 
@@ -312,9 +330,9 @@ namespace MetaFrm.Stock.Exchange
             };
             data["1"].CommandText = "Batch.[dbo].[USP_WORK_DATA_TRAILLING_STOP_TRADING_UPD]";
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
-            data["1"].AddParameter(nameof(BID_PRICE_AVG), Database.DbType.Decimal, 18, BID_PRICE_AVG);
-            data["1"].AddParameter(nameof(TARGET_PRICE), Database.DbType.Decimal, 18, TARGET_PRICE);
-            data["1"].AddParameter(nameof(RETURN_PRICE), Database.DbType.Decimal, 18, RETURN_PRICE);
+            data["1"].AddParameter(nameof(BID_PRICE_AVG), Database.DbType.Decimal, 25, BID_PRICE_AVG);
+            data["1"].AddParameter(nameof(TARGET_PRICE), Database.DbType.Decimal, 25, TARGET_PRICE);
+            data["1"].AddParameter(nameof(RETURN_PRICE), Database.DbType.Decimal, 25, RETURN_PRICE);
             data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, user.UserID);
 
             stringBuilder.Append($"{user.ExchangeName()} 트레일링 스탑 타겟 알림");
