@@ -123,10 +123,12 @@ namespace MetaFrm.Stock.Exchange
                 return false;
             }
 
-            if (setting.Invest < 10000 && setting.SettingType != SettingType.MartingaleShort)
+            var investMin = ExchangeID switch { 1 => 10000, 2 => 2000, _ => 10000 };
+
+            if (setting.Invest < investMin && setting.SettingType != SettingType.MartingaleShort)
             {
-                message = "'투자금액'(10,000이상)을 입력하세요.";
-                $"'투자금액'(10,000이상)을 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                message = $"'투자금액'({investMin:N}이상)을 입력하세요.";
+                $"'투자금액'({investMin:N}이상)을 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                 return false;
             }
 
@@ -418,6 +420,7 @@ namespace MetaFrm.Stock.Exchange
                 //await Task.Delay(30000);
 
                 int cnt = 0;
+                int cntPoint = 0;
                 int mod = 0;
                 while (true)
                 {
@@ -634,6 +637,12 @@ namespace MetaFrm.Stock.Exchange
                             }
 
                             this.Orders = order;
+
+                            if (cntPoint >= 720000)
+                            {
+                                cntPoint = 0;
+                                this.PointCheck();
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -645,6 +654,7 @@ namespace MetaFrm.Stock.Exchange
                         await Task.Delay(this.StartRunDelay);
 
                         cnt += this.StartRunDelay;
+                        cntPoint += this.StartRunDelay;
                         mod = (mod == 0 ? 1 : 0);
                     }
                 }
@@ -682,8 +692,7 @@ namespace MetaFrm.Stock.Exchange
         {
             if (e.Action == "OrderExecution" && e.Value != null && e.Value is Models.Order order)
             {
-                $"OrderExecution {order.Side} {order.Price} {order.ExecutedVolume} {order.UUID}".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Cyan);
-                //this.Run(new List<Models.Order>() { { new() { UUID = order.UUID, Side = order.Side, OrdType = order.OrdType, Price = order.Price, State = order.State, Market = order.Market, Volume = order.Volume } } });
+                //$"OrderExecution {order.Side} {order.Price} {order.ExecutedVolume} {order.UUID}".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Cyan);
 
                 lock (this.Settings)
                     if (this.Api != null && this.Settings.Any(x => x.Market == order.Market) && !this.RemoveSettingQueue.Any(x => x.Market == order.Market))
@@ -722,7 +731,7 @@ namespace MetaFrm.Stock.Exchange
                             }
                             else
                             {
-                                $"if (aa != null)".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Red);
+                                //$"if (aa != null)".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Red);
                             }
                         }
                         catch (Exception ex)
@@ -736,7 +745,7 @@ namespace MetaFrm.Stock.Exchange
                     }
                     else
                     {
-                        $"if (this.Api != null && this.Settings.Any(x => x.Market == order.Market) && !this.RemoveSettingQueue.Any(x => x.Market == order.Market))".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Red);
+                        //$"if (this.Api != null && this.Settings.Any(x => x.Market == order.Market) && !this.RemoveSettingQueue.Any(x => x.Market == order.Market))".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Red);
                     }
             }
 
@@ -795,6 +804,37 @@ namespace MetaFrm.Stock.Exchange
                 if (response.Status != Status.OK)
                     response.Message?.WriteMessage(setting.User.ExchangeID, setting.User.UserID, setting.SettingID, order.Market);
             });
+        }
+
+        internal void PointCheck()
+        {
+            ServiceData data = new()
+            {
+                TransactionScope = false,
+                Token = this.AuthState.Token(),
+            };
+            data["1"].CommandText = "[dbo].[USP_TRADING_POINT_CHECK]";
+            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.UserID);
+
+            Response response;
+
+            response = this.ServiceRequest(data);
+
+            if (response.Status != Status.OK)
+                response.Message?.WriteMessage();
+            else
+            {
+                if (response.DataSet != null && response.DataSet.DataTables.Count > 0 && response.DataSet.DataTables[0].DataRows.Count >= 1)
+                    if (response.DataSet.DataTables[0].DataRows[0].String("IS_STOP") == "Y")
+                    {
+                        lock (this.Settings)
+                            foreach (var item in this.Settings)
+                            {
+                                item.BidCancel = true;
+                                this.RemoveSetting(item);
+                            }
+                    }
+            }
         }
 
         /// <summary>

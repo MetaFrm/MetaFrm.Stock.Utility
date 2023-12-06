@@ -29,12 +29,14 @@ namespace MetaFrm.Stock.Exchange
         /// </summary>
         /// <param name="authState"></param>
         /// <param name="exchangeID"></param>
-        public Exchanger(Task<AuthenticationState> authState, int exchangeID)
+        /// <param name="isLoadDB"></param>
+        public Exchanger(Task<AuthenticationState> authState, int exchangeID, bool isLoadDB)
         { 
             this.AuthState = authState;
             this.ExchangeID = exchangeID;
 
-            this.GetSetting();
+            if (isLoadDB)
+                this.GetSetting();
         }
 
         /// <summary>
@@ -282,7 +284,7 @@ namespace MetaFrm.Stock.Exchange
                                         Fees = (decimal)FEES,
                                         TopStop = TOP_STOP,
                                         IsProfitStop = IS_PROFIT_STOP,
-                                        Message = MESSAGE,
+                                        //Message = MESSAGE,
 
                                         SmartType = SMART_TYPE.EnumParse<SmartType>(),
                                         IsBuying = IS_BUYING,
@@ -310,7 +312,7 @@ namespace MetaFrm.Stock.Exchange
                                         Fees = (decimal)FEES,
                                         //TopStop = TOP_STOP,
                                         //IsProfitStop = IS_PROFIT_STOP,
-                                        Message = MESSAGE,
+                                        //Message = MESSAGE,
 
                                         ReturnRate = (decimal)RETURN_RATE1,
                                         GapRate = (decimal)GAP_RATE1,
@@ -337,7 +339,7 @@ namespace MetaFrm.Stock.Exchange
                                         Fees = (decimal)FEES,
                                         TopStop = TOP_STOP,
                                         IsProfitStop = IS_PROFIT_STOP,
-                                        Message = MESSAGE,
+                                        //Message = MESSAGE,
 
                                         GapRate = (decimal)GAP_RATE2,
                                         FirstFix = FIRST_FIX2,
@@ -362,7 +364,7 @@ namespace MetaFrm.Stock.Exchange
                                         Fees = (decimal)FEES,
                                         TopStop = TOP_STOP,
                                         IsProfitStop = IS_PROFIT_STOP,
-                                        Message = MESSAGE,
+                                        //Message = MESSAGE,
 
                                         GapRate = (decimal)GAP_RATE3,
                                         FirstFix = FIRST_FIX3,

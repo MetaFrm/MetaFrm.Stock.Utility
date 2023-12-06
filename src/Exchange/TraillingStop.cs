@@ -301,14 +301,14 @@ namespace MetaFrm.Stock.Exchange
                     return null;
                 else
                 {
-                    $"SettingTraillingStop".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
-                    foreach (var workData in workDatas)
-                    {
-                        if (workData == null) continue;
+                    //$"SettingTraillingStop".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    //foreach (var workData in workDatas)
+                    //{
+                    //    if (workData == null) continue;
 
-                        $"B {workData.BidPrice,20:N8} {workData.BidQty,23:N8}\tA {workData.AskPrice,20:N8} {workData.AskQty,23:N8}".WriteMessage();
-                    }
-                    System.Console.WriteLine();
+                    //    $"B {workData.BidPrice,20:N8} {workData.BidQty,23:N8}\tA {workData.AskPrice,20:N8} {workData.AskQty,23:N8}".WriteMessage();
+                    //}
+                    //System.Console.WriteLine();
 
                     return workDatas;
                 }

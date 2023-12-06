@@ -93,6 +93,9 @@ namespace MetaFrm.Stock.Console
         /// <param name="consoleColor"></param>
         public static void WriteMessage(this string message, int? exchangeID = null, int? userID = null, int? settingID = null, string? market = null, ConsoleColor consoleColor = ConsoleColor.White)
         {
+            if (message.Contains("주문가능한"))
+                return;
+
             if (consoleColor != ConsoleColor.White)
                 System.Console.ForegroundColor = consoleColor;
 

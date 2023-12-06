@@ -85,6 +85,7 @@ namespace MetaFrm.Stock.Exchange
         public bool IsProfitStop { get; set; }
 
         private string? message;
+        private DateTime messageDateTime;
         /// <summary>
         /// Message
         /// </summary>
@@ -92,11 +93,12 @@ namespace MetaFrm.Stock.Exchange
         {
             get
             {
-                return message;
+                return $"{messageDateTime:dd HH:mm:ss} {this.message}";
             }
             set
             {
-                message = $"{DateTime.Now:dd HH:mm:ss} {value}";
+                this.message = value;
+                this.messageDateTime = DateTime.Now;
             }
         }
         /// <summary>
@@ -106,11 +108,11 @@ namespace MetaFrm.Stock.Exchange
         {
             get
             {
-                return message;
+                return this.message;
             }
             set
             {
-                message = value;
+                this.message = value;
             }
         }
 
