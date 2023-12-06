@@ -93,7 +93,7 @@ namespace MetaFrm.Stock.Console
         /// <param name="consoleColor"></param>
         public static void WriteMessage(this string message, int? exchangeID = null, int? userID = null, int? settingID = null, string? market = null, ConsoleColor consoleColor = ConsoleColor.White)
         {
-            if (message.Contains("주문가능한"))
+            if (message.Contains("주문가능한") || (Factory.DeviceInfo != null && Factory.DeviceInfo.Platform != Maui.Devices.DevicePlatform.Server))
                 return;
 
             if (consoleColor != ConsoleColor.White)
@@ -119,6 +119,9 @@ namespace MetaFrm.Stock.Console
         /// <param name="market"></param>
         public static void WriteMessage(this Exception exception, bool detailMessage = false, int? exchangeID = null, int? userID = null, int? settingID = null, string? market = null, [CallerMemberName] string? methodName = "")
         {
+            if ((Factory.DeviceInfo != null && Factory.DeviceInfo.Platform != Maui.Devices.DevicePlatform.Server))
+                return;
+
             if (lastString == "> ")
                 System.Console.Write("\r");
             System.Console.ForegroundColor = ConsoleColor.DarkRed;
