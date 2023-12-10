@@ -533,7 +533,8 @@ namespace MetaFrm.Stock.Exchange
                                     this.Settings.Add(setting);
                                     $"Added setting".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
 
-                                    setting.SettingInOut(setting.User, setting.SettingID, true);
+                                    if (Exchanger.IsUnLock)
+                                        setting.SettingInOut(setting.User, setting.SettingID, true);
 
                                     if (setting.Market != null)
                                         addSettingsOrder.Add(new() { Market = setting.Market });

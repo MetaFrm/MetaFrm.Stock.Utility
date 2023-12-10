@@ -235,7 +235,9 @@ namespace MetaFrm.Stock.Exchange
                                     , ASK - BID
                                     , this.Market);
 
-                                this.Organized(this.SettingID, true, false, false, false, false, true, true);
+                                this.BidCancel = true;
+                                this.User.RemoveSetting(this);
+                                //this.Organized(this.SettingID, true, false, false, false, false, true, true);
                                 this.WorkDataList = null;
                                 return;
                             }

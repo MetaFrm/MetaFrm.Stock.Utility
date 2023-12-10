@@ -19,10 +19,16 @@ namespace MetaFrm.Stock.Exchange
         /// ExchangeID
         /// </summary>
         public int ExchangeID { get; set; }
+
         /// <summary>
         /// Users
         /// </summary>
         public List<User> Users { get; set; } = new();
+
+        /// <summary>
+        /// IsUnLock
+        /// </summary>
+        public static bool IsUnLock { get; set; } = false;
 
         /// <summary>
         /// Exchange
