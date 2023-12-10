@@ -448,16 +448,16 @@ namespace MetaFrm.Stock.Exchange
                                             {
                                                 setting.SaveLossStack(this);
 
-                                                (((GridMartingaleShort)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true);
+                                                (((GridMartingaleShort)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true, false);
                                             }
                                             else if (setting.SettingType == SettingType.GridMartingaleLong)
                                             {
                                                 setting.SaveLossStack(this);
 
-                                                (((GridMartingaleLong)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true);
+                                                (((GridMartingaleLong)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true, false);
                                             }
                                             else
-                                                (setting as ISettingAction).Organized(setting.SettingID, false, false, false, false, true, true);
+                                                (setting as ISettingAction).Organized(setting.SettingID, false, false, false, false, true, true, false);
                                         }
                                         else
                                         {
@@ -465,55 +465,55 @@ namespace MetaFrm.Stock.Exchange
                                             if (setting.BidCancel || setting.AskCancel || setting.AskCurrentPrice || setting.BidCurrentPrice)
                                             {
                                                 if (setting.SettingType == SettingType.MartingaleShort)
-                                                    (setting as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
+                                                    (setting as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
 
                                                 else if (setting.SettingType == SettingType.GridMartingaleShort)
                                                 {
                                                     GridMartingaleShort set2 = (GridMartingaleShort)setting;
 
                                                     if (set2.Current?.SettingType == SettingType.MartingaleShort)
-                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
                                                     else if (set2.Current?.SettingType == SettingType.Grid)
-                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
                                                 }
                                                 else if (setting.SettingType == SettingType.GridMartingaleLong)
                                                 {
                                                     GridMartingaleLong set2 = (GridMartingaleLong)setting;
 
                                                     if (set2.Current?.SettingType == SettingType.MartingaleLong)
-                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
                                                     else if (set2.Current?.SettingType == SettingType.Grid)
-                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
                                                 }
                                                 else
-                                                    (setting as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true);
+                                                    (setting as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
                                             }
                                             else
                                             {
                                                 //서버 프로그램에서 개별 세팅 중지
                                                 if (setting.SettingType == SettingType.MartingaleShort)
-                                                    (setting as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true);
+                                                    (setting as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true, true);
 
                                                 else if (setting.SettingType == SettingType.GridMartingaleShort)
                                                 {
                                                     GridMartingaleShort set2 = (GridMartingaleShort)setting;
 
                                                     if (set2.Current?.SettingType == SettingType.MartingaleShort)
-                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true);
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true, true);
                                                     else if (set2.Current?.SettingType == SettingType.Grid)
-                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true);
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
                                                 }
                                                 else if (setting.SettingType == SettingType.GridMartingaleLong)
                                                 {
                                                     GridMartingaleLong set2 = (GridMartingaleLong)setting;
 
                                                     if (set2.Current?.SettingType == SettingType.MartingaleLong)
-                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true);
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
                                                     else if (set2.Current?.SettingType == SettingType.Grid)
-                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true);
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
                                                 }
                                                 else
-                                                    (setting as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true);
+                                                    (setting as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
                                             }
                                         }
 
@@ -532,6 +532,8 @@ namespace MetaFrm.Stock.Exchange
                                     setting.User = this;
                                     this.Settings.Add(setting);
                                     $"Added setting".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
+
+                                    setting.SettingInOut(setting.User, setting.SettingID, true);
 
                                     if (setting.Market != null)
                                         addSettingsOrder.Add(new() { Market = setting.Market });
@@ -554,7 +556,8 @@ namespace MetaFrm.Stock.Exchange
                                     $"{item.Market}".WriteMessage(this.ExchangeID, this.UserID);
                                 ;
                                 this.Run(addSettingsOrder, order);
-                                cnt = 0;
+                                //cnt = 0;
+                                cnt = 60000;
                             }
                             else if (cnt >= 60000)
                             {
@@ -638,7 +641,7 @@ namespace MetaFrm.Stock.Exchange
 
                             this.Orders = order;
 
-                            if (cntPoint >= 720000)
+                            if (cntPoint >= 2880000)
                             {
                                 cntPoint = 0;
                                 this.PointCheck();
@@ -773,7 +776,7 @@ namespace MetaFrm.Stock.Exchange
             data["1"].AddParameter(nameof(order.UUID), Database.DbType.NVarChar, 100, order.UUID);
             data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, setting.User.UserID);
 
-            stringBuilder.Append($"{this.ExchangeName()} {(order.Side == "bid" ? "매수" : "매도")} 체결");
+            stringBuilder.Append($"{this.ExchangeName()} {setting.SettingTypeString} {(order.Side == "bid" ? "매수" : "매도")} 체결");
             data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
             stringBuilder.Clear();

@@ -10,7 +10,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>MetaFrm.Stock.Utility.net7.0</PackageId>
     <Title>Meta Framework Stock Utility</Title>
-    <Version>7.0.1.16</Version>
+    <Version>7.0.1.17</Version>
     <Authors>dsun</Authors>
     <Company>Meta Framework</Company>
     <Product>Meta Framework Stock Utility</Product>
@@ -59,6 +59,7 @@
     <Compile Include="..\src\Exchange\Upbit\CoinAddress.cs" Link="Exchange\Upbit\CoinAddress.cs" />
     <Compile Include="..\src\Exchange\Upbit\Deposits.cs" Link="Exchange\Upbit\Deposits.cs" />
     <Compile Include="..\src\Exchange\Upbit\Error.cs" Link="Exchange\Upbit\Error.cs" />
+    <Compile Include="..\src\Exchange\Upbit\ErrorName.cs" Link="Exchange\Upbit\ErrorName.cs" />
     <Compile Include="..\src\Exchange\Upbit\ErrorRoot.cs" Link="Exchange\Upbit\ErrorRoot.cs" />
     <Compile Include="..\src\Exchange\Upbit\Market.cs" Link="Exchange\Upbit\Market.cs" />
     <Compile Include="..\src\Exchange\Upbit\Markets.cs" Link="Exchange\Upbit\Markets.cs" />

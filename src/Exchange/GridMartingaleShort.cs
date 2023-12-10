@@ -203,7 +203,7 @@ namespace MetaFrm.Stock.Exchange
                 if (bidWorkData.Any())
                     bidKrw = bidWorkData.Sum(x => (x.BidOrder?.Price * x.BidOrder?.RemainingVolume) + (x.BidOrder?.Price * x.BidOrder?.RemainingVolume * (grid.Fees / 100M))) ?? 0;
 
-                grid.Organized(grid.SettingID, true, true, false, false, false, false);
+                grid.Organized(grid.SettingID, true, true, false, false, false, false, false);
 
                 if (bidKrw > 0)
                     qty += this.MakeOrderBidPrice(grid.Market, bidKrw)?.ExecutedVolume ?? 0;
@@ -284,7 +284,7 @@ namespace MetaFrm.Stock.Exchange
                             this.MakeOrderAskMarket(MartingaleShort.Market, qty);
                     }
 
-                    MartingaleShort.Organized(MartingaleShort.SettingID, true, true, false, false, false, false);
+                    MartingaleShort.Organized(MartingaleShort.SettingID, true, true, false, false, false, false, false);
 
                     //매도 안된 수량만큼 시장가로 매도 한다
                     var askWorkData = MartingaleShort.WorkDataList.Where(x => x.AskOrder != null && x.AskOrder.State == "wait" && x.AskOrder.RemainingVolume > 0);
@@ -343,7 +343,7 @@ namespace MetaFrm.Stock.Exchange
                 }
             }
 
-            MartingaleShort.Organized(MartingaleShort.SettingID, true, true, false, false, false, false);
+            MartingaleShort.Organized(MartingaleShort.SettingID, true, true, false, false, false, false, false);
 
             //this.SettingGridTrading.Market = this.Market;
             //this.SettingGridTrading.SettingID = this.SettingID;

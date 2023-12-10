@@ -360,14 +360,14 @@ namespace MetaFrm.Stock.Exchange
                 //자동매매 종료 및 손실제한 처리
                 if (this.CurrentInfo.TradePrice < minPrice && this.StopLoss)
                 {
-                    this.Organized(this.SettingID, true, true, true, false, false, true);
+                    this.Organized(this.SettingID, true, true, true, false, false, true, true);
                     return;
                 }
 
                 //종료호가 터치 중지
                 if (this.CurrentInfo.TradePrice > this.TopPrice && this.TopStop)
                 {
-                    this.Organized(this.SettingID, true, false, false, false, false, true);
+                    this.Organized(this.SettingID, true, false, false, false, false, true, true);
                     return;
                 }
 

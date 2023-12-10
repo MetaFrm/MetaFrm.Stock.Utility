@@ -249,30 +249,7 @@ namespace MetaFrm.Stock.Exchange
                             }
                         }
 
-                        this.Organized(this.SettingID, true, true, false, false, false, this.IsProfitStop);
-
-                        //자동전환 일때 원상 복구
-                        //if (setting.IsOutChange && setting.OutPrice != 0 && setting.OutQty != 0 && setting.LastTradePrice > (setting.OutPrice * 1.01M))
-                        //{
-                        //    System.Threading.Thread.Sleep(60);
-                        //    lock (setting.User.LockSettingList)
-                        //        order1 = setting.Api.MakeOrder(setting.Market, OrderSide.ask, setting.OutQty, setting.OutPrice);
-
-                        //    if (order1.Error != null)
-                        //    {
-                        //        System.Console.WriteLine(order1.Error.message);
-                        //        //return;
-                        //    }
-                        //    else
-                        //    {
-                        //        response = this.UpdateOut(setting.SettingID, 0, 0, setting.SettingUserID);
-
-                        //        if (response.Status != Status.OK)
-                        //        {
-                        //            System.Console.WriteLine(response.Message);
-                        //        }
-                        //    }
-                        //}
+                        this.Organized(this.SettingID, true, true, false, false, false, this.IsProfitStop, this.IsProfitStop);
 
                         this.FirstFix = false;
                         this.WorkDataList = null;
@@ -290,7 +267,7 @@ namespace MetaFrm.Stock.Exchange
                 //종료호가 터치 중지
                 if (this.CurrentInfo.TradePrice > this.TopPrice && this.TopStop)
                 {
-                    this.Organized(this.SettingID, false, true, false, false, false, true);
+                    this.Organized(this.SettingID, false, true, false, false, false, true, true);
                     this.WorkDataList = null;
                     return;
                 }
@@ -429,7 +406,7 @@ namespace MetaFrm.Stock.Exchange
 
                             if (order1 != null && order1.Error == null)//매도 주문 정상이면 포지션 종료
                             {
-                                this.Organized(this.SettingID, false, true, false, false, false, this.IsProfitStop);
+                                this.Organized(this.SettingID, false, true, false, false, false, this.IsProfitStop, this.IsProfitStop);
                                 this.WorkDataList = null;
                                 return;
                             }
@@ -460,7 +437,7 @@ namespace MetaFrm.Stock.Exchange
 
                             if (order1 != null && order1.Error == null)//매도 주문 정상이면 포지션 종료
                             {
-                                this.Organized(this.SettingID, false, true, false, false, false, this.IsProfitStop);
+                                this.Organized(this.SettingID, false, true, false, false, false, this.IsProfitStop, this.IsProfitStop);
                                 this.WorkDataList = null;
                                 return;
                             }
@@ -519,7 +496,7 @@ namespace MetaFrm.Stock.Exchange
                             workDataList = this.WorkDataList.Where(x => x.AskOrder != null && x.AskOrder.UUID != null && x.AskOrder.UUID != "" && x.AskOrder.Volume != x.AskOrder.RemainingVolume);
                             if (!workDataList.Any())
                             {
-                                this.Organized(this.SettingID, false, true, false, false, false, false);
+                                this.Organized(this.SettingID, false, true, false, false, false, false, false);
                                 this.WorkDataList = null;
                                 return;
                             }

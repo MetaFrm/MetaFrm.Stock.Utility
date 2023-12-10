@@ -209,7 +209,7 @@ namespace MetaFrm.Stock.Exchange
                         {
                             this.IsTarget = true;
                             item.TargetAskPrice = this.CurrentInfo.TradePrice;
-                            this.ReturnPrice = item.TargetAskPrice * (1 - (this.ReturnRate / 100M));
+                            this.ReturnPrice = item.TargetAskPrice * (1 + (this.ReturnRate / 100M));
 
                             this.Update(this.User, this.SettingID, item.BidAvgPrice, item.TargetAskPrice, this.ReturnPrice);
                         }
@@ -235,7 +235,7 @@ namespace MetaFrm.Stock.Exchange
                                     , ASK - BID
                                     , this.Market);
 
-                                this.Organized(this.SettingID, true, false, false, false, false, true);
+                                this.Organized(this.SettingID, true, false, false, false, false, true, true);
                                 this.WorkDataList = null;
                                 return;
                             }
@@ -345,7 +345,7 @@ namespace MetaFrm.Stock.Exchange
 
             if (TARGET_PRICE >= 100)
                 stringBuilder.Append($"타겟: {TARGET_PRICE:N0} {tmps?[0]}");
-            else if (BID_PRICE_AVG >= 1)
+            else if (TARGET_PRICE >= 1)
                 stringBuilder.Append($"타겟: {TARGET_PRICE:N2} {tmps?[0]}");
             else
                 stringBuilder.Append($"타겟: {TARGET_PRICE:N4} {tmps?[0]}");

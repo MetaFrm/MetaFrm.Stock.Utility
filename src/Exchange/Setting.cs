@@ -33,7 +33,33 @@ namespace MetaFrm.Stock.Exchange
         {
             get
             {
-                return $"{this.SettingType}{(this.Current != null ? $"-{this.Current.SettingType}" : "")}";
+                string tmp1;
+                string tmp2 = "";
+
+                tmp1 = this.SettingType switch
+                {
+                    SettingType.Grid => "그리드",
+                    SettingType.TraillingStop => "트레일링 스탑",
+                    SettingType.MartingaleLong => "마틴게일 롱",
+                    SettingType.MartingaleShort => "마틴게일 숏",
+                    SettingType.GridMartingaleLong => "그리드 + 마틴게일 롱",
+                    SettingType.GridMartingaleShort => "그리드 + 마틴게일 숏",
+                    _ => $"{this.SettingType}"
+                };
+
+                if (this.Current != null)
+                    tmp2 = this.Current.SettingType switch
+                    {
+                        SettingType.Grid => "그리드",
+                        SettingType.TraillingStop => "트레일링 스탑",
+                        SettingType.MartingaleLong => "마틴게일 롱",
+                        SettingType.MartingaleShort => "마틴게일 숏",
+                        SettingType.GridMartingaleLong => "그리드 + 마틴게일 롱",
+                        SettingType.GridMartingaleShort => "그리드 + 마틴게일 숏",
+                        _ => $"{this.SettingType}"
+                    };
+
+                return $"{tmp1}{(this.Current != null ? $"-{tmp2}" : "")}";
             }
         }
 
@@ -83,6 +109,11 @@ namespace MetaFrm.Stock.Exchange
         /// 익절 중지
         /// </summary>
         public bool IsProfitStop { get; set; }
+
+        /// <summary>
+        /// AccProfit
+        /// </summary>
+        public decimal AccProfit { get; set; }
 
         private string? message;
         private DateTime messageDateTime;
@@ -191,9 +222,10 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="ASK_CANCEL"></param>
         /// <param name="ASK_CURRENT_PRICE"></param>
         /// <param name="BID_CURRENT_PRICE"></param>
-        /// <param name="SAVE_WORKDATA"></param>
-        /// <param name="REMOVE_SETTING"></param>
-        public void Organized(int SETTING_ID, bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool BID_CURRENT_PRICE, bool SAVE_WORKDATA, bool REMOVE_SETTING)
+        /// <param name="SAVE_WORKDATA">서버 프로그램 중지 할떄</param>
+        /// <param name="REMOVE_SETTING">서버에서 세팅을 제거 할때</param>
+        /// <param name="IS_PROFIT_STOP">수익/StopLoss/TopStop 발생 해서 중지 할때</param>
+        public void Organized(int SETTING_ID, bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool BID_CURRENT_PRICE, bool SAVE_WORKDATA, bool REMOVE_SETTING, bool IS_PROFIT_STOP)
         {
             this.CurrentInfo ??= this.GetCurrentInfo();
 
@@ -206,7 +238,7 @@ namespace MetaFrm.Stock.Exchange
             this.OrganizedRun(BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, BID_CURRENT_PRICE, this.CurrentInfo);
 
             if (REMOVE_SETTING)
-                this.Clear(this.User, SETTING_ID, BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, BID_CURRENT_PRICE, REMOVE_SETTING);
+                this.Clear(this.User, SETTING_ID, BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, BID_CURRENT_PRICE, SAVE_WORKDATA, REMOVE_SETTING, IS_PROFIT_STOP);
 
             if (this.ParentSetting != null)
             {
@@ -386,9 +418,26 @@ namespace MetaFrm.Stock.Exchange
 
 
         private string LastMessage = "";
+        private string LastMessageTmp = "";
         internal void UpdateMessage(User user, int SETTING_ID, string MESSAGE)
         {
-            if (this.LastMessage.Equals(MESSAGE)) return;
+            //09 21:24:00 주문가능한 금액(KRW)이 부족합니다.
+            //1234567890123
+
+            if (MESSAGE.Length > 12)
+            {
+                string tmp = MESSAGE;
+
+                //System.Console.WriteLine(tmp);
+                tmp = $"{tmp[..7]} {tmp[12..]}";
+                //System.Console.WriteLine(tmp);
+
+                if (this.LastMessageTmp.Equals(tmp)) return;
+
+                this.LastMessageTmp = tmp;
+            }
+            else
+                if (this.LastMessage.Equals(MESSAGE)) return;
 
             this.LastMessage = MESSAGE;
 
@@ -417,6 +466,8 @@ namespace MetaFrm.Stock.Exchange
             if (this.LossStack.Count > 0)
                 this.LossStack.Peek().AccProfit += PROFIT;
 
+            this.AccProfit += PROFIT;
+
             StringBuilder stringBuilder = new();
             ServiceData data = new()
             {
@@ -435,7 +486,7 @@ namespace MetaFrm.Stock.Exchange
             data["1"].AddParameter(nameof(PROFIT), Database.DbType.Decimal, 25, PROFIT);
             data["1"].AddParameter(nameof(USER_ID), Database.DbType.Int, 3, USER_ID);
 
-            stringBuilder.Append($"{user.ExchangeName()} 수익 발생");
+            stringBuilder.Append($"{user.ExchangeName()} {this.SettingTypeString} 수익 발생");
             data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
             stringBuilder.Clear();
@@ -529,7 +580,20 @@ namespace MetaFrm.Stock.Exchange
                     response.Message?.WriteMessage(user.ExchangeID, user.UserID, this.SettingID, this.Market);
             });
         }
-        internal void Clear(User user, int SETTING_ID, bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool BID_CURRENT_PRICE, bool IS_PROFIT_STOP)
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="SETTING_ID"></param>
+        /// <param name="BID_CANCEL"></param>
+        /// <param name="ASK_CANCEL"></param>
+        /// <param name="ASK_CURRENT_PRICE"></param>
+        /// <param name="BID_CURRENT_PRICE"></param>
+        /// <param name="SAVE_WORKDATA">서버 프로그램 중지 할떄</param>
+        /// <param name="REMOVE_SETTING">서버에서 세팅을 제거 할때</param>
+        /// <param name="IS_PROFIT_STOP">수익이 발생 해서 중지 할때</param>
+        internal void Clear(User user, int SETTING_ID, bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool BID_CURRENT_PRICE, bool SAVE_WORKDATA, bool REMOVE_SETTING, bool IS_PROFIT_STOP)
         {
             ServiceData data = new()
             {
@@ -543,7 +607,44 @@ namespace MetaFrm.Stock.Exchange
             data["1"].AddParameter(nameof(ASK_CANCEL), Database.DbType.NVarChar, 1, ASK_CANCEL ? "Y" : "N");
             data["1"].AddParameter(nameof(ASK_CURRENT_PRICE), Database.DbType.NVarChar, 1, ASK_CURRENT_PRICE ? "Y" : "N");
             data["1"].AddParameter(nameof(BID_CURRENT_PRICE), Database.DbType.NVarChar, 1, BID_CURRENT_PRICE ? "Y" : "N");
+            data["1"].AddParameter(nameof(SAVE_WORKDATA), Database.DbType.NVarChar, 1, SAVE_WORKDATA ? "Y" : "N");
+            data["1"].AddParameter(nameof(REMOVE_SETTING), Database.DbType.NVarChar, 1, REMOVE_SETTING ? "Y" : "N");
             data["1"].AddParameter(nameof(IS_PROFIT_STOP), Database.DbType.NVarChar, 1, IS_PROFIT_STOP ? "Y" : "N");
+            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, user.UserID);
+
+            Task.Run(() =>
+            {
+                Response response;
+
+                response = this.ServiceRequest(data);
+
+                if (response.Status != Status.OK)
+                    response.Message?.WriteMessage(user.ExchangeID, user.UserID, this.SettingID, this.Market);
+
+                if (REMOVE_SETTING && IS_PROFIT_STOP)
+                    this.SettingInOut(user, this.SettingID, false);
+            });
+        }
+        internal void SettingInOut(User user, int SETTING_ID, bool isIn)
+        {
+            StringBuilder stringBuilder = new();
+            ServiceData data = new()
+            {
+                ServiceName = "",
+                TransactionScope = false,
+                Token = user.AuthState.Token(),
+            };
+            data["1"].CommandText = "Batch.[dbo].[USP_TRADING_IN_OUT]";
+            data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
+            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, user.UserID);
+
+            stringBuilder.Append($"{user.ExchangeName()} {this.SettingTypeString} 세팅 {(isIn ? "추가" : "제거")}");
+            data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+
+            stringBuilder.Clear();
+            stringBuilder.Append($"{this.Market}");
+
+            data["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
             Task.Run(() =>
             {

@@ -39,5 +39,10 @@
         /// TraillingStop
         /// </summary>
         TraillingStop,
+
+        /// <summary>
+        /// Schedule
+        /// </summary>
+        Schedule
     }
 }
