@@ -10,7 +10,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>MetaFrm.Stock.Utility.net6.0</PackageId>
     <Title>Meta Framework Stock Utility</Title>
-    <Version>6.0.1.17</Version>
+    <Version>6.0.1.18</Version>
     <Authors>dsun</Authors>
     <Company>Meta Framework</Company>
     <Product>Meta Framework Stock Utility</Product>
@@ -41,6 +41,7 @@
     <Compile Include="..\src\Exchange\Loss.cs" Link="Exchange\Loss.cs" />
     <Compile Include="..\src\Exchange\MartingaleLong.cs" Link="Exchange\MartingaleLong.cs" />
     <Compile Include="..\src\Exchange\MartingaleShort.cs" Link="Exchange\MartingaleShort.cs" />
+    <Compile Include="..\src\Exchange\Schedule.cs" Link="Exchange\Schedule.cs" />
     <Compile Include="..\src\Exchange\Setting.cs" Link="Exchange\Setting.cs" />
     <Compile Include="..\src\Exchange\SettingType.cs" Link="Exchange\SettingType.cs" />
     <Compile Include="..\src\Exchange\SmartType.cs" Link="Exchange\SmartType.cs" />

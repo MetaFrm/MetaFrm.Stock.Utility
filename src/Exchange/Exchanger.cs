@@ -447,6 +447,39 @@ namespace MetaFrm.Stock.Exchange
                                     });
 
                                 break;
+
+                            case SettingType.Schedule:
+                                string? ORDER_SIDE = item.String(nameof(ORDER_SIDE));
+                                string? ORDER_TYPE = item.String(nameof(ORDER_TYPE));
+                                int? INTERVAL = item.Int(nameof(INTERVAL));
+                                DateTime? START_DATE = item.DateTime(nameof(START_DATE));
+                                DateTime? END_DATE = item.DateTime(nameof(END_DATE));
+                                DateTime? EXECUTE_DATE = item.DateTime(nameof(EXECUTE_DATE));
+
+                                if (ORDER_SIDE != null && ORDER_TYPE != null && INTERVAL != null && START_DATE != null && END_DATE != null)
+                                    user1.AddSetting(new Schedule(user1)
+                                    {
+                                        SettingID = (int)SETTING_ID,
+                                        Market = MARKET,
+                                        Invest = (decimal)INVEST,
+                                        BasePrice = (decimal)BASE_PRICE,
+                                        //TopPrice = (decimal)TOP_PRICE,
+                                        //Rate = (decimal)RATE,
+                                        //ListMin = (int)LIST_MIN,
+                                        Fees = (decimal)FEES,
+                                        //TopStop = TOP_STOP,
+                                        //IsProfitStop = IS_PROFIT_STOP,
+                                        //Message = MESSAGE,
+
+                                        OrderSide = ORDER_SIDE.EnumParse<Models.OrderSide>(),
+                                        OrderType = ORDER_TYPE.EnumParse<Models.OrderType>(),
+                                        Interval = (int)INTERVAL,
+                                        StartDate = (DateTime)START_DATE,
+                                        EndDate = (DateTime)END_DATE,
+                                        ExecuteDate = EXECUTE_DATE,
+                                    });
+
+                                break;
                         }
                     }
                 }

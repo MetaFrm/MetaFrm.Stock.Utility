@@ -125,7 +125,7 @@ namespace MetaFrm.Stock.Exchange
 
             var investMin = ExchangeID switch { 1 => 10000, 2 => 2000, _ => 10000 };
 
-            if (setting.Invest < investMin && setting.SettingType != SettingType.MartingaleShort)
+            if (setting.Invest < investMin && setting.SettingType != SettingType.MartingaleShort && setting.SettingType != SettingType.Schedule)
             {
                 message = $"'투자금액'({investMin:N}이상)을 입력하세요.";
                 $"'투자금액'({investMin:N}이상)을 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
@@ -383,6 +383,71 @@ namespace MetaFrm.Stock.Exchange
                         return false;
                     }
                     break;
+
+                case SettingType.Schedule:
+                    Schedule settingSchedule = (Schedule)setting;
+
+                    if (settingSchedule.OrderSide == Models.OrderSide.bid)
+                    {
+                        if (setting.Invest < investMin)
+                        {
+                            message = $"'매수금액'({investMin:N}이상)을 입력하세요.";
+                            $"'매수금액'({investMin:N}이상)을 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                            return false;
+                        }
+                        if (settingSchedule.OrderType == Models.OrderType.limit)
+                        {
+                            if (setting.BasePrice <= 0.0M)
+                            {
+                                message = "'매수가격'을 입력하세요.";
+                                $"'매수가격'을 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                                return false;
+                            }
+                        }
+                    }
+                    if (settingSchedule.OrderSide == Models.OrderSide.ask)
+                    {
+                        if (setting.Invest <= 0)
+                        {
+                            message = $"'매도수량'을 입력하세요.";
+                            $"'매도수량'을 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                            return false;
+                        }
+                        if (settingSchedule.OrderType == Models.OrderType.limit)
+                        {
+                            if (setting.BasePrice <= 0.0M)
+                            {
+                                message = "'매도가격'을 입력하세요.";
+                                $"'매도가격'을 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                                return false;
+                            }
+                        }
+                    }
+                    if (settingSchedule.StartDate < DateTime.Now)
+                    {
+                        message = "'시작일시'는 현재 일시 보다 커야 합니다.";
+                        $"'시작일시'는 현재 일시 보다 커야 합니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingSchedule.EndDate < DateTime.Now)
+                    {
+                        message = "'종료일시'는 현재 일시 보다 커야 합니다.";
+                        $"'종료일시'는 현재 일시 보다 커야 합니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingSchedule.StartDate >= settingSchedule.EndDate)
+                    {
+                        message = "'종료일시'는 '시작일시' 보다 커야 합니다.";
+                        $"'종료일시'는 '시작일시' 보다 커야 합니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    if (settingSchedule.Invest <= 0)
+                    {
+                        message = "'간격(분)'을 입력하세요.";
+                        $"'간격(분)'을 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        return false;
+                    }
+                    break;
             }
 
             message = "";
@@ -531,7 +596,7 @@ namespace MetaFrm.Stock.Exchange
 
                                     setting.User = this;
                                     this.Settings.Add(setting);
-                                    $"Added setting".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
+                                    $"Added {setting.SettingTypeString}".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
 
                                     if (Exchanger.IsUnLock)
                                         setting.SettingInOut(setting.User, setting.SettingID, true);
@@ -612,7 +677,7 @@ namespace MetaFrm.Stock.Exchange
                                     }
                                     else
                                     {
-                                        var a2 = this.Settings.Where(x => x.SettingType == SettingType.TraillingStop);
+                                        var a2 = this.Settings.Where(x => x.SettingType == SettingType.TraillingStop || x.SettingType == SettingType.Schedule);
 
                                         if (a2.Any())
                                         {

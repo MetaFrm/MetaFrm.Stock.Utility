@@ -44,6 +44,7 @@ namespace MetaFrm.Stock.Exchange
                     SettingType.MartingaleShort => "마틴게일 숏",
                     SettingType.GridMartingaleLong => "그리드 + 마틴게일 롱",
                     SettingType.GridMartingaleShort => "그리드 + 마틴게일 숏",
+                    SettingType.Schedule => "스케줄러",
                     _ => $"{this.SettingType}"
                 };
 
@@ -56,6 +57,7 @@ namespace MetaFrm.Stock.Exchange
                         SettingType.MartingaleShort => "마틴게일 숏",
                         SettingType.GridMartingaleLong => "그리드 + 마틴게일 롱",
                         SettingType.GridMartingaleShort => "그리드 + 마틴게일 숏",
+                        SettingType.Schedule => "스케줄러",
                         _ => $"{this.SettingType}"
                     };
 

@@ -68,6 +68,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Exchange", "Exchange", "{E7
 		src\Exchange\Loss.cs = src\Exchange\Loss.cs
 		src\Exchange\MartingaleLong.cs = src\Exchange\MartingaleLong.cs
 		src\Exchange\MartingaleShort.cs = src\Exchange\MartingaleShort.cs
+		src\Exchange\Schedule.cs = src\Exchange\Schedule.cs
 		src\Exchange\Setting.cs = src\Exchange\Setting.cs
 		src\Exchange\SettingType.cs = src\Exchange\SettingType.cs
 		src\Exchange\SmartType.cs = src\Exchange\SmartType.cs
