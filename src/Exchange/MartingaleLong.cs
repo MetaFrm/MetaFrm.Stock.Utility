@@ -573,7 +573,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = this.User.AuthState.Token(),
             };
-            data["1"].CommandText = "[dbo].[USP_WORK_DATA_MARTINGALE_L_TRADING]";
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("MartingaleLong.GetWorkData");
             data["1"].AddParameter("EXCHANGE_ID", Database.DbType.Int, 3, this.User.ExchangeID);
             data["1"].AddParameter("BASE_PRICE", Database.DbType.Decimal, 25, this.FirstFix ? this.BasePrice : TRADE_PRICE);
             data["1"].AddParameter("GAP_RATE", Database.DbType.Decimal, 25, this.GapRate);

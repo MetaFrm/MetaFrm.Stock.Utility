@@ -155,7 +155,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = user.AuthState.Token(),
             };
-            data["1"].CommandText = "Batch.[dbo].[USP_WORK_DATA_SCHEDULE_TRADING_UPD]";
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("Schedule.Update");
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
             data["1"].AddParameter("EXECUTE_DATE", Database.DbType.DateTime, 0, executeDate);
             data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, user.UserID);

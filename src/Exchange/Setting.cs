@@ -449,7 +449,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = user.AuthState.Token(),
             };
-            data["1"].CommandText = "Batch.[dbo].[USP_TRADING_MESSAGE_UPD]";
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("Setting.UpdateMessage");
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
             data["1"].AddParameter(nameof(MESSAGE), Database.DbType.NVarChar, 4000, MESSAGE);
 
@@ -477,7 +477,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = user.AuthState.Token(),
             };
-            data["1"].CommandText = "Batch.[dbo].[USP_TRADING_PROFIT_UPD]";
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("Setting.Profit");
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
             data["1"].AddParameter(nameof(BID_PRICE), Database.DbType.Decimal, 25, BID_PRICE);
             data["1"].AddParameter(nameof(BID_QTY), Database.DbType.Decimal, 25, BID_QTY);
@@ -544,7 +544,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = user.AuthState.Token(),
             };
-            data["1"].CommandText = "Batch.[dbo].[USP_TRADING_CHANGE_SETTING]";
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("Setting.ChangeSettingMessage");
             data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, before.SettingID);
             data["1"].AddParameter("BEFORE", Database.DbType.NVarChar, 50, before.SettingType.ToString());
             data["1"].AddParameter("AFTER", Database.DbType.NVarChar, 50, after.SettingType.ToString());
@@ -603,7 +603,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = user.AuthState.Token(),
             };
-            data["1"].CommandText = "Batch.[dbo].[USP_TRADING_CLEAR_UPD]";
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("Setting.Clear");
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
             data["1"].AddParameter(nameof(BID_CANCEL), Database.DbType.NVarChar, 1, BID_CANCEL ? "Y" : "N");
             data["1"].AddParameter(nameof(ASK_CANCEL), Database.DbType.NVarChar, 1, ASK_CANCEL ? "Y" : "N");
@@ -636,7 +636,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = user.AuthState.Token(),
             };
-            data["1"].CommandText = "Batch.[dbo].[USP_TRADING_IN_OUT]";
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("Setting.SettingInOut");
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
             data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, user.UserID);
 

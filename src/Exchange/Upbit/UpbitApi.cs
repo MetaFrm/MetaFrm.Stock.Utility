@@ -888,7 +888,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
 
         #region "시세 종목 조회/마켓 코드 조회"
-        private static Models.Markets MarketsDB = new();
+        private static Models.Markets MarketsDB = new() { MarketList = new() };
         Models.Markets IApi.Markets()
         {
             string? tmp;
@@ -1339,7 +1339,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 {
                     await Task.Delay(5000);
 
-                    if (!((IApi)this).AccessKey.IsNullOrEmpty() && !((IApi)this).SecretKey.IsNullOrEmpty())
+                    var markets = ((IApi)this).Markets();
+
+                    if ((!((IApi)this).AccessKey.IsNullOrEmpty() && !((IApi)this).SecretKey.IsNullOrEmpty()) || (markets.MarketList != null && markets.MarketList.Any()))
                         break;
                 }
 

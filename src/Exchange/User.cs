@@ -832,7 +832,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = this.AuthState.Token(),
             };
-            data["1"].CommandText = "Batch.[dbo].[USP_TRADING_ORDER_EXECUTION]";
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("User.OrderExecution");
             data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, setting.SettingID);
             data["1"].AddParameter("MARKET_ID", Database.DbType.NVarChar, 20, order.Market);
             data["1"].AddParameter("SIDE", Database.DbType.NVarChar, 20, order.Side);
@@ -882,7 +882,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = this.AuthState.Token(),
             };
-            data["1"].CommandText = "[dbo].[USP_TRADING_POINT_CHECK]";
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("User.PointCheck");
             data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.UserID);
 
             Response response;

@@ -270,7 +270,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = this.User.AuthState.Token(),
             };
-            data["1"].CommandText = "[dbo].[USP_WORK_DATA_TRAILLING_STOP_TRADING]";
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("TraillingStop.GetWorkData");
             data["1"].AddParameter("EXCHANGE_ID", Database.DbType.Int, 3, this.User.ExchangeID);
             data["1"].AddParameter("BASE_PRICE", Database.DbType.Decimal, 25, TRADE_PRICE);
             data["1"].AddParameter("GAP_RATE", Database.DbType.Decimal, 25, this.GapRate);
@@ -330,7 +330,7 @@ namespace MetaFrm.Stock.Exchange
                 TransactionScope = false,
                 Token = user.AuthState.Token(),
             };
-            data["1"].CommandText = "Batch.[dbo].[USP_WORK_DATA_TRAILLING_STOP_TRADING_UPD]";
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("TraillingStop.Update");
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
             data["1"].AddParameter(nameof(BID_PRICE_AVG), Database.DbType.Decimal, 25, BID_PRICE_AVG);
             data["1"].AddParameter(nameof(TARGET_PRICE), Database.DbType.Decimal, 25, TARGET_PRICE);
