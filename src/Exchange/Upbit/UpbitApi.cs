@@ -1443,6 +1443,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                             {
                                 sel.LastDateTime = dateTime;
                                 sel.Market = tickerWebSocket.Code;
+                                sel.Icon = sel.Icon == null ? markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon : "";
                                 sel.TradeDate = tickerWebSocket.TradeDate;
                                 sel.TradeTime = tickerWebSocket.TradeTime;
                                 //sel.TradeDateKst = tickerWebSocket.TradeDate;
@@ -1474,6 +1475,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                                 {
                                     LastDateTime = dateTime,
                                     Market = tickerWebSocket.Code,
+                                    Icon = markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon,
                                     TradeDate = tickerWebSocket.TradeDate,
                                     TradeTime = tickerWebSocket.TradeTime,
                                     //TradeDateKst = tickerWebSocket.TradeDate,

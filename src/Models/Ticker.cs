@@ -16,6 +16,11 @@
         public string? Market { get; set; }
 
         /// <summary>
+        /// Icon
+        /// </summary>
+        public string? Icon { get; set; }
+
+        /// <summary>
         /// 최근 거래 일자(UTC)
         /// </summary>
         public string? TradeDate { get; set; }

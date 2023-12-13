@@ -2011,6 +2011,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                 {
                                     sel.LastDateTime = dateTime;
                                     sel.Market = ticker.Market;
+                                    sel.Icon = sel.Icon == null ? markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon : "";
                                     sel.TradeDate = ticker.TradeDate;
                                     sel.TradeTime = ticker.TradeTime;
                                     //sel.TradeDateKst = ticker.TradeDate;
@@ -2042,6 +2043,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                     {
                                         LastDateTime = dateTime,
                                         Market = ticker.Market,
+                                        Icon = markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon,
                                         TradeDate = ticker.TradeDate,
                                         TradeTime = ticker.TradeTime,
                                         //TradeDateKst = ticker.TradeDate,
