@@ -93,7 +93,7 @@ namespace MetaFrm.Stock.Console
         /// <param name="consoleColor"></param>
         public static void WriteMessage(this string message, int? exchangeID = null, int? userID = null, int? settingID = null, string? market = null, ConsoleColor consoleColor = ConsoleColor.White)
         {
-            if (message.Contains("주문가능한") || message.Contains("주문량이 사용가능") || (Factory.DeviceInfo != null && Factory.DeviceInfo.Platform != Maui.Devices.DevicePlatform.Server))
+            if (message.Contains("주문가능한") || message.Contains("주문량이 사용가능") || message.Contains("too_many_requests") || (Factory.DeviceInfo != null && Factory.DeviceInfo.Platform != Maui.Devices.DevicePlatform.Server))
                 return;
 
             if (consoleColor != ConsoleColor.White)

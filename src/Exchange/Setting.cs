@@ -25,7 +25,6 @@ namespace MetaFrm.Stock.Exchange
         /// </summary>
         public SettingType SettingType { get; set; } = SettingType.None;
 
-
         /// <summary>
         /// SettingTypeString
         /// </summary>
@@ -206,6 +205,33 @@ namespace MetaFrm.Stock.Exchange
         /// BidCurrentPrice
         /// </summary>
         public bool BidCurrentPrice { get; set; }
+
+
+        /// <summary>
+        /// Ticker
+        /// </summary>
+        public Models.Ticker? Ticker { get; set; }
+        private int exID;
+        /// <summary>
+        /// ExchangeID
+        /// </summary>
+        public int ExchangeID
+        {
+            get
+            {
+                return this.User != null ? this.User.ExchangeID : this.exID;
+            }
+            set
+            {
+                if (this.User == null)
+                    this.exID = value;
+            }
+        }
+        /// <summary>
+        /// TradePrice
+        /// </summary>
+        public decimal? TradePrice => this.Ticker?.TradePrice;
+
 
         /// <summary>
         /// Setting

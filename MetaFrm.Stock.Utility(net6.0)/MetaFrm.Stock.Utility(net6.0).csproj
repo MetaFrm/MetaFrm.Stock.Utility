@@ -10,7 +10,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>MetaFrm.Stock.Utility.net6.0</PackageId>
     <Title>Meta Framework Stock Utility</Title>
-    <Version>6.0.1.19</Version>
+    <Version>6.0.1.20</Version>
     <Authors>dsun</Authors>
     <Company>Meta Framework</Company>
     <Product>Meta Framework Stock Utility</Product>
@@ -108,6 +108,8 @@
     <Compile Include="..\src\Models\Ticks.cs" Link="Models\Ticks.cs" />
     <Compile Include="..\src\Models\Trade.cs" Link="Models\Trade.cs" />
     <Compile Include="..\src\Models\WithdrawsCoin.cs" Link="Models\WithdrawsCoin.cs" />
+    <Compile Include="..\src\Service\IService.cs" Link="Service\IService.cs" />
+    <Compile Include="..\src\Service\Service.cs" Link="Service\Service.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="icon.ico" />
@@ -121,8 +123,5 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Console\" />
   </ItemGroup>
 </Project>

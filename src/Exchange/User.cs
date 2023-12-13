@@ -423,12 +423,12 @@ namespace MetaFrm.Stock.Exchange
                             }
                         }
                     }
-                    if (settingSchedule.StartDate < DateTime.Now)
-                    {
-                        message = "'시작일시'는 현재 일시 보다 커야 합니다.";
-                        $"'시작일시'는 현재 일시 보다 커야 합니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return false;
-                    }
+                    //if (settingSchedule.StartDate < DateTime.Now)
+                    //{
+                    //    message = "'시작일시'는 현재 일시 보다 커야 합니다.";
+                    //    $"'시작일시'는 현재 일시 보다 커야 합니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                    //    return false;
+                    //}
                     if (settingSchedule.EndDate < DateTime.Now)
                     {
                         message = "'종료일시'는 현재 일시 보다 커야 합니다.";

@@ -130,6 +130,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Console", "Console", "{C36B
 		src\Console\Utility.cs = src\Console\Utility.cs
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Service", "Service", "{4C3BDE26-0431-44C3-93BC-DAB05165C18A}"
+	ProjectSection(SolutionItems) = preProject
+		src\Service\IService.cs = src\Service\IService.cs
+		src\Service\Service.cs = src\Service\Service.cs
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -155,6 +161,7 @@ Global
 		{90B9E3E6-AF7E-4E77-BF9B-77100ACA430E} = {E7B514D8-128A-431F-902B-3B3CFF6AC25A}
 		{ED4C662F-04BF-4FC0-99BE-E2A72A91E6F4} = {E7B514D8-128A-431F-902B-3B3CFF6AC25A}
 		{C36BC119-F853-4EA5-A0A2-7BF032A6F8AC} = {43BEF168-A67F-4D2B-B327-2661539BABBD}
+		{4C3BDE26-0431-44C3-93BC-DAB05165C18A} = {43BEF168-A67F-4D2B-B327-2661539BABBD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1547E748-CDB9-4674-999B-8A438B794365}

@@ -1337,20 +1337,18 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 while (true)
                 {
-                    await Task.Delay(5000);
-
                     var markets = ((IApi)this).Markets();
 
                     if ((!((IApi)this).AccessKey.IsNullOrEmpty() && !((IApi)this).SecretKey.IsNullOrEmpty()) || (markets.MarketList != null && markets.MarketList.Any()))
                         break;
+
+                    await Task.Delay(5000);
                 }
 
                 RunTickerFromWebSocketDateTime = DateTime.Now;
                 $"Start : RunTickerFromWebSocket".WriteMessage(((IApi)this).ExchangeID);
                 while (true)
                 {
-                    await Task.Delay(2000);
-
                     if (this.IsDispose) break;
 
                     if (WebSocketTickerDB == null)
@@ -1365,6 +1363,8 @@ namespace MetaFrm.Stock.Exchange.Upbit
                         TickerFromWebSocketClose();
                         //$"TickerFromWebSocketClose(RunTickerFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
                     }
+
+                    await Task.Delay(2000);
                 }
             });
         }
