@@ -897,32 +897,33 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
             try
             {
-                lock (MarketsDB)
-                    if (MarketsDB.MarketList == null || !MarketsDB.MarketList.Any() || MarketsDB.LastDateTime.Hour != DateTime.Now.Hour)
-                    {
-                        MarketsDB.LastDateTime = DateTime.Now;
+                if (!((IApi)this).AccessKey.IsNullOrEmpty())
+                    lock (MarketsDB)
+                        if (MarketsDB.MarketList == null || !MarketsDB.MarketList.Any() || MarketsDB.LastDateTime.Hour != DateTime.Now.Hour)
+                        {
+                            MarketsDB.LastDateTime = DateTime.Now;
 
-                        tmp = this.CallAPI($"{this.BaseUrl}market/all", null, HttpMethod.Get);
+                            tmp = this.CallAPI($"{this.BaseUrl}market/all", null, HttpMethod.Get);
 
-                        if (string.IsNullOrEmpty(tmp)) return MarketsDB;
-                        if (tmp.Contains("error")) { result.Error = GetError(tmp); return MarketsDB; }
-                        if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return MarketsDB; }
+                            if (string.IsNullOrEmpty(tmp)) return MarketsDB;
+                            if (tmp.Contains("error")) { result.Error = GetError(tmp); return MarketsDB; }
+                            if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return MarketsDB; }
 
-                        list = JsonSerializer.Deserialize<Markets[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                            list = JsonSerializer.Deserialize<Markets[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
 
-                        if (list == null) return MarketsDB;
+                            if (list == null) return MarketsDB;
 
-                        result.MarketList = new();
-                        foreach (var item in list)
-                            result.MarketList.Add(new()
-                            {
-                                Market = item.Market,
-                                KoreanName = item.KoreanName,
-                                EnglishName = item.EnglishName,
-                            });
+                            result.MarketList = new();
+                            foreach (var item in list)
+                                result.MarketList.Add(new()
+                                {
+                                    Market = item.Market,
+                                    KoreanName = item.KoreanName,
+                                    EnglishName = item.EnglishName,
+                                });
 
-                        MarketsDB = result;
-                    }
+                            MarketsDB = result;
+                        }
             }
             catch (Exception ex)
             {
@@ -1446,7 +1447,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                                 sel.ExchangeID = 1;
                                 sel.LastDateTime = dateTime;
                                 sel.Market = tickerWebSocket.Code;
-                                sel.Icon = sel.Icon == null ? markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon : "";
+                                sel.Icon = sel.Icon == null ? markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon : sel.Icon;
                                 sel.TradeDate = tickerWebSocket.TradeDate;
                                 sel.TradeTime = tickerWebSocket.TradeTime;
                                 //sel.TradeDateKst = tickerWebSocket.TradeDate;

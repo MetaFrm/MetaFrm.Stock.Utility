@@ -1229,45 +1229,46 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
             try
             {
-                lock (MarketsDB)
-                    if (MarketsDB.MarketList == null || !MarketsDB.MarketList.Any() || MarketsDB.LastDateTime.Hour != DateTime.Now.Hour)
-                    {
-                        MarketsDB.LastDateTime = DateTime.Now;
-
-                        ticker1 = this.TickerAll("KRW");
-                        if (ticker1.Error != null)
+                if (!((IApi)this).AccessKey.IsNullOrEmpty())
+                    lock (MarketsDB)
+                        if (MarketsDB.MarketList == null || !MarketsDB.MarketList.Any() || MarketsDB.LastDateTime.Hour != DateTime.Now.Hour)
                         {
-                            GetError(ticker1.Error.Code, ticker1.Error.Message);
-                            return MarketsDB;
-                        }
+                            MarketsDB.LastDateTime = DateTime.Now;
 
-                        ticker2 = this.TickerAll("BTC");
-                        if (ticker2.Error != null)
-                        {
-                            GetError(ticker2.Error.Code, ticker2.Error.Message);
-                            return MarketsDB;
-                        }
-
-                        result.MarketList = new();
-                        if (ticker1.TickerList != null && ticker1.TickerList.Count > 0)
-                        {
-                            if (ticker2.TickerList != null && ticker2.TickerList.Count > 0)
-                                ticker1.TickerList.AddRange(ticker2.TickerList);
-
-                            foreach (var item in ticker1.TickerList)
+                            ticker1 = this.TickerAll("KRW");
+                            if (ticker1.Error != null)
                             {
-                                result.MarketList.Add(new()
-                                {
-                                    Market = item.Market,
-                                    KoreanName = item.Market,
-                                    EnglishName = item.Market,
-
-                                });
+                                GetError(ticker1.Error.Code, ticker1.Error.Message);
+                                return MarketsDB;
                             }
 
-                            MarketsDB = result;
+                            ticker2 = this.TickerAll("BTC");
+                            if (ticker2.Error != null)
+                            {
+                                GetError(ticker2.Error.Code, ticker2.Error.Message);
+                                return MarketsDB;
+                            }
+
+                            result.MarketList = new();
+                            if (ticker1.TickerList != null && ticker1.TickerList.Count > 0)
+                            {
+                                if (ticker2.TickerList != null && ticker2.TickerList.Count > 0)
+                                    ticker1.TickerList.AddRange(ticker2.TickerList);
+
+                                foreach (var item in ticker1.TickerList)
+                                {
+                                    result.MarketList.Add(new()
+                                    {
+                                        Market = item.Market,
+                                        KoreanName = item.Market,
+                                        EnglishName = item.Market,
+
+                                    });
+                                }
+
+                                MarketsDB = result;
+                            }
                         }
-                    }
             }
             catch (Exception ex)
             {
@@ -2014,7 +2015,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                     sel.ExchangeID = 2;
                                     sel.LastDateTime = dateTime;
                                     sel.Market = ticker.Market;
-                                    sel.Icon = sel.Icon == null ? markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon : "";
+                                    sel.Icon = sel.Icon == null ? markets.MarketList.SingleOrDefault(x => x.Market == ticker.Market)?.Icon : sel.Icon;
                                     sel.TradeDate = ticker.TradeDate;
                                     sel.TradeTime = ticker.TradeTime;
                                     //sel.TradeDateKst = ticker.TradeDate;
@@ -2047,7 +2048,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                         ExchangeID = 2,
                                         LastDateTime = dateTime,
                                         Market = ticker.Market,
-                                        Icon = markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon,
+                                        Icon = markets.MarketList.SingleOrDefault(x => x.Market == ticker.Market)?.Icon,
                                         TradeDate = ticker.TradeDate,
                                         TradeTime = ticker.TradeTime,
                                         //TradeDateKst = ticker.TradeDate,
