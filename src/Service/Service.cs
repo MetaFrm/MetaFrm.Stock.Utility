@@ -57,6 +57,7 @@ namespace MetaFrm.Stock.Service
                             Market = item.String("MARKET"),
                             KoreanName = item.String("KOR_NAME"),
                             EnglishName = item.String("ENG_NAME"),
+                            Icon = item.String("ICON"),
                         });
                     }
 

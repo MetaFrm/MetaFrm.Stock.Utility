@@ -36,6 +36,11 @@
         public string? EnglishName { get; set; }
 
         /// <summary>
+        /// Icon
+        /// </summary>
+        public string? Icon { get; set; }
+
+        /// <summary>
         /// LastDateTime
         /// </summary>
         public DateTime LastDateTime { get; set; } = DateTime.Now;
