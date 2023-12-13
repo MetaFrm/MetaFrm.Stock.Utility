@@ -1217,6 +1217,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                                         if (sel != null)
                                         {
+                                            sel.ExchangeID = 1;
                                             sel.LastDateTime = dateTime;
                                             sel.Market = item.Market;
                                             sel.TradeDate = item.TradeDate;
@@ -1280,6 +1281,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                                         if (!TickerDB.TickerList.Any(x => x.Market == item.Market))
                                             TickerDB.TickerList.Add(new()
                                             {
+                                                ExchangeID = 1,
                                                 Market = item.Market,
                                                 TradeDate = item.TradeDate,
                                                 TradeTime = item.TradeTime,
@@ -1441,6 +1443,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                             var sel = TickerDB.TickerList.SingleOrDefault(x => x.Market == tickerWebSocket.Code);
                             if (sel != null)
                             {
+                                sel.ExchangeID = 1;
                                 sel.LastDateTime = dateTime;
                                 sel.Market = tickerWebSocket.Code;
                                 sel.Icon = sel.Icon == null ? markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon : "";
@@ -1473,6 +1476,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                             else
                                 TickerDB.TickerList.Add(new()
                                 {
+                                    ExchangeID = 1,
                                     LastDateTime = dateTime,
                                     Market = tickerWebSocket.Code,
                                     Icon = markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon,

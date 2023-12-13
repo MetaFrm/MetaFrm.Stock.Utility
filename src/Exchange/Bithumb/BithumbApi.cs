@@ -1599,6 +1599,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                                 if (sel != null)
                                 {
+                                    sel.ExchangeID = 2;
                                     sel.LastDateTime = dateTime;
                                     sel.Market = item.Market;
                                     sel.TradeDate = item.TradeDate;
@@ -1663,6 +1664,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                 if (!TickerDB.TickerList.Any(x => x.Market == item.Market))
                                     TickerDB.TickerList.Add(new()
                                     {
+                                        ExchangeID = 2,
                                         Market = item.Market,
                                         TradeDate = item.TradeDate,
                                         TradeTime = item.TradeTime,
@@ -1765,7 +1767,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                             if (contract != null)
                             {
-                                ticker = new() { LastDateTime = dateTime, Market = $"{marketGroup}-{item.Key}" };
+                                ticker = new() { ExchangeID = 2, LastDateTime = dateTime, Market = $"{marketGroup}-{item.Key}" };
                                 foreach (var contractDetail in contract)
                                 {
                                     string? valueString = null;
@@ -2009,6 +2011,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                 var sel = TickerDB.TickerList.SingleOrDefault(x => x.Market == ticker.Market);
                                 if (sel != null)
                                 {
+                                    sel.ExchangeID = 2;
                                     sel.LastDateTime = dateTime;
                                     sel.Market = ticker.Market;
                                     sel.Icon = sel.Icon == null ? markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon : "";
@@ -2041,6 +2044,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                 else
                                     TickerDB.TickerList.Add(new()
                                     {
+                                        ExchangeID = 2,
                                         LastDateTime = dateTime,
                                         Market = ticker.Market,
                                         Icon = markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon,

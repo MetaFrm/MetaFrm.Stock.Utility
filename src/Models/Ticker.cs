@@ -11,6 +11,11 @@
         public List<Ticker> TickerList { get; set; } = new();
 
         /// <summary>
+        /// ExchangeID
+        /// </summary>
+        public int ExchangeID { get; set; }
+
+        /// <summary>
         /// 종목 구분 코드
         /// </summary>
         public string? Market { get; set; }
