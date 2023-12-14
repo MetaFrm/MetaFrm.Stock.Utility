@@ -1813,7 +1813,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                                 ticker.ChangePrice = Math.Abs(ticker.SignedChangePrice);
                                                 break;
                                             case "fluctate_rate_24H":
-                                                ticker.SignedChangeRate = valueString.ToDecimal();
+                                                ticker.SignedChangeRate = valueString.ToDecimal() / 100M;
                                                 ticker.ChangeRate = Math.Abs(ticker.SignedChangeRate);
                                                 break;
                                             case "date":
@@ -1998,12 +1998,12 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                             ticker.PrevClosingPrice = item.Value.ToDecimal();
                                             break;
                                         case "chgRate":
-                                            ticker.SignedChangeRate = item.Value.ToDecimal();
+                                            ticker.SignedChangeRate = item.Value.ToDecimal() / 100M;
                                             ticker.ChangeRate = Math.Abs(ticker.SignedChangeRate);
                                             break;
                                         case "chgAmt":
                                             ticker.SignedChangePrice = item.Value.ToDecimal();
-                                            ticker.ChangePrice = Math.Abs(ticker.SignedChangeRate);
+                                            ticker.ChangePrice = Math.Abs(ticker.SignedChangePrice);
                                             ticker.Change = (ticker.TradePrice + ticker.SignedChangePrice) == ticker.PrevClosingPrice ? "EVEN" : (ticker.TradePrice > ticker.PrevClosingPrice) ? "RISE" : "FALL";
                                             break;
                                     }
