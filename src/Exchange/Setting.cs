@@ -35,33 +35,32 @@ namespace MetaFrm.Stock.Exchange
                 string tmp1;
                 string tmp2 = "";
 
-                tmp1 = this.SettingType switch
-                {
-                    SettingType.Grid => "그리드",
-                    SettingType.TraillingStop => "트레일링 스탑",
-                    SettingType.MartingaleLong => "마틴게일 롱",
-                    SettingType.MartingaleShort => "마틴게일 숏",
-                    SettingType.GridMartingaleLong => "그리드 + 마틴게일 롱",
-                    SettingType.GridMartingaleShort => "그리드 + 마틴게일 숏",
-                    SettingType.Schedule => "스케줄러",
-                    _ => $"{this.SettingType}"
-                };
+                tmp1 = GetSettingTypeString(this.SettingType);
 
                 if (this.Current != null)
-                    tmp2 = this.Current.SettingType switch
-                    {
-                        SettingType.Grid => "그리드",
-                        SettingType.TraillingStop => "트레일링 스탑",
-                        SettingType.MartingaleLong => "마틴게일 롱",
-                        SettingType.MartingaleShort => "마틴게일 숏",
-                        SettingType.GridMartingaleLong => "그리드 + 마틴게일 롱",
-                        SettingType.GridMartingaleShort => "그리드 + 마틴게일 숏",
-                        SettingType.Schedule => "스케줄러",
-                        _ => $"{this.SettingType}"
-                    };
+                    tmp2 = GetSettingTypeString(this.Current.SettingType);
 
                 return $"{tmp1}{(this.Current != null ? $"-{tmp2}" : "")}";
             }
+        }
+        /// <summary>
+        /// GetSettingTypeString
+        /// </summary>
+        /// <param name="settingType"></param>
+        /// <returns></returns>
+        public static string GetSettingTypeString(SettingType settingType)
+        {
+            return settingType switch
+            {
+                SettingType.Grid => "그리드",
+                SettingType.TraillingStop => "트레일링 스탑",
+                SettingType.MartingaleLong => "마틴게일 롱",
+                SettingType.MartingaleShort => "마틴게일 숏",
+                SettingType.GridMartingaleLong => "그리드 + 마틴게일 롱",
+                SettingType.GridMartingaleShort => "그리드 + 마틴게일 숏",
+                SettingType.Schedule => "스케줄러",
+                _ => $"{settingType}"
+            };
         }
 
         /// <summary>
