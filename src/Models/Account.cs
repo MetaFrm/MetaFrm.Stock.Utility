@@ -58,6 +58,11 @@
         public Error? Error { get; set; }
 
         /// <summary>
+        /// Ticker
+        /// </summary>
+        public Ticker? Ticker { get; set; }
+
+        /// <summary>
         /// Equals
         /// </summary>
         /// <param name="obj"></param>
