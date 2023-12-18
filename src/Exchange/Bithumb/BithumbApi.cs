@@ -1901,8 +1901,9 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 string msg = @"{
 ""type"" : ""ticker"", 
 ""symbols"" : [" + codes + @"], 
-""tickTypes"" : [""30M"", ""1H"", ""12H"", ""24H"", ""MID""]
+""tickTypes"" : [""24H""]
 }";
+//""tickTypes"" : [""30M"", ""1H"", ""12H"", ""24H"", ""MID""]
                 //DEFAULT   SIMPLE
                 await WebSocketTickerDB.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg)), WebSocketMessageType.Text, true, CancellationToken.None);
 

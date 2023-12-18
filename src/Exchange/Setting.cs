@@ -54,10 +54,10 @@ namespace MetaFrm.Stock.Exchange
             {
                 SettingType.Grid => "그리드",
                 SettingType.TraillingStop => "트레일링 스탑",
-                SettingType.MartingaleLong => "마틴게일 롱",
-                SettingType.MartingaleShort => "마틴게일 숏",
-                SettingType.GridMartingaleLong => "그리드 + 마틴게일 롱",
-                SettingType.GridMartingaleShort => "그리드 + 마틴게일 숏",
+                SettingType.MartingaleLong => "마틴 롱",
+                SettingType.MartingaleShort => "마틴 숏",
+                SettingType.GridMartingaleLong => "그리드+마틴 롱",
+                SettingType.GridMartingaleShort => "그리드+마틴 숏",
                 SettingType.Schedule => "스케줄러",
                 _ => $"{settingType}"
             };
