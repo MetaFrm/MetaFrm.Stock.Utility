@@ -487,6 +487,8 @@ namespace MetaFrm.Stock.Exchange
                 int cnt = 0;
                 int cntPoint = 0;
                 int mod = 0;
+                bool isUploadOrder = false;
+                bool isUploadAccount = false;
                 while (true)
                 {
                     try
@@ -614,6 +616,11 @@ namespace MetaFrm.Stock.Exchange
                             Models.Order order;
 
                             order = this.Api.AllOrder("ALL", "desc");
+                            if (!isUploadOrder)
+                            {
+                                Upload(this, order);
+                                isUploadOrder = true;
+                            }
 
                             if (addSettingsOrder.Count > 0)
                             {
@@ -624,6 +631,8 @@ namespace MetaFrm.Stock.Exchange
                                 this.Run(addSettingsOrder, order);
                                 //cnt = 0;
                                 cnt = 60000;
+                                isUploadOrder = false;
+                                isUploadAccount = false;
                             }
                             else if (cnt >= 60000)
                             {
@@ -638,6 +647,8 @@ namespace MetaFrm.Stock.Exchange
                                         orders.Add(new() { Market = item.Market });
 
                                     this.Run(orders, order);
+                                    isUploadOrder = false;
+                                    isUploadAccount = false;
                                 }
 
                                 if (cnt >= 60000)
@@ -650,6 +661,11 @@ namespace MetaFrm.Stock.Exchange
                                     Models.Account account;
 
                                     account = this.Api.Account();
+                                    if (!isUploadAccount)
+                                    {
+                                        Upload(this, account);
+                                        isUploadAccount = true;
+                                    }
 
                                     this.Accounts ??= account;
 
@@ -673,6 +689,8 @@ namespace MetaFrm.Stock.Exchange
 
                                             this.Run(orders, order);
                                             cnt = 0;
+                                            isUploadOrder = false;
+                                            isUploadAccount = false;
                                         }
                                     }
                                     else
@@ -687,6 +705,8 @@ namespace MetaFrm.Stock.Exchange
                                                 orders.Add(new() { Market = item.Market });
 
                                             this.Run(orders, order);
+                                            //isUploadOrder = false;
+                                            //isUploadAccount = false;
                                         }
                                     }
 
@@ -698,8 +718,14 @@ namespace MetaFrm.Stock.Exchange
                                     {
                                         var aa = this.Orders.OrderList.Except(order.OrderList);
                                         var bb = order.OrderList.Except(this.Orders.OrderList);
+                                        var cc = aa.Union(bb);
 
-                                        this.Run(aa.Union(bb), order);
+                                        if (cc.Any())
+                                        {
+                                            this.Run(cc, order);
+                                            isUploadOrder = false;
+                                            isUploadAccount = false;
+                                        }
                                         //cnt = 0;
                                     }
                                 }
@@ -905,6 +931,102 @@ namespace MetaFrm.Stock.Exchange
                     }
             }
         }
+
+
+        /// <summary>
+        /// Upload
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="account"></param>
+        public static void Upload(User user, Models.Account account)
+        {
+            MemoryServiceSet(user, user.AuthState, $"{user.UserID}_Accounts", System.Text.Json.JsonSerializer.Serialize(account));
+        }
+        /// <summary>
+        /// Upload
+        /// </summary>
+        /// <param name="user"></param>
+        /// <param name="order"></param>
+        public static void Upload(User user, Models.Order order)
+        {
+            MemoryServiceSet(user, user.AuthState, $"{user.UserID}_Orders", System.Text.Json.JsonSerializer.Serialize(order));
+        }
+        private static void MemoryServiceSet(ICore core, Task<AuthenticationState> authenticationState, string key, string value)
+        {
+            Response response;
+            ServiceData data = new()
+            {
+                ServiceName = "MetaFrm.Service.MemoryService",
+                TransactionScope = false,
+                Token = authenticationState.Token(),
+            };
+            data["1"].CommandText = "Set";
+            data["1"].AddParameter("KEY", Database.DbType.NVarChar, 0, key);
+            data["1"].AddParameter("VALUE", Database.DbType.NVarChar, 0, value);
+
+            response = core.ServiceRequest(data);
+
+            Task.Run(() =>
+            {
+                Response response;
+
+                response = core.ServiceRequest(data);
+
+                if (response.Status != Status.OK)
+                    $"{key} : {response.Message}"?.WriteMessage();
+            });
+        }
+
+        /// <summary>
+        /// DownloadAccount
+        /// </summary>
+        /// <param name="core"></param>
+        /// <param name="authenticationState"></param>
+        /// <returns></returns>
+        public static Models.Account? DownloadAccount(ICore core, Task<AuthenticationState> authenticationState)
+        {
+            var result = MemoryServiceGet(core, authenticationState, $"{authenticationState.UserID}_Accounts");
+
+            if (result != null)
+                return System.Text.Json.JsonSerializer.Deserialize<Models.Account?>(result);
+            else
+                return null;
+        }
+        /// <summary>
+        /// DownloadAccount
+        /// </summary>
+        /// <param name="core"></param>
+        /// <param name="authenticationState"></param>
+        /// <returns></returns>
+        public static Models.Order? DownloadOrder(ICore core, Task<AuthenticationState> authenticationState)
+        {
+            var result = MemoryServiceGet(core, authenticationState, $"{authenticationState.UserID}_Orders");
+
+            if (result != null)
+                return System.Text.Json.JsonSerializer.Deserialize<Models.Order?>(result);
+            else
+                return null;
+        }
+        private static string? MemoryServiceGet(ICore core, Task<AuthenticationState> authenticationState, string key)
+        {
+            Response response;
+            ServiceData data = new()
+            {
+                ServiceName = "MetaFrm.Service.MemoryService",
+                TransactionScope = false,
+                Token = authenticationState.Token(),
+            };
+            data["1"].CommandText = "Get";
+            data["1"].AddParameter("KEY", Database.DbType.NVarChar, 0, key);
+
+            response = core.ServiceRequest(data);
+
+            if (response.Status != Status.OK || response.DataSet == null || response.DataSet.DataTables.Count < 1 || response.DataSet.DataTables[0].DataRows.Count < 1)
+                return null;
+            else
+                return response.DataSet.DataTables[0].DataRows[0].String("VALUE");
+        }
+
 
         /// <summary>
         /// ExchangeName
