@@ -940,7 +940,7 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="account"></param>
         public static void Upload(User user, Models.Account account)
         {
-            MemoryServiceSet(user, user.AuthState, $"{user.UserID}_Accounts", System.Text.Json.JsonSerializer.Serialize(account));
+            MemoryServiceSet(user, user.AuthState, $"{user.ExchangeID}_{user.UserID}_Accounts", System.Text.Json.JsonSerializer.Serialize(account));
         }
         /// <summary>
         /// Upload
@@ -949,7 +949,7 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="order"></param>
         public static void Upload(User user, Models.Order order)
         {
-            MemoryServiceSet(user, user.AuthState, $"{user.UserID}_Orders", System.Text.Json.JsonSerializer.Serialize(order));
+            MemoryServiceSet(user, user.AuthState, $"{user.ExchangeID}_{user.UserID}_Orders", System.Text.Json.JsonSerializer.Serialize(order));
         }
         private static void MemoryServiceSet(ICore core, Task<AuthenticationState> authenticationState, string key, string value)
         {
@@ -982,10 +982,11 @@ namespace MetaFrm.Stock.Exchange
         /// </summary>
         /// <param name="core"></param>
         /// <param name="authenticationState"></param>
+        /// <param name="exchangeID"></param>
         /// <returns></returns>
-        public static Models.Account? DownloadAccount(ICore core, Task<AuthenticationState> authenticationState)
+        public static Models.Account? DownloadAccount(ICore core, Task<AuthenticationState> authenticationState, int exchangeID)
         {
-            var result = MemoryServiceGet(core, authenticationState, $"{authenticationState.UserID}_Accounts");
+            var result = MemoryServiceGet(core, authenticationState, $"{exchangeID}_{authenticationState.UserID()}_Accounts");
 
             if (result != null)
                 return System.Text.Json.JsonSerializer.Deserialize<Models.Account?>(result);
@@ -997,10 +998,11 @@ namespace MetaFrm.Stock.Exchange
         /// </summary>
         /// <param name="core"></param>
         /// <param name="authenticationState"></param>
+        /// <param name="exchangeID"></param>
         /// <returns></returns>
-        public static Models.Order? DownloadOrder(ICore core, Task<AuthenticationState> authenticationState)
+        public static Models.Order? DownloadOrder(ICore core, Task<AuthenticationState> authenticationState, int exchangeID)
         {
-            var result = MemoryServiceGet(core, authenticationState, $"{authenticationState.UserID}_Orders");
+            var result = MemoryServiceGet(core, authenticationState, $"{exchangeID}_{authenticationState.UserID()}_Orders");
 
             if (result != null)
                 return System.Text.Json.JsonSerializer.Deserialize<Models.Order?>(result);
