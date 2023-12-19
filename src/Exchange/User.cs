@@ -984,9 +984,9 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="authenticationState"></param>
         /// <param name="exchangeID"></param>
         /// <returns></returns>
-        public static Models.Account? DownloadAccount(ICore core, Task<AuthenticationState> authenticationState, int exchangeID)
+        public static async Task<Models.Account?> DownloadAccount(ICore core, Task<AuthenticationState> authenticationState, int exchangeID)
         {
-            var result = MemoryServiceGet(core, authenticationState, $"{exchangeID}_{authenticationState.UserID()}_Accounts");
+            var result = await MemoryServiceGet(core, authenticationState, $"{exchangeID}_{authenticationState.UserID()}_Accounts");
 
             if (result != null)
                 return System.Text.Json.JsonSerializer.Deserialize<Models.Account?>(result);
@@ -1000,16 +1000,16 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="authenticationState"></param>
         /// <param name="exchangeID"></param>
         /// <returns></returns>
-        public static Models.Order? DownloadOrder(ICore core, Task<AuthenticationState> authenticationState, int exchangeID)
+        public static async Task<Models.Order?> DownloadOrder(ICore core, Task<AuthenticationState> authenticationState, int exchangeID)
         {
-            var result = MemoryServiceGet(core, authenticationState, $"{exchangeID}_{authenticationState.UserID()}_Orders");
+            var result = await MemoryServiceGet(core, authenticationState, $"{exchangeID}_{authenticationState.UserID()}_Orders");
 
             if (result != null)
                 return System.Text.Json.JsonSerializer.Deserialize<Models.Order?>(result);
             else
                 return null;
         }
-        private static string? MemoryServiceGet(ICore core, Task<AuthenticationState> authenticationState, string key)
+        private static async Task<string?> MemoryServiceGet(ICore core, Task<AuthenticationState> authenticationState, string key)
         {
             Response response;
             ServiceData data = new()
@@ -1021,7 +1021,7 @@ namespace MetaFrm.Stock.Exchange
             data["1"].CommandText = "Get";
             data["1"].AddParameter("KEY", Database.DbType.NVarChar, 0, key);
 
-            response = core.ServiceRequest(data);
+            response = await core.ServiceRequestAsync(data);
 
             if (response.Status != Status.OK || response.DataSet == null || response.DataSet.DataTables.Count < 1 || response.DataSet.DataTables[0].DataRows.Count < 1)
                 return null;
