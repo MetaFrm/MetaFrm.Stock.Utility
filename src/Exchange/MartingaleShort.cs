@@ -256,10 +256,12 @@ namespace MetaFrm.Stock.Exchange
                             this.User.RemoveSetting(this);
                         }
                         else
+                        {
                             this.Organized(this.SettingID, true, true, false, false, false, this.IsProfitStop, this.IsProfitStop);
+                            this.WorkDataList = null;
+                        }
 
                         this.FirstFix = false;
-                        this.WorkDataList = null;
                         return;
                     }
                     catch (Exception ex)

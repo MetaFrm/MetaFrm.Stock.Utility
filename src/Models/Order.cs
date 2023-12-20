@@ -102,6 +102,12 @@
         /// </summary>
         public List<Trade>? Trades { get; set; }
 
+
+        /// <summary>
+        /// Check
+        /// </summary>
+        public bool Check { get; set; }
+
         /// <summary>
         /// 에러
         /// </summary>

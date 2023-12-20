@@ -238,10 +238,10 @@ namespace MetaFrm.Stock.Exchange
                         $"'종료호가'는 '시작호가'와 같거나 작을 수 없습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                         return false;
                     }
-                    if (martingaleLong.GapRate < 5M)
+                    if (martingaleLong.GapRate < 3M)
                     {
-                        message = "'갭%'은 5.0 이상만 됩니다.";
-                        $"SettingTraillingStop.GapRate 는 5.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        message = "'갭%'은 3.0 이상만 됩니다.";
+                        $"SettingTraillingStop.GapRate 는 3.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                         return false;
                     }
                     if (setting.ListMin < 2)
@@ -274,10 +274,10 @@ namespace MetaFrm.Stock.Exchange
                         $"'종료호가'는 '시작호가'와 같거나 작을 수 없습니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                         return false;
                     }
-                    if (martingaleShort.GapRate < 5M)
+                    if (martingaleShort.GapRate < 3M)
                     {
-                        message = "'갭%'은 5.0 이상만 됩니다.";
-                        $"SettingTraillingStop.GapRate 는 5.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        message = "'갭%'은 3.0 이상만 됩니다.";
+                        $"SettingTraillingStop.GapRate 는 3.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                         return false;
                     }
                     if (setting.ListMin < 2)
@@ -316,10 +316,10 @@ namespace MetaFrm.Stock.Exchange
                         return false;
                     }
 
-                    if (settingGridMartingaleLongTrading.MartingaleLong.GapRate < 5M)
+                    if (settingGridMartingaleLongTrading.MartingaleLong.GapRate < 3M)
                     {
-                        message = "'마틴게일 롱 갭%'은 5.0 이상만 됩니다.";
-                        $"'마틴게일 롱 갭%'은 5.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        message = "'마틴게일 롱 갭%'은 3.0 이상만 됩니다.";
+                        $"'마틴게일 롱 갭%'은 3.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                         return false;
                     }
                     if (settingGridMartingaleLongTrading.MartingaleLong.ListMin < 4)
@@ -364,10 +364,10 @@ namespace MetaFrm.Stock.Exchange
                         return false;
                     }
 
-                    if (settingGridMartingaleShortTrading.MartingaleShort.GapRate < 5M)
+                    if (settingGridMartingaleShortTrading.MartingaleShort.GapRate < 3M)
                     {
-                        message = "'마틴게일 숏 갭%'은 5.0 이상만 됩니다.";
-                        $"'마틴게일 숏 갭%'은 5.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        message = "'마틴게일 숏 갭%'은 3.0 이상만 됩니다.";
+                        $"'마틴게일 숏 갭%'은 3.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                         return false;
                     }
                     if (settingGridMartingaleShortTrading.MartingaleShort.ListMin < 4)
@@ -531,10 +531,7 @@ namespace MetaFrm.Stock.Exchange
                                             //사용자 세팅 중지 요청
                                             if (setting.BidCancel || setting.AskCancel || setting.AskCurrentPrice || setting.BidCurrentPrice)
                                             {
-                                                if (setting.SettingType == SettingType.MartingaleShort)
-                                                    (setting as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
-
-                                                else if (setting.SettingType == SettingType.GridMartingaleShort)
+                                                if (setting.SettingType == SettingType.GridMartingaleShort)
                                                 {
                                                     GridMartingaleShort set2 = (GridMartingaleShort)setting;
 
