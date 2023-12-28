@@ -432,15 +432,41 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="rate"></param>
         /// <param name="listMin"></param>
         /// <returns></returns>
-        internal static decimal GetBasePrice(int exchangeID, decimal tradePrice, decimal rate, decimal listMin)
+        public static decimal GetBasePrice(int exchangeID, decimal tradePrice, decimal rate, decimal listMin)
         {
             decimal basePrice = tradePrice * (1 - ((rate + Setting.DefaultFees(exchangeID)) / 99.8M) * listMin);
-            return Math.Round(basePrice);
+            return RoundPrice(basePrice);
         }
-        internal static decimal GetTopPrice(int exchangeID, decimal tradePrice, decimal rate, decimal listMin)
+        /// <summary>
+        /// GetTopPrice
+        /// </summary>
+        /// <param name="exchangeID"></param>
+        /// <param name="tradePrice"></param>
+        /// <param name="rate"></param>
+        /// <param name="listMin"></param>
+        /// <returns></returns>
+        public static decimal GetTopPrice(int exchangeID, decimal tradePrice, decimal rate, decimal listMin)
         {
             decimal basePrice = tradePrice * (1 + ((rate + Setting.DefaultFees(exchangeID)) / 99.8M) * listMin);
-            return Math.Round(basePrice);
+            return RoundPrice(basePrice);
+        }
+
+        /// <summary>
+        /// RoundPrice
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static decimal RoundPrice(decimal value)
+        {
+            if (value <= 0M)
+                throw new Exception($"RoundPrice({value})");
+            else if (value < 1M)
+                return Math.Round(value * 10000M) / 10000M;
+            else if (value < 100M)
+                return Math.Round(value * 100M) / 100M;
+            else
+                return Math.Round(value);
         }
 
 

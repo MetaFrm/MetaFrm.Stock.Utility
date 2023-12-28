@@ -197,12 +197,12 @@ namespace MetaFrm.Stock.Exchange
                         $"'목표%'를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                         return false;
                     }
-                    if (settingTraillingStop.ReturnRate >= 0.0M)
-                    {
-                        message = "'리턴%'(음수)를 입력하세요.";
-                        $"'리턴%'(음수)를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
-                        return false;
-                    }
+                    //if (settingTraillingStop.ReturnRate <= 0.0M)
+                    //{
+                    //    message = "'리턴%'(양수)를 입력하세요.";
+                    //    $"'리턴%'(양수)를 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                    //    return false;
+                    //}
                     if (Math.Abs(settingTraillingStop.ReturnRate) > settingTraillingStop.Rate)
                     {
                         message = "'목표%' 값 너무 낮거나 '리턴%' 값니 너무 작습니다.";
@@ -937,7 +937,19 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="account"></param>
         public static void Upload(User user, Models.Account account)
         {
-            MemoryServiceSet(user, user.AuthState, $"{user.ExchangeID}_{user.UserID}_Accounts", System.Text.Json.JsonSerializer.Serialize(account));
+            Upload(user, user.AuthState, user.ExchangeID, user.UserID, account);
+        }
+        /// <summary>
+        /// Upload
+        /// </summary>
+        /// <param name="core"></param>
+        /// <param name="authenticationState"></param>
+        /// <param name="exchangeID"></param>
+        /// <param name="userID"></param>
+        /// <param name="account"></param>
+        public static void Upload(ICore core, Task<AuthenticationState> authenticationState, int exchangeID, int userID, Models.Account account)
+        {
+            MemoryServiceSet(core, authenticationState, $"{exchangeID}_{userID}_Accounts", System.Text.Json.JsonSerializer.Serialize(account));
         }
         /// <summary>
         /// Upload
@@ -946,7 +958,19 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="order"></param>
         public static void Upload(User user, Models.Order order)
         {
-            MemoryServiceSet(user, user.AuthState, $"{user.ExchangeID}_{user.UserID}_Orders", System.Text.Json.JsonSerializer.Serialize(order));
+            Upload(user, user.AuthState, user.ExchangeID, user.UserID, order);
+        }
+        /// <summary>
+        /// Upload
+        /// </summary>
+        /// <param name="core"></param>
+        /// <param name="authenticationState"></param>
+        /// <param name="exchangeID"></param>
+        /// <param name="userID"></param>
+        /// <param name="order"></param>
+        public static void Upload(ICore core, Task<AuthenticationState> authenticationState, int exchangeID, int userID, Models.Order order)
+        {
+            MemoryServiceSet(core, authenticationState, $"{exchangeID}_{userID}_Orders", System.Text.Json.JsonSerializer.Serialize(order));
         }
         private static void MemoryServiceSet(ICore core, Task<AuthenticationState> authenticationState, string key, string value)
         {
