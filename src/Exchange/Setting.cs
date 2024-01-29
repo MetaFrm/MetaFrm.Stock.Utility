@@ -691,7 +691,7 @@ namespace MetaFrm.Stock.Exchange
             data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
             data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, user.UserID);
 
-            stringBuilder.Append($"{user.ExchangeName()} {this.SettingTypeString} 세팅 {(isIn ? "추가" : "제거")}");
+            stringBuilder.Append($"{user.ExchangeName()} {(this.ParentSetting != null ? this.ParentSetting.SettingTypeString : this.SettingTypeString)} 세팅 {(isIn ? "추가" : "제거")}");
             data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
             stringBuilder.Clear();
