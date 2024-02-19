@@ -875,12 +875,13 @@ namespace MetaFrm.Stock.Exchange
 
             stringBuilder.Append($"{order.ExecutedVolume:N4} {tmps?[1]}");
 
-            if (order.Price >= 100)
-                stringBuilder.Append($" | {order.Price:N0} {tmps?[0]}");
-            else if (order.Price >= 1)  
-                stringBuilder.Append($" | {order.Price:N2} {tmps?[0]}");
-            else                        
-                stringBuilder.Append($" | {order.Price:N4} {tmps?[0]}");
+            //if (order.Price >= 100)
+            //    stringBuilder.Append($" | {order.Price:N0} {tmps?[0]}");
+            //else if (order.Price >= 1)  
+            //    stringBuilder.Append($" | {order.Price:N2} {tmps?[0]}");
+            //else                        
+            //    stringBuilder.Append($" | {order.Price:N4} {tmps?[0]}");
+            stringBuilder.Append($" | {order.Price.PriceToString(setting.ExchangeID, order.Market ?? "")} {tmps?[0]}");
 
             decimal tmp = order.Price * order.ExecutedVolume;
             stringBuilder.Append($" | {tmp + tmp * (order.Side == "bid" ? setting.Fees / 100M : -setting.Fees / 100M):N0}원");

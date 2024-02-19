@@ -209,7 +209,7 @@ namespace MetaFrm.Stock.Exchange
                         {
                             this.IsTarget = true;
                             item.TargetAskPrice = this.CurrentInfo.TradePrice;
-                            this.ReturnPrice = item.TargetAskPrice * (1 + (this.ReturnRate / 100M));
+                            this.ReturnPrice = (item.TargetAskPrice * (1 + (this.ReturnRate / 100M))).PriceRound(this.ExchangeID, this.Market);
 
                             this.Update(this.User, this.SettingID, item.BidAvgPrice, item.TargetAskPrice, this.ReturnPrice);
                         }
@@ -345,19 +345,21 @@ namespace MetaFrm.Stock.Exchange
 
             string[]? tmps = this.Market?.Split('-');
 
-            if (TARGET_PRICE >= 100)
-                stringBuilder.Append($"타겟: {TARGET_PRICE:N0} {tmps?[0]}");
-            else if (TARGET_PRICE >= 1)
-                stringBuilder.Append($"타겟: {TARGET_PRICE:N2} {tmps?[0]}");
-            else
-                stringBuilder.Append($"타겟: {TARGET_PRICE:N4} {tmps?[0]}");
+            //if (TARGET_PRICE >= 100)
+            //    stringBuilder.Append($"타겟: {TARGET_PRICE:N0} {tmps?[0]}");
+            //else if (TARGET_PRICE >= 1)
+            //    stringBuilder.Append($"타겟: {TARGET_PRICE:N2} {tmps?[0]}");
+            //else
+            //    stringBuilder.Append($"타겟: {TARGET_PRICE:N4} {tmps?[0]}");
+            stringBuilder.Append($"타겟: {TARGET_PRICE.PriceToString(SETTING_ID, this.Market ?? "")} {tmps?[0]}");
 
-            if (RETURN_PRICE >= 100)
-                stringBuilder.Append($" | 리턴: {RETURN_PRICE:N0} {tmps?[0]}");
-            else if (RETURN_PRICE >= 1)
-                stringBuilder.Append($" | 리턴: {RETURN_PRICE:N2} {tmps?[0]}");
-            else
-                stringBuilder.Append($" | 리턴: {RETURN_PRICE:N4} {tmps?[0]}");
+            //if (RETURN_PRICE >= 100)
+            //    stringBuilder.Append($" | 리턴: {RETURN_PRICE:N0} {tmps?[0]}");
+            //else if (RETURN_PRICE >= 1)
+            //    stringBuilder.Append($" | 리턴: {RETURN_PRICE:N2} {tmps?[0]}");
+            //else
+            //    stringBuilder.Append($" | 리턴: {RETURN_PRICE:N4} {tmps?[0]}");
+            stringBuilder.Append($" | 리턴: {RETURN_PRICE.PriceToString(SETTING_ID, this.Market ?? "")} {tmps?[0]}");
 
             data["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 

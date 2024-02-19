@@ -428,46 +428,51 @@ namespace MetaFrm.Stock.Exchange
         /// GetBasePrice
         /// </summary>
         /// <param name="exchangeID"></param>
+        /// <param name="market"></param>
         /// <param name="tradePrice"></param>
         /// <param name="rate"></param>
         /// <param name="listMin"></param>
         /// <returns></returns>
-        public static decimal GetBasePrice(int exchangeID, decimal tradePrice, decimal rate, decimal listMin)
+        public static decimal GetBasePrice(int exchangeID, string market, decimal tradePrice, decimal rate, decimal listMin)
         {
             decimal basePrice = tradePrice * (1 - ((rate + Setting.DefaultFees(exchangeID)) / 99.8M) * listMin);
-            return RoundPrice(basePrice);
+
+            return basePrice.PriceRound(exchangeID, market);
+            //return RoundPrice(basePrice);
         }
         /// <summary>
         /// GetTopPrice
         /// </summary>
         /// <param name="exchangeID"></param>
+        /// <param name="market"></param>
         /// <param name="tradePrice"></param>
         /// <param name="rate"></param>
         /// <param name="listMin"></param>
         /// <returns></returns>
-        public static decimal GetTopPrice(int exchangeID, decimal tradePrice, decimal rate, decimal listMin)
+        public static decimal GetTopPrice(int exchangeID, string market, decimal tradePrice, decimal rate, decimal listMin)
         {
             decimal basePrice = tradePrice * (1 + ((rate + Setting.DefaultFees(exchangeID)) / 99.8M) * listMin);
-            return RoundPrice(basePrice);
+            return basePrice.PriceRound(exchangeID, market);
+            //return RoundPrice(basePrice);
         }
 
-        /// <summary>
-        /// RoundPrice
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public static decimal RoundPrice(decimal value)
-        {
-            if (value <= 0M)
-                throw new Exception($"RoundPrice({value})");
-            else if (value < 1M)
-                return Math.Round(value * 10000M) / 10000M;
-            else if (value < 100M)
-                return Math.Round(value * 100M) / 100M;
-            else
-                return Math.Round(value);
-        }
+        ///// <summary>
+        ///// RoundPrice
+        ///// </summary>
+        ///// <param name="value"></param>
+        ///// <returns></returns>
+        ///// <exception cref="Exception"></exception>
+        //public static decimal RoundPrice(decimal value)
+        //{
+        //    if (value <= 0M)
+        //        throw new Exception($"RoundPrice({value})");
+        //    else if (value < 1M)
+        //        return Math.Round(value * 10000M) / 10000M;
+        //    else if (value < 100M)
+        //        return Math.Round(value * 100M) / 100M;
+        //    else
+        //        return Math.Round(value);
+        //}
 
 
         private string LastMessage = "";
@@ -551,25 +556,27 @@ namespace MetaFrm.Stock.Exchange
             //stringBuilder.Append("S ");
             stringBuilder.Append($"{ASK_QTY:N4} {tmps?[1]}");
 
-            if (ASK_PRICE >= 100)
-                stringBuilder.Append($" | {ASK_PRICE:N0} {tmps?[0]}");
-            else if (ASK_PRICE >= 1)    
-                stringBuilder.Append($" | {ASK_PRICE:N2} {tmps?[0]}");
-            else                        
-                stringBuilder.Append($" | {ASK_PRICE:N4} {tmps?[0]}");
-                                        
+            //if (ASK_PRICE >= 100)
+            //    stringBuilder.Append($" | {ASK_PRICE:N0} {tmps?[0]}");
+            //else if (ASK_PRICE >= 1)
+            //    stringBuilder.Append($" | {ASK_PRICE:N2} {tmps?[0]}");
+            //else
+            //    stringBuilder.Append($" | {ASK_PRICE:N4} {tmps?[0]}");
+            stringBuilder.Append($" | {ASK_PRICE.PriceToString(this.ExchangeID, this.Market ?? "")} {tmps?[0]}");
+
             stringBuilder.AppendLine($" | {(ASK_PRICE * ASK_QTY) - ASK_FEE:N0}원");
 
 
             //stringBuilder.Append("B ");
             stringBuilder.Append($"{BID_QTY:N4} {tmps?[1]}");
 
-            if (BID_PRICE >= 100)
-                stringBuilder.Append($" | {BID_PRICE:N0} {tmps?[0]}");
-            else if (BID_PRICE >= 1)    
-                stringBuilder.Append($" | {BID_PRICE:N2} {tmps?[0]}");
-            else                        
-                stringBuilder.Append($" | {BID_PRICE:N4} {tmps?[0]}");
+            //if (BID_PRICE >= 100)
+            //    stringBuilder.Append($" | {BID_PRICE:N0} {tmps?[0]}");
+            //else if (BID_PRICE >= 1)
+            //    stringBuilder.Append($" | {BID_PRICE:N2} {tmps?[0]}");
+            //else
+            //    stringBuilder.Append($" | {BID_PRICE:N4} {tmps?[0]}");
+            stringBuilder.Append($" | {BID_PRICE.PriceToString(this.SettingID, this.Market ?? "")} {tmps?[0]}");
 
             stringBuilder.Append($" | {(BID_PRICE * BID_QTY) + BID_FEE:N0}원");
 

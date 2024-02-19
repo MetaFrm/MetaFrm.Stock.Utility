@@ -9,6 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MetaFrm.Stock.Utility(net7.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{43BEF168-A67F-4D2B-B327-2661539BABBD}"
 	ProjectSection(SolutionItems) = preProject
+		src\Converter.cs = src\Converter.cs
 		src\IApi.cs = src\IApi.cs
 	EndProjectSection
 EndProject

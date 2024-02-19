@@ -112,12 +112,12 @@ namespace MetaFrm.Stock.Exchange
 
                 if (this.LossStack.Count % 2 == 0)
                 {
-                    this.SetGrid(this.User.ExchangeID, this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().CurrentInvest);
+                    this.SetGrid(this.User.ExchangeID, this.Market, this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().CurrentInvest);
                     this.Current = this.Grid;
                 }
                 else
                 {
-                    this.SetMartingaleLong(this.User.ExchangeID, this.CurrentInfo.TradePrice, this.LossStack.Peek().CurrentInvest);
+                    this.SetMartingaleLong(this.User.ExchangeID, this.Market, this.CurrentInfo.TradePrice, this.LossStack.Peek().CurrentInvest);
                     this.Current = this.MartingaleLong;
                 }
             }
@@ -231,7 +231,7 @@ namespace MetaFrm.Stock.Exchange
                 //this.SettingMartingaleLongTrading.BasePrice = this.CurrentInfo.TradePrice;
                 //this.SettingMartingaleLongTrading.TopPrice = this.GetTopPrice(this.CurrentInfo.TradePrice, this.SettingMartingaleLongTrading.Rate, this.SettingMartingaleLongTrading.ListMin);
                 //this.SettingMartingaleLongTrading.Invest = qty;
-                this.SetMartingaleLong(this.User.ExchangeID, this.CurrentInfo.TradePrice, krw);
+                this.SetMartingaleLong(this.User.ExchangeID, this.Market ?? "", this.CurrentInfo.TradePrice, krw);
 
                 if (isPush)
                     this.LossStack.Push(new() { AccProfit = 0, Invest = askKrw, CurrentInvest = krw });
@@ -316,7 +316,7 @@ namespace MetaFrm.Stock.Exchange
 
                     this.LossStack.Pop();
 
-                    this.SetGrid(this.User.ExchangeID, this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
+                    this.SetGrid(this.User.ExchangeID, this.Market, this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
 
 
                     $"전환 SettingMartingaleLongTrading->SettingGridTrading IsPush:{false}TradePrice:{this.CurrentInfo.TradePrice}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market, ConsoleColor.DarkGreen);
@@ -371,7 +371,7 @@ namespace MetaFrm.Stock.Exchange
                     bidKrw = askVolumeWorkData.Sum(x => (x.BidOrder?.Price * x.BidOrder?.Volume) - (x.BidOrder?.Price * x.BidOrder?.Volume * (martingaleLong.Fees / 100M))) ?? 0;
 
                 //this.SettingGridTrading.Invest = askAmount;
-                this.SetGrid(this.User.ExchangeID, this.CurrentInfo.TradePrice, krw);
+                this.SetGrid(this.User.ExchangeID, this.Market ?? "", this.CurrentInfo.TradePrice, krw);
                 this.LossStack.Push(new() { AccProfit = 0, Invest = bidKrw, CurrentInvest = krw });
             }
             else
@@ -379,7 +379,7 @@ namespace MetaFrm.Stock.Exchange
                 this.LossStack.Pop();
 
                 //this.SettingGridTrading.Invest = this.Invest;
-                this.SetGrid(this.User.ExchangeID, this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
+                this.SetGrid(this.User.ExchangeID, this.Market ?? "", this.CurrentInfo.TradePrice, this.LossStack.Count == 0 ? this.Invest : this.LossStack.Peek().Invest);
             }
 
             $"전환 SettingMartingaleLongTrading->SettingGridTrading IsPush:{isPush} TradePrice:{this.CurrentInfo.TradePrice}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market, ConsoleColor.DarkGreen);
@@ -388,20 +388,20 @@ namespace MetaFrm.Stock.Exchange
             return;
         }
 
-        private void SetGrid(int exchangeID, decimal tradePrice, decimal invest)
+        private void SetGrid(int exchangeID, string market, decimal tradePrice, decimal invest)
         {
             this.Grid.Market = this.Market;
             this.Grid.SettingID = this.SettingID;
             this.Grid.TopPrice = tradePrice;
-            this.Grid.BasePrice = GetBasePrice(exchangeID, tradePrice, this.Grid.Rate, this.Grid.ListMin);
+            this.Grid.BasePrice = GetBasePrice(exchangeID, market, tradePrice, this.Grid.Rate, this.Grid.ListMin);
             this.Grid.Invest = invest;
         }
-        private void SetMartingaleLong(int exchangeID, decimal tradePrice, decimal invest)
+        private void SetMartingaleLong(int exchangeID, string market, decimal tradePrice, decimal invest)
         {
             this.MartingaleLong.Market = this.Market;
             this.MartingaleLong.SettingID = this.SettingID;
             this.MartingaleLong.BasePrice = tradePrice;
-            this.MartingaleLong.TopPrice = GetTopPrice(exchangeID, tradePrice, this.MartingaleLong.Rate, this.MartingaleLong.ListMin);
+            this.MartingaleLong.TopPrice = GetTopPrice(exchangeID, market, tradePrice, this.MartingaleLong.Rate, this.MartingaleLong.ListMin);
             this.MartingaleLong.Invest = invest;
         }
     }
