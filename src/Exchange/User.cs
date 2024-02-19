@@ -608,7 +608,7 @@ namespace MetaFrm.Stock.Exchange
                         if (this.IsStopped && this.Settings.Count == 0)
                             break;
 
-                        if (this.Api != null && this.Settings.Any())
+                        if (this.Api != null && this.Settings.Count != 0)
                         {
                             Models.Order order;
 

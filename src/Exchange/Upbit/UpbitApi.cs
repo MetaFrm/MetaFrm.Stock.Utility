@@ -213,6 +213,8 @@ namespace MetaFrm.Stock.Exchange.Upbit
             return error != null ? new() { Message = error.Name, Code = error.Name } : null;
         }
 
+        private readonly JsonSerializerOptions jsonSerializerOptions = new() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString };
+
         #region "자산"
         Models.Account IApi.Account()
         {
@@ -228,7 +230,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<List<Account>>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<List<Account>>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
 
@@ -268,7 +270,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                orderChance = JsonSerializer.Deserialize<OrderChance>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                orderChance = JsonSerializer.Deserialize<OrderChance>(tmp, jsonSerializerOptions);
 
                 if (orderChance != null)
                 {
@@ -359,7 +361,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                order = JsonSerializer.Deserialize<Order>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                order = JsonSerializer.Deserialize<Order>(tmp, jsonSerializerOptions);
 
                 if (order != null)
                 {
@@ -458,7 +460,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<Order[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<Order[]>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
 
@@ -527,7 +529,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                order = JsonSerializer.Deserialize<Order>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                order = JsonSerializer.Deserialize<Order>(tmp, jsonSerializerOptions);
 
                 if (order != null)
                 {
@@ -607,7 +609,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                order = JsonSerializer.Deserialize<Order>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                order = JsonSerializer.Deserialize<Order>(tmp, jsonSerializerOptions);
 
                 if (order != null)
                 {
@@ -815,7 +817,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<Deposits[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<Deposits[]>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
 
@@ -863,7 +865,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<ApiKyes[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<ApiKyes[]>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
 
@@ -899,7 +901,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 if (!((IApi)this).AccessKey.IsNullOrEmpty())
                     lock (MarketsDB)
-                        if (MarketsDB.MarketList == null || !MarketsDB.MarketList.Any() || MarketsDB.LastDateTime.Hour != DateTime.Now.Hour)
+                        if (MarketsDB.MarketList == null || MarketsDB.MarketList.Count == 0 || MarketsDB.LastDateTime.Hour != DateTime.Now.Hour)
                         {
                             MarketsDB.LastDateTime = DateTime.Now;
 
@@ -909,7 +911,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                             if (tmp.Contains("error")) { result.Error = GetError(tmp); return MarketsDB; }
                             if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return MarketsDB; }
 
-                            list = JsonSerializer.Deserialize<Markets[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                            list = JsonSerializer.Deserialize<Markets[]>(tmp, jsonSerializerOptions);
 
                             if (list == null) return MarketsDB;
 
@@ -950,7 +952,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<CandlesMinute[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<CandlesMinute[]>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
 
@@ -981,6 +983,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             return result;
         }
 
+        private readonly JsonSerializerOptions jsonSerializerOptions1 = new() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals };
         Models.CandlesDay IApi.CandlesDay(string market, DateTime to, int count, string convertingPriceUnit)
         {
             string? tmp;
@@ -995,7 +998,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<CandlesDay[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
+                list = JsonSerializer.Deserialize<CandlesDay[]>(tmp, jsonSerializerOptions1);
 
                 if (list == null) return result;
 
@@ -1043,7 +1046,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<CandlesWeek[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
+                list = JsonSerializer.Deserialize<CandlesWeek[]>(tmp, jsonSerializerOptions1);
 
                 if (list == null) return result;
 
@@ -1088,7 +1091,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<CandlesMonth[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals });
+                list = JsonSerializer.Deserialize<CandlesMonth[]>(tmp, jsonSerializerOptions1);
 
                 if (list == null) return result;
 
@@ -1136,7 +1139,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<Ticks[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<Ticks[]>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
 
@@ -1187,7 +1190,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 //데이터를 가져온지 오래 되었고 요청한 리스트에 있으면
                 var isIn = tmps.Where(x => TickerDB.TickerList.Where(x1 => x1.LastDateTime < dateTime).Select(x => x.Market).Contains(x));
 
-                if (TickerDB.TickerList != null && TickerDB.TickerList.Any() && isIn != null && isIn.Any())
+                if (TickerDB.TickerList != null && TickerDB.TickerList.Count != 0 && isIn != null && isIn.Any())
                 {
                     tmp = string.Join(',', isIn);
 
@@ -1205,7 +1208,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                         }
                         else
                         {
-                            list = JsonSerializer.Deserialize<Ticker[]>(tmp.Replace(":null", ":0"), new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                            list = JsonSerializer.Deserialize<Ticker[]>(tmp.Replace(":null", ":0"), jsonSerializerOptions);
 
                             if (list != null)
                             {
@@ -1272,7 +1275,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                         }
                         else
                         {
-                            list = JsonSerializer.Deserialize<Ticker[]>(tmp.Replace(":null", ":0"), new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                            list = JsonSerializer.Deserialize<Ticker[]>(tmp.Replace(":null", ":0"), jsonSerializerOptions);
 
                             if (list != null)
                             {
@@ -1342,7 +1345,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 {
                     var markets = ((IApi)this).Markets();
 
-                    if ((!((IApi)this).AccessKey.IsNullOrEmpty() && !((IApi)this).SecretKey.IsNullOrEmpty()) || (markets.MarketList != null && markets.MarketList.Any()))
+                    if ((!((IApi)this).AccessKey.IsNullOrEmpty() && !((IApi)this).SecretKey.IsNullOrEmpty()) || (markets.MarketList != null && markets.MarketList.Count != 0))
                         break;
 
                     await Task.Delay(5000);
@@ -1383,7 +1386,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 markets = ((IApi)this).Markets();
 
-                if (markets == null || markets.MarketList == null || !markets.MarketList.Any())
+                if (markets == null || markets.MarketList == null || markets.MarketList.Count == 0)
                     return;
 
                 codes = string.Join(',', markets.MarketList.Select(x => $"\"{x.Market}\""));
@@ -1447,7 +1450,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                                 sel.ExchangeID = 1;
                                 sel.LastDateTime = dateTime;
                                 sel.Market = tickerWebSocket.Code;
-                                sel.Icon = sel.Icon == null ? markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon : sel.Icon;
+                                sel.Icon ??= (markets.MarketList.SingleOrDefault(x => x.Market == tickerWebSocket.Code)?.Icon);
                                 sel.TradeDate = tickerWebSocket.TradeDate;
                                 sel.TradeTime = tickerWebSocket.TradeTime;
                                 //sel.TradeDateKst = tickerWebSocket.TradeDate;
@@ -1552,7 +1555,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
                 if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
 
-                list = JsonSerializer.Deserialize<Orderbook[]>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<Orderbook[]>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
 

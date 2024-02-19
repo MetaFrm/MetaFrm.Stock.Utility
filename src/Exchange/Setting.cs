@@ -717,6 +717,7 @@ namespace MetaFrm.Stock.Exchange
             });
         }
 
+        private readonly JsonSerializerOptions jsonSerializerOptions = new() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString };
         internal void SaveWorkDataList(User user)
         {
             try
@@ -725,7 +726,7 @@ namespace MetaFrm.Stock.Exchange
                 {
                     string path = $"S_WDL_{this.SettingID}.txt";
                     using StreamWriter streamWriter = File.CreateText(path);
-                    streamWriter.Write(JsonSerializer.Serialize(this.WorkDataList, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString }));
+                    streamWriter.Write(JsonSerializer.Serialize(this.WorkDataList, jsonSerializerOptions));
                 }
             }
             catch (Exception ex)
@@ -743,7 +744,7 @@ namespace MetaFrm.Stock.Exchange
                 if (File.Exists(path))
                 {
                     using (StreamReader streamReader = File.OpenText(path))
-                        result = JsonSerializer.Deserialize<List<WorkData>>(streamReader.ReadToEnd(), new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                        result = JsonSerializer.Deserialize<List<WorkData>>(streamReader.ReadToEnd(), jsonSerializerOptions);
 
                     File.Delete(path);
                 }
@@ -763,7 +764,7 @@ namespace MetaFrm.Stock.Exchange
             {
                 string path = $"S_LS_{this.SettingID}.txt";
                 using StreamWriter streamWriter = File.CreateText(path);
-                streamWriter.Write(JsonSerializer.Serialize(this.LossStack, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString }));
+                streamWriter.Write(JsonSerializer.Serialize(this.LossStack, jsonSerializerOptions));
             }
             catch (Exception ex)
             {
@@ -780,7 +781,7 @@ namespace MetaFrm.Stock.Exchange
                 if (File.Exists(path))
                 {
                     using (StreamReader streamReader = File.OpenText(path))
-                        result = JsonSerializer.Deserialize<Stack<Loss>>(streamReader.ReadToEnd(), new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                        result = JsonSerializer.Deserialize<Stack<Loss>>(streamReader.ReadToEnd(), jsonSerializerOptions);
 
                     File.Delete(path);
                 }

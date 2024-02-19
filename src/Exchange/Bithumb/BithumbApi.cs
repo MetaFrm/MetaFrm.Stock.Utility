@@ -338,6 +338,8 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         //    this.AccountInfoCurrent.Add(accountInfo);
         //}
 
+        private readonly JsonSerializerOptions jsonSerializerOptions = new() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString };
+
         /// <summary>
         /// 전체 계좌 조회
         /// </summary>
@@ -364,7 +366,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbData>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<BithumbData>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
@@ -457,7 +459,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbData>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<BithumbData>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
@@ -571,7 +573,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 //";
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
@@ -667,9 +669,9 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                     }
                                 }
                             }
-                            result.RemainingVolume -= result.Trades != null && result.Trades.Any() ? result.Trades.Sum(x => x.Volume) : 0;
+                            result.RemainingVolume -= result.Trades != null && result.Trades.Count != 0 ? result.Trades.Sum(x => x.Volume) : 0;
                             result.ExecutedVolume = result.Volume - result.RemainingVolume;
-                            result.PaidFee = result.Trades != null && result.Trades.Any() ? result.Trades.Sum(x => x.Fee) : 0;
+                            result.PaidFee = result.Trades != null && result.Trades.Count != 0 ? result.Trades.Sum(x => x.Fee) : 0;
                             result.RemainingFee = result.ExecutedVolume > 0 ? (result.PaidFee * result.RemainingVolume) / result.ExecutedVolume : 0;
                             break;
                     }
@@ -743,7 +745,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDatas>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<BithumbDatas>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
                 if ((list.Code != "5600" && list.Message != "거래 진행중인 내역이 존재하지 않습니다.") && list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
@@ -880,7 +882,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbData>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<BithumbData>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
@@ -965,7 +967,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbData>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<BithumbData>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
@@ -1146,7 +1148,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDatas>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<BithumbDatas>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
@@ -1231,7 +1233,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             {
                 if (!((IApi)this).AccessKey.IsNullOrEmpty())
                     lock (MarketsDB)
-                        if (MarketsDB.MarketList == null || !MarketsDB.MarketList.Any() || MarketsDB.LastDateTime.Hour != DateTime.Now.Hour)
+                        if (MarketsDB.MarketList == null || MarketsDB.MarketList.Count == 0 || MarketsDB.LastDateTime.Hour != DateTime.Now.Hour)
                         {
                             MarketsDB.LastDateTime = DateTime.Now;
 
@@ -1313,7 +1315,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDataJsonElementList>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<BithumbDataJsonElementList>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
@@ -1402,7 +1404,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDataJsonElementList>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<BithumbDataJsonElementList>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
@@ -1572,7 +1574,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 //데이터를 가져온지 오래 되었고 요청한 리스트에 있으면
                 var isIn = tmps.Where(x => TickerDB.TickerList.Where(x1 => x1.LastDateTime < dateTime).Select(x => x.Market).Contains(x));
 
-                if (TickerDB.TickerList != null && TickerDB.TickerList.Any() && isIn != null && isIn.Any())
+                if (TickerDB.TickerList != null && TickerDB.TickerList.Count != 0 && isIn != null && isIn.Any())
                 {
                     ticker1 = this.TickerAll("KRW");
                     if (ticker1.Error != null)
@@ -1729,7 +1731,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
@@ -1849,7 +1851,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 {
                     var markets = ((IApi)this).Markets();
 
-                    if ((!((IApi)this).AccessKey.IsNullOrEmpty() && !((IApi)this).SecretKey.IsNullOrEmpty()) || (markets.MarketList != null && markets.MarketList.Any()))
+                    if ((!((IApi)this).AccessKey.IsNullOrEmpty() && !((IApi)this).SecretKey.IsNullOrEmpty()) || (markets.MarketList != null && markets.MarketList.Count != 0))
                         break;
 
                     await Task.Delay(5000);
@@ -1891,7 +1893,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 markets = ((IApi)this).Markets();
 
-                if (markets == null || markets.MarketList == null || !markets.MarketList.Any())
+                if (markets == null || markets.MarketList == null || markets.MarketList.Count == 0)
                     return;
 
                 codes = string.Join(',', markets.MarketList.Select(x => $"\"{(x.Market ?? "-").Split('-')[1]}_{(x.Market ?? "-").Split('-')[0]}\""));
@@ -2016,7 +2018,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                     sel.ExchangeID = 2;
                                     sel.LastDateTime = dateTime;
                                     sel.Market = ticker.Market;
-                                    sel.Icon = sel.Icon == null ? markets.MarketList.SingleOrDefault(x => x.Market == ticker.Market)?.Icon : sel.Icon;
+                                    sel.Icon ??= (markets.MarketList.SingleOrDefault(x => x.Market == ticker.Market)?.Icon);
                                     sel.TradeDate = ticker.TradeDate;
                                     sel.TradeTime = ticker.TradeTime;
                                     //sel.TradeDateKst = ticker.TradeDate;
@@ -2127,7 +2129,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                 if (string.IsNullOrEmpty(tmp)) return result;
 
-                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp, new JsonSerializerOptions() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString });
+                list = JsonSerializer.Deserialize<BithumbDataJsonElement>(tmp, jsonSerializerOptions);
 
                 if (list == null) return result;
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
