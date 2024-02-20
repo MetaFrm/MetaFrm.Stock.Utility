@@ -74,6 +74,11 @@ namespace MetaFrm.Stock.Exchange
         public decimal Invest { get; set; }
 
         /// <summary>
+        /// BaseInvest
+        /// </summary>
+        public decimal BaseInvest { get; set; }
+
+        /// <summary>
         /// BasePrice
         /// </summary>
         public decimal BasePrice { get; set; }

@@ -256,6 +256,7 @@ namespace MetaFrm.Stock.Exchange
                         int? SETTING_ID = item.Int(nameof(SETTING_ID));
                         string? MARKET = item.String(nameof(MARKET));
                         decimal? INVEST = item.Decimal(nameof(INVEST));
+                        decimal? BASE_INVEST = item.Decimal(nameof(BASE_INVEST));
                         decimal? BASE_PRICE = item.Decimal(nameof(BASE_PRICE));
                         decimal? TOP_PRICE = item.Decimal(nameof(TOP_PRICE));
                         decimal? RATE = item.Decimal(nameof(RATE));
@@ -265,7 +266,7 @@ namespace MetaFrm.Stock.Exchange
                         bool IS_PROFIT_STOP = item.String(nameof(IS_PROFIT_STOP)) == "Y";
                         string? MESSAGE = item.String(nameof(MESSAGE));
 
-                        if (SETTING_TYPE == null || SETTING_ID == null || MARKET == null || INVEST == null || BASE_PRICE == null || TOP_PRICE == null || RATE == null || LIST_MIN == null || FEES == null)
+                        if (SETTING_TYPE == null || SETTING_ID == null || MARKET == null || BASE_INVEST == null || INVEST == null || BASE_PRICE == null || TOP_PRICE == null || RATE == null || LIST_MIN == null || FEES == null)
                             continue;
 
                         switch (SETTING_TYPE.EnumParse<SettingType>())
@@ -274,6 +275,7 @@ namespace MetaFrm.Stock.Exchange
 
                                 string? SMART_TYPE = item.String(nameof(SMART_TYPE));
                                 bool IS_BUYING = item.String(nameof(IS_BUYING)) == "Y";
+                                bool ASK_FILL = item.String(nameof(ASK_FILL)) == "Y";
                                 bool STOP_LOSS = item.String(nameof(STOP_LOSS)) == "Y";
                                 bool BID_ORDER_ALL = item.String(nameof(BID_ORDER_ALL)) == "Y";
 
@@ -283,6 +285,7 @@ namespace MetaFrm.Stock.Exchange
                                         SettingID = (int)SETTING_ID,
                                         Market = MARKET,
                                         Invest = (decimal)INVEST,
+                                        BaseInvest = (decimal)BASE_INVEST,
                                         BasePrice = (decimal)BASE_PRICE,
                                         TopPrice = (decimal)TOP_PRICE,
                                         Rate = (decimal)RATE,
@@ -294,6 +297,7 @@ namespace MetaFrm.Stock.Exchange
 
                                         SmartType = SMART_TYPE.EnumParse<SmartType>(),
                                         IsBuying = IS_BUYING,
+                                        AskFill = ASK_FILL,
                                         StopLoss = STOP_LOSS,
                                         BidOrderAll = BID_ORDER_ALL,
                                     });
@@ -311,6 +315,7 @@ namespace MetaFrm.Stock.Exchange
                                         SettingID = (int)SETTING_ID,
                                         Market = MARKET,
                                         Invest = (decimal)INVEST,
+                                        BaseInvest = (decimal)BASE_INVEST,
                                         BasePrice = (decimal)BASE_PRICE,
                                         //TopPrice = (decimal)TOP_PRICE,
                                         Rate = (decimal)RATE,
@@ -338,6 +343,7 @@ namespace MetaFrm.Stock.Exchange
                                         SettingID = (int)SETTING_ID,
                                         Market = MARKET,
                                         Invest = (decimal)INVEST,
+                                        BaseInvest = (decimal)BASE_INVEST,
                                         BasePrice = (decimal)BASE_PRICE,
                                         TopPrice = (decimal)TOP_PRICE,
                                         Rate = (decimal)RATE,
@@ -363,6 +369,7 @@ namespace MetaFrm.Stock.Exchange
                                         SettingID = (int)SETTING_ID,
                                         Market = MARKET,
                                         Invest = (decimal)INVEST,
+                                        BaseInvest = (decimal)BASE_INVEST,
                                         BasePrice = (decimal)BASE_PRICE,
                                         TopPrice = (decimal)TOP_PRICE,
                                         Rate = (decimal)RATE,
@@ -409,6 +416,7 @@ namespace MetaFrm.Stock.Exchange
                                         SettingID = (int)SETTING_ID,
                                         Market = MARKET,
                                         Invest = (decimal)INVEST,
+                                        BaseInvest = (decimal)BASE_INVEST,
                                     });
 
                                 break;
@@ -444,6 +452,7 @@ namespace MetaFrm.Stock.Exchange
                                         SettingID = (int)SETTING_ID,
                                         Market = MARKET,
                                         Invest = (decimal)INVEST,
+                                        BaseInvest = (decimal)BASE_INVEST,
                                     });
 
                                 break;
@@ -462,6 +471,7 @@ namespace MetaFrm.Stock.Exchange
                                         SettingID = (int)SETTING_ID,
                                         Market = MARKET,
                                         Invest = (decimal)INVEST,
+                                        BaseInvest = (decimal)BASE_INVEST,
                                         BasePrice = (decimal)BASE_PRICE,
                                         //TopPrice = (decimal)TOP_PRICE,
                                         //Rate = (decimal)RATE,

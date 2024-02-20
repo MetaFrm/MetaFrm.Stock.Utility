@@ -125,7 +125,7 @@ namespace MetaFrm.Stock.Exchange
 
             var investMin = ExchangeID switch { 1 => 10000, 2 => 2000, _ => 10000 };
 
-            if (setting.Invest < investMin && setting.SettingType != SettingType.MartingaleShort && setting.SettingType != SettingType.Schedule)
+            if ((setting.Invest + setting.BaseInvest) < investMin && setting.SettingType != SettingType.MartingaleShort && setting.SettingType != SettingType.Schedule)
             {
                 message = $"'투자금액'({investMin:N}이상)을 입력하세요.";
                 $"'투자금액'({investMin:N}이상)을 입력하세요.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);

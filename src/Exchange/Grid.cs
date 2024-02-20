@@ -553,7 +553,7 @@ namespace MetaFrm.Stock.Exchange
             data["1"].AddParameter("INVEST", Database.DbType.Decimal, 25, this.Invest);
 
             if (BASE_INVEST == null)
-                data["1"].AddParameter("BASE_INVEST", Database.DbType.Decimal, 25, null);
+                data["1"].AddParameter("BASE_INVEST", Database.DbType.Decimal, 25, this.BaseInvest);
             else
                 data["1"].AddParameter("BASE_INVEST", Database.DbType.Decimal, 25, BASE_INVEST);
 
