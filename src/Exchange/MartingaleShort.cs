@@ -580,7 +580,12 @@ namespace MetaFrm.Stock.Exchange
             }
         }
 
-        private List<WorkData>? GetWorkData(decimal? TRADE_PRICE)
+        /// <summary>
+        /// GetWorkData
+        /// </summary>
+        /// <param name="TRADE_PRICE"></param>
+        /// <returns></returns>
+        public List<WorkData>? GetWorkData(decimal? TRADE_PRICE)
         {
             Response response;
 

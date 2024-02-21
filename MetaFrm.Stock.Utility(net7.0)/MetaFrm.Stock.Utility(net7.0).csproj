@@ -10,7 +10,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>MetaFrm.Stock.Utility.net7.0</PackageId>
     <Title>Meta Framework Stock Utility</Title>
-    <Version>7.0.2.4</Version>
+    <Version>7.0.2.5</Version>
     <Authors>dsun</Authors>
     <Company>Meta Framework</Company>
     <Product>Meta Framework Stock Utility</Product>

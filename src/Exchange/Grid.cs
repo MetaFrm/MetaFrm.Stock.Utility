@@ -78,7 +78,7 @@ namespace MetaFrm.Stock.Exchange
             {
                 if (this.User.Api == null) return;
                 if (this.Market == null) return;
-                if (this.Invest < this.User.ExchangeID switch
+                if ((this.Invest + this.BaseInvest) < this.User.ExchangeID switch
                 {
                     1 => 5000,
                     2 => 500,
@@ -534,7 +534,14 @@ namespace MetaFrm.Stock.Exchange
 
             return AskQty;
         }
-        private List<WorkData>? GetWorkData(decimal? BASE_INVEST, decimal? BASE_PRICE, decimal? TOP_PRICE)
+        /// <summary>
+        /// GetWorkData
+        /// </summary>
+        /// <param name="BASE_INVEST"></param>
+        /// <param name="BASE_PRICE"></param>
+        /// <param name="TOP_PRICE"></param>
+        /// <returns></returns>
+        public List<WorkData>? GetWorkData(decimal? BASE_INVEST, decimal? BASE_PRICE, decimal? TOP_PRICE)
         {
             Response response;
 
