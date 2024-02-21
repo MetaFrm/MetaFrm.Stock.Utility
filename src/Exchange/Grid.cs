@@ -1,6 +1,7 @@
 ﻿using MetaFrm.Extensions;
 using MetaFrm.Service;
 using MetaFrm.Stock.Console;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace MetaFrm.Stock.Exchange
 {
@@ -540,23 +541,21 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="BASE_INVEST"></param>
         /// <param name="BASE_PRICE"></param>
         /// <param name="TOP_PRICE"></param>
+        /// <param name="authState"></param>
         /// <returns></returns>
-        public List<WorkData>? GetWorkData(decimal? BASE_INVEST, decimal? BASE_PRICE, decimal? TOP_PRICE)
+        public List<WorkData>? GetWorkData(decimal? BASE_INVEST, decimal? BASE_PRICE, decimal? TOP_PRICE, Task<AuthenticationState>? authState = null)
         {
             Response response;
 
-            if (this.User != null)
-                this.Fees = DefaultFees(this.User.ExchangeID);
-
-            if (this.User == null) return null;
+            this.Fees = DefaultFees(this.ExchangeID);
 
             ServiceData data = new()
             {
                 TransactionScope = false,
-                Token = this.User.AuthState.Token(),
+                Token = authState != null ? authState.Token() : this.User?.AuthState.Token(),
             };
             data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("Grid.GetWorkData");
-            data["1"].AddParameter("EXCHANGE_ID", Database.DbType.Int, 3, this.User.ExchangeID);
+            data["1"].AddParameter("EXCHANGE_ID", Database.DbType.Int, 3, this.ExchangeID);
             data["1"].AddParameter("INVEST", Database.DbType.Decimal, 25, this.Invest);
 
             if (BASE_INVEST == null)
@@ -598,7 +597,7 @@ namespace MetaFrm.Stock.Exchange
                     return null;
                 else
                 {
-                    //$"SettingGrid".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    //$"SettingGrid".WriteMessage(this.ExchangeID, this.User.UserID, this.SettingID, this.Market);
                     //foreach (var workData in workDatas)
                     //{
                     //    if (workData == null) continue;
@@ -612,7 +611,7 @@ namespace MetaFrm.Stock.Exchange
             }
             else
             {
-                response.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                response.Message?.WriteMessage(this.ExchangeID, this.User?.UserID, this.SettingID, this.Market);
                 return null;
             }
         }
