@@ -581,7 +581,7 @@ namespace MetaFrm.Stock.Exchange
             //    stringBuilder.Append($" | {BID_PRICE:N2} {tmps?[0]}");
             //else
             //    stringBuilder.Append($" | {BID_PRICE:N4} {tmps?[0]}");
-            stringBuilder.Append($" | {BID_PRICE.PriceToString(this.SettingID, this.Market ?? "")} {tmps?[0]}");
+            stringBuilder.Append($" | {BID_PRICE.PriceToString(this.ExchangeID, this.Market ?? "")} {tmps?[0]}");
 
             stringBuilder.Append($" | {(BID_PRICE * BID_QTY) + BID_FEE:N0}원");
 

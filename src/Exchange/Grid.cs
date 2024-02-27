@@ -194,8 +194,7 @@ namespace MetaFrm.Stock.Exchange
                         dataRow.BidOrder = bidOrder;
 
                     var askOrder = allOrderList.SingleOrDefault(x => x.Side == "ask" && x.Price == dataRow.AskPrice
-                                                                && x.Volume == (this.IsBuying ? this.IsBuyingAskQty(this.User.ExchangeID, dataRow.BidPrice, dataRow.BidPrice, dataRow.AskPrice)//매집인 경우
-                                                                                                : dataRow.AskQty));
+                                                                && x.Volume == dataRow.AskQty);
                     if (askOrder != null)
                         dataRow.AskOrder = askOrder;
                     else if (this.AskFill && orderChance != null)//매도 채우기
@@ -288,7 +287,7 @@ namespace MetaFrm.Stock.Exchange
                             decimal ASK;
 
                             if (this.IsBuying)
-                                ASK = (dataRow.AskQty * dataRow.AskPrice) - (dataRow.AskQty * dataRow.AskPrice * (this.Fees / 100M));
+                                ASK = (dataRow.BidOrder.Volume * dataRow.AskOrder.Price) - dataRow.AskOrder.PaidFee;
                             else
                                 ASK = (dataRow.AskOrder.Volume * dataRow.AskOrder.Price) - dataRow.AskOrder.PaidFee;
 
@@ -434,19 +433,7 @@ namespace MetaFrm.Stock.Exchange
                     {
                         Models.Order order;
 
-                        if (this.IsBuying)//매집이면
-                        {
-                            //  ( 매도가격 * 수량X ) - ( 매도가격 * 수량X * (this.Fees / 100M)) = 매도정산금액(BidKrw)
-                            //  수량X * (매도가격 - (수량X * (this.Fees / 100M)) = 매도정산금액(BidKrw)
-                            //  수량X = 매도정산금액(BidKrw) / (매도가격 - (수량X * (this.Fees / 100M))
-                            //var BidKrw = (dataRow.BidOrder.Price * dataRow.BidOrder.ExecutedVolume) + dataRow.BidOrder.PaidFee;
-                            //var AskQty = BidKrw / (dataRow.AskPrice - (dataRow.AskPrice * (this.Fees / 100M)));
-                            //AskQty = Math.Ceiling(AskQty * Point(this.User.ExchangeID)) / Point(this.User.ExchangeID);
-
-                            order = this.User.Api.MakeOrder(this.Market, Models.OrderSide.ask, this.IsBuyingAskQty(this.User.ExchangeID, dataRow.BidOrder.Price, dataRow.BidOrder.ExecutedVolume, dataRow.AskPrice), dataRow.AskPrice);
-                        }
-                        else
-                            order = this.User.Api.MakeOrder(this.Market, Models.OrderSide.ask, dataRow.AskQty, dataRow.AskPrice);
+                        order = this.User.Api.MakeOrder(this.Market, Models.OrderSide.ask, dataRow.AskQty, dataRow.AskPrice);
 
                         if (order.Error == null)//에러가 없으면
                             dataRow.AskOrder = order;
@@ -527,14 +514,6 @@ namespace MetaFrm.Stock.Exchange
             }
         }
 
-        private decimal IsBuyingAskQty(int ExchangeID, decimal bidPrice, decimal bidQty, decimal askPrice)
-        {
-            var BidKrw = (bidPrice * bidQty) + (bidPrice * bidQty * (this.Fees / 99.9M));
-            var AskQty = BidKrw / (askPrice - (askPrice * (this.Fees / 99.9M)));
-            AskQty = Math.Ceiling(AskQty * Point(ExchangeID)) / Point(ExchangeID);
-
-            return AskQty;
-        }
         /// <summary>
         /// GetWorkData
         /// </summary>
@@ -575,6 +554,7 @@ namespace MetaFrm.Stock.Exchange
 
             data["1"].AddParameter("RATE", Database.DbType.Decimal, 25, this.Rate);
             data["1"].AddParameter("FEES", Database.DbType.Decimal, 25, this.Fees);
+            data["1"].AddParameter("IS_BUYING", Database.DbType.NVarChar, 1, this.IsBuying ? "Y" : "N");
             data["1"].AddParameter("MARKET_ID", Database.DbType.NVarChar, 20, this.Market);
 
             response = this.ServiceRequest(data);
