@@ -1289,7 +1289,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             string? tmp;
             string[] tmps;
             string marketGroup;
-            Models.CandlesMinute result = new();
+            Models.CandlesMinute result = new(market, 2, (int)unit);
             BithumbDataJsonElementList? list;
 
             try
@@ -1335,7 +1335,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                             if (contract != null)
                             {
                                 int i = 0;
-                                Models.CandlesMinute candlesMinute = new() { Market = $"{marketGroup}-{market}" };
+                                Models.CandlesMinute candlesMinute = new($"{marketGroup}-{market}", 2, (int)unit);
                                 foreach (var contractItem in contract)
                                 {
                                     string? value = contractItem.ToString();

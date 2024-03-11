@@ -942,7 +942,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         {
             string? tmp;
             CandlesMinute[]? list;
-            Models.CandlesMinute result = new();
+            Models.CandlesMinute result = new(market, 1, (int)unit);
 
             try
             {
@@ -959,7 +959,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 result.CandlesMinuteList = new();
                 foreach (var item in list)
                 {
-                    result.CandlesMinuteList.Add(new()
+                    result.CandlesMinuteList.Add(new(market, 1, (int)unit)
                     {
                         Market = item.Market,
                         CandleDateTimeUtc = item.CandleDateTimeUtc,

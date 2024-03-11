@@ -30,6 +30,9 @@ namespace MetaFrm.Stock.Exchange
         /// </summary>
         public static bool IsUnLock { get; set; } = false;
 
+        private BidAskAlarmMA? BidAskAlarmMA_BTC;
+        private BidAskAlarmMA? BidAskAlarmMA_ETH;
+
         /// <summary>
         /// Exchange
         /// </summary>
@@ -82,6 +85,15 @@ namespace MetaFrm.Stock.Exchange
 
             user.Start();
             $"Added User".WriteMessage(this.ExchangeID, user.UserID);
+
+            if (this.ExchangeID == 1 && user.IsFirstUser)
+            {
+                this.BidAskAlarmMA_BTC = new(this.AuthState, user.Api, "KRW-BTC", 10, 7, 30, 60, 0.030M, 0.08M);
+                this.BidAskAlarmMA_BTC.Run();
+
+                this.BidAskAlarmMA_ETH = new(this.AuthState, user.Api, "KRW-ETH", 15, 6, 30, 60, 0.025M, 0.12M);
+                this.BidAskAlarmMA_ETH.Run();
+            }
 
             return user;
         }
@@ -188,6 +200,11 @@ namespace MetaFrm.Stock.Exchange
 
             while (true)
             {
+                if (this.BidAskAlarmMA_BTC != null)
+                    this.BidAskAlarmMA_BTC.IsRunReciveData = false;
+                if (this.BidAskAlarmMA_ETH != null)
+                    this.BidAskAlarmMA_ETH.IsRunReciveData = false;
+
                 await Task.Delay(2000);
 
                 lock (this.Users)

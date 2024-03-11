@@ -10,7 +10,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageId>MetaFrm.Stock.Utility.net8.0</PackageId>
     <Title>Meta Framework Stock Utility</Title>
-    <Version>8.0.2.7</Version>
+    <Version>8.0.2.8</Version>
     <Authors>dsun</Authors>
     <Company>Meta Framework</Company>
     <Product>Meta Framework Stock Utility</Product>
@@ -26,6 +26,7 @@
   <ItemGroup>
     <Compile Include="..\src\Console\Utility.cs" Link="Console\Utility.cs" />
     <Compile Include="..\src\Converter.cs" Link="Converter.cs" />
+    <Compile Include="..\src\Exchange\BidAskAlarmMA.cs" Link="Exchange\BidAskAlarmMA.cs" />
     <Compile Include="..\src\Exchange\Bithumb\AccountInfo.cs" Link="Exchange\Bithumb\AccountInfo.cs" />
     <Compile Include="..\src\Exchange\Bithumb\BithumbApi.cs" Link="Exchange\Bithumb\BithumbApi.cs" />
     <Compile Include="..\src\Exchange\Bithumb\BithumbData.cs" Link="Exchange\Bithumb\BithumbData.cs" />
@@ -105,6 +106,7 @@
     <Compile Include="..\src\Models\OrderChance.cs" Link="Models\OrderChance.cs" />
     <Compile Include="..\src\Models\OrderSide.cs" Link="Models\OrderSide.cs" />
     <Compile Include="..\src\Models\OrderType.cs" Link="Models\OrderType.cs" />
+    <Compile Include="..\src\Models\StatusBidAskAlarmMA.cs" Link="Models\StatusBidAskAlarmMA.cs" />
     <Compile Include="..\src\Models\Ticker.cs" Link="Models\Ticker.cs" />
     <Compile Include="..\src\Models\Ticks.cs" Link="Models\Ticks.cs" />
     <Compile Include="..\src\Models\Trade.cs" Link="Models\Trade.cs" />

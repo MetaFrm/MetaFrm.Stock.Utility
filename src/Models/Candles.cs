@@ -71,5 +71,15 @@
         /// 차트용
         /// </summary>
         public decimal CandleAccTradeVolume1 { get; set; }
+
+        /// <summary>
+        /// 보조지표
+        /// </summary>
+        public Dictionary<string, decimal?> SecondaryIndicator { get; set; } = new();
+
+        /// <summary>
+        /// SecondaryIndicatorCount
+        /// </summary>
+        public int SecondaryIndicatorCount => this.SecondaryIndicator.Count;
     }
 }
