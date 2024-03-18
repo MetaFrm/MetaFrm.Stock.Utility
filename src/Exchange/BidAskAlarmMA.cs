@@ -13,7 +13,6 @@ namespace MetaFrm.Stock.Exchange
     /// </summary>
     public class BidAskAlarmMA : ICore
     {
-
         /// <summary>
         /// AuthState
         /// </summary>
@@ -22,7 +21,7 @@ namespace MetaFrm.Stock.Exchange
         /// <summary>
         /// Candles
         /// </summary>
-        public CandlesMinute Candles { get; set; }
+        public static Dictionary<string, CandlesMinute> Candles { get; set; } = new();
 
         /// <summary>
         /// MinuteCandleType
@@ -55,9 +54,9 @@ namespace MetaFrm.Stock.Exchange
         public decimal StopLossRate { get; set; }
 
         /// <summary>
-        /// ProfitRate
+        /// Rate
         /// </summary>
-        public decimal ProfitRate { get; set; }
+        public decimal Rate { get; set; }
 
         /// <summary>
         /// IsRunReciveData
@@ -82,20 +81,23 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="rightMA30"></param>
         /// <param name="rightMA60"></param>
         /// <param name="stopLossRate"></param>
-        /// <param name="profitRate"></param>
-        public BidAskAlarmMA(Task<AuthenticationState> authState, IApi api, string market, int unit, int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal profitRate)
+        /// <param name="rate"></param>
+        public BidAskAlarmMA(Task<AuthenticationState> authState, IApi api, string market, int unit, int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal rate)
         {
             this.AuthState = authState;
             this.Api = api;
-            this.Candles = new(market, api.ExchangeID, unit);
+
+            if (!BidAskAlarmMA.Candles.ContainsKey(market))
+                BidAskAlarmMA.Candles.Add(market, new(market, api.ExchangeID, unit));
+
             this.LeftMA7 = leftMA7;
             this.RightMA30 = rightMA30;
             this.RightMA60 = rightMA60;
             this.StopLossRate = stopLossRate;
-            this.ProfitRate = profitRate;
+            this.Rate = rate;
             this.MinuteCandleType = $"_{unit}".EnumParse<MinuteCandleType>();
 
-            this.ReadStatusBidAskAlarmMA();
+            this.ReadStatusBidAskAlarmMA(unit, market);
         }
 
 
@@ -103,7 +105,7 @@ namespace MetaFrm.Stock.Exchange
         /// <summary>
         /// Run
         /// </summary>
-        public void Run()
+        public void Run(string market)
         {
             this.IsRunReciveData = true;
 
@@ -111,6 +113,7 @@ namespace MetaFrm.Stock.Exchange
             {
                 DateTime dateTime;
                 StringBuilder stringBuilder = new();
+                CandlesMinute candles = BidAskAlarmMA.Candles[market];
 
                 while (this.IsRunReciveData)
                 {
@@ -119,8 +122,8 @@ namespace MetaFrm.Stock.Exchange
                     dateTime = DateTime.Now;
 
                     if (this.lassRunDateTime == DateTime.MinValue
-                        || this.Candles.CandlesMinuteList == null || this.Candles.CandlesMinuteList.Count < this.RightMA60
-                        || (this.lassRunDateTime.Minute != dateTime.Minute && dateTime.Minute % this.Candles.Unit == 0))
+                        || candles.CandlesMinuteList == null || candles.CandlesMinuteList.Count < this.RightMA60
+                        || (this.lassRunDateTime.Minute != dateTime.Minute && dateTime.Minute % candles.Unit == 0))
                     {
                         this.lassRunDateTime = dateTime;
 
@@ -128,17 +131,33 @@ namespace MetaFrm.Stock.Exchange
                         if (this.StatusBidAskAlarmMA.CurrentStatus == "매수" && this.StatusBidAskAlarmMA.IsBid)
                             this.StatusBidAskAlarmMA.IsBid = false;
 
-                        System.Console.WriteLine($"실행 {this.Api.ExchangeID} {this.Candles.Market} {this.lassRunDateTime:yyyy-MM-dd HH:mm:ss}");
+                        System.Console.WriteLine($"실행 {this.Api.ExchangeID} {market} {this.lassRunDateTime:yyyy-MM-dd HH:mm:ss}");
 
                         await Task.Delay(2000);
 
-                        this.CandlesMinute();
-                        this.Simulation();
+                        lock (BidAskAlarmMA.Candles)
+                        {
+                            this.CandlesMinute(candles, market);
+
+                            if (candles.CandlesMinuteList == null || candles.CandlesMinuteList.Count < this.RightMA60)
+                                ;
+                            else
+                            {
+                                CandlesMinute_MA_TradePrice(candles, this.LeftMA7);
+                                CandlesMinute_MA_TradePrice(candles, this.RightMA30);
+                                CandlesMinute_MA_TradePrice(candles, this.RightMA60);
+
+                                CandlesMinute_MA_Diff_TradePrice(candles, this.LeftMA7, this.RightMA30);
+                                CandlesMinute_MA_Diff_TradePrice(candles, this.LeftMA7, this.RightMA60);
+                            }
+                        }
+
+                        this.MA_Test(candles, this.StatusBidAskAlarmMA, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
                     }
 
                     if (this.StatusBidAskAlarmMA.CurrentStatus == "매수" && !this.StatusBidAskAlarmMA.IsBid)
                     {
-                        Ticker? ticker = this.GetCurrentInfo();
+                        Ticker? ticker = this.GetCurrentInfo(market);
 
                         //매수 상태이고 스탑로스 가격 보다 떨어지면 손절
                         if (ticker != null && this.StatusBidAskAlarmMA.StopLossPrice >= ticker.TradePrice)
@@ -146,84 +165,64 @@ namespace MetaFrm.Stock.Exchange
                             this.StatusBidAskAlarmMA.CurrentStatus = "손절";
 
                             stringBuilder.Clear();
-                            stringBuilder.AppendLine($"손절가격 : {this.StatusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, this.Candles.Market ?? "")} -{(this.StopLossRate * 100M):N2}%");
-                            stringBuilder.AppendLine($"매수가격 : {this.StatusBidAskAlarmMA.BidPrice.PriceToString(this.Api.ExchangeID, this.Candles.Market ?? "")}");
-                            stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, this.Candles.Market);
+                            stringBuilder.AppendLine($"손절가격 : {this.StatusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)} -{(this.StopLossRate * 100M):N2}%");
+                            stringBuilder.AppendLine($"매수가격 : {this.StatusBidAskAlarmMA.BidPrice.PriceToString(this.Api.ExchangeID, market)}");
+                            stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
 
-                            this.BidAskAlarm_MA(this.AuthState.Token(), this.Candles.Market ?? "", "ask", "limit", this.StatusBidAskAlarmMA.StopLossPrice.PriceRound(this.Api.ExchangeID, this.Candles.Market ?? "")
-                                , $"{User.ExchangeName(this.Api.ExchangeID)} {this.Candles.Market} 손절신호", stringBuilder.ToString());
+                            this.BidAskAlarm_MA(this.AuthState.Token(), market, "ask", "limit", this.StatusBidAskAlarmMA.StopLossPrice.PriceRound(this.Api.ExchangeID, market)
+                                , $"{User.ExchangeName(this.Api.ExchangeID)} {market} 손절신호", stringBuilder.ToString());
                         }
                     }
                 }
 
-                this.SaveStatusBidAskAlarmMA();
+                this.SaveStatusBidAskAlarmMA(candles.Unit, market);
             });
         }
-        internal Ticker? GetCurrentInfo()
+        internal Ticker? GetCurrentInfo(string market)
         {
             if (this.Api == null) return null;
-            if (this.Candles.Market == null) return null;
 
-            var ticker = this.Api.Ticker(this.Candles.Market);
+            var ticker = this.Api.Ticker(market);
             if (ticker == null || ticker.TickerList == null || ticker.TickerList.Count < 1) return null;
 
             return ticker.TickerList[0];
         }
 
-        private void CandlesMinute()
+        private void CandlesMinute(CandlesMinute candles, string market)
         {
             CandlesMinute? candlesMinute = null;
             DateTime? candleDateTimeKstMax = null;
             int rightMA60 = this.RightMA60 + 1;
 
-            candlesMinute = this.Api.CandlesMinute(this.Candles.Market ?? "", this.MinuteCandleType, DateTime.Now.AddMinutes((int)this.MinuteCandleType * -1), rightMA60);
+            candlesMinute = this.Api.CandlesMinute(market, this.MinuteCandleType, DateTime.Now.AddMinutes((int)this.MinuteCandleType * -1), rightMA60);
 
-            if (this.Candles == null)
-                this.Candles = candlesMinute;
-            else
+            if (candlesMinute.CandlesMinuteList != null && candles.CandlesMinuteList != null)
             {
-                if (candlesMinute.CandlesMinuteList != null && this.Candles.CandlesMinuteList != null)
+                if (candles.CandlesMinuteList.Count == 0)
+                    candleDateTimeKstMax = DateTime.Now.AddMinutes(candles.Unit * rightMA60 * -1);
+                else
                 {
-                    if (this.Candles.CandlesMinuteList.Count == 0)
-                        candleDateTimeKstMax = DateTime.Now.AddMinutes(this.Candles.Unit * rightMA60 * -1);
-                    else
-                    {
-                        candleDateTimeKstMax = this.Candles.CandlesMinuteList?.Max(x => x.CandleDateTimeKst);
-                        candleDateTimeKstMax ??= DateTime.Now.AddMinutes(this.Candles.Unit * rightMA60 * -1);
-                    }
-
-                    var list = candlesMinute.CandlesMinuteList.Where(x => x.CandleDateTimeKst > candleDateTimeKstMax).OrderByDescending(o => o.CandleDateTimeKst).ToList();
-
-                    if (list != null && list.Count > 0)
-                        this.Candles.CandlesMinuteList?.InsertRange(0, list);
-
-                    if (this.Candles.CandlesMinuteList != null && this.Candles.CandlesMinuteList.Count > rightMA60)
-                        this.Candles.CandlesMinuteList.RemoveRange(this.Candles.CandlesMinuteList.Count - (this.Candles.CandlesMinuteList.Count - rightMA60), this.Candles.CandlesMinuteList.Count - rightMA60);
+                    candleDateTimeKstMax = candles.CandlesMinuteList?.Max(x => x.CandleDateTimeKst);
+                    candleDateTimeKstMax ??= DateTime.Now.AddMinutes(candles.Unit * rightMA60 * -1);
                 }
+
+                var list = candlesMinute.CandlesMinuteList.Where(x => x.CandleDateTimeKst > candleDateTimeKstMax).OrderByDescending(o => o.CandleDateTimeKst).ToList();
+
+                if (list != null && list.Count > 0)
+                    candles.CandlesMinuteList?.InsertRange(0, list);
+
+                if (candles.CandlesMinuteList != null && candles.CandlesMinuteList.Count > rightMA60)
+                    candles.CandlesMinuteList.RemoveRange(candles.CandlesMinuteList.Count - (candles.CandlesMinuteList.Count - rightMA60), candles.CandlesMinuteList.Count - rightMA60);
             }
         }
 
-        private void Simulation()
+
+        private void MA_Test(CandlesMinute candles, StatusBidAskAlarmMA statusBidAskAlarmMA, string market, int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal profitRate)
         {
-            if (this.Candles == null || this.Candles.CandlesMinuteList == null || this.Candles.CandlesMinuteList.Count < this.RightMA60)
+            if (candles.CandlesMinuteList == null)
                 return;
 
-            this.CandlesMinute_MA_TradePrice(this.LeftMA7);
-            this.CandlesMinute_MA_TradePrice(this.RightMA30);
-            this.CandlesMinute_MA_TradePrice(this.RightMA60);
-
-            this.CandlesMinute_MA_Diff_TradePrice(this.LeftMA7, this.RightMA30);
-            this.CandlesMinute_MA_Diff_TradePrice(this.LeftMA7, this.RightMA60);
-
-            this.MA_Test(this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.ProfitRate);
-        }
-
-        private void MA_Test(int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal profitRate)
-        {
-            if (this.Candles.CandlesMinuteList == null)
-                return;
-
-            var data = this.Candles.CandlesMinuteList.OrderByDescending(o => o.CandleDateTimeKst).Take(2).OrderBy(o => o.CandleDateTimeKst);
+            var data = candles.CandlesMinuteList.OrderByDescending(o => o.CandleDateTimeKst).Take(2).OrderBy(o => o.CandleDateTimeKst);
 
             if (data == null)
                 return;
@@ -249,56 +248,57 @@ namespace MetaFrm.Stock.Exchange
                         //상승 중
 
                         //매수 포지션 일떄
-                        if (this.StatusBidAskAlarmMA.CurrentStatus == "매수")
+                        if (statusBidAskAlarmMA.CurrentStatus == "매수")
                         {
                             //이전 값보다 작아 졌을떄 => 간격이 좁아지면 => 매도를 한다 (보정값으로으로 미세 조정 필요★)
                             // 5 < 6
-                            if (value_7_30 < beforValue_7_30 && item.TradePrice > (this.StatusBidAskAlarmMA.BidPrice * (1M + profitRate)))
+                            if (value_7_30 < beforValue_7_30 && item.TradePrice > (statusBidAskAlarmMA.BidPrice * (1M + profitRate)))
                             {
-                                this.StatusBidAskAlarmMA.AskPrice = item.TradePrice;
-                                this.StatusBidAskAlarmMA.CurrentStatus = "";
+                                statusBidAskAlarmMA.AskPrice = item.TradePrice;
+                                statusBidAskAlarmMA.CurrentStatus = "";
 
                                 stringBuilder.Clear();
-                                stringBuilder.AppendLine($"매수가격 : {this.StatusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, this.Candles.Market ?? "")}");
-                                stringBuilder.AppendLine($"매도가격 : {this.StatusBidAskAlarmMA.AskPrice.PriceToString(this.Api.ExchangeID, this.Candles.Market ?? "")}");
-                                stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, this.Candles.Market);
+                                stringBuilder.AppendLine($"매수가격 : {statusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)}");
+                                stringBuilder.AppendLine($"매도가격 : {statusBidAskAlarmMA.AskPrice.PriceToString(this.Api.ExchangeID, market)}");
+                                stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
 
-                                this.BidAskAlarm_MA(this.AuthState.Token(), this.Candles.Market ?? "", "ask", "limit", item.TradePrice.PriceRound(this.Api.ExchangeID, this.Candles.Market ?? "")
-                                    , $"{User.ExchangeName(this.Api.ExchangeID)} {this.Candles.Market} 매도신호", stringBuilder.ToString());
+                                this.BidAskAlarm_MA(this.AuthState.Token(), market, "ask", "limit", item.TradePrice.PriceRound(this.Api.ExchangeID, market)
+                                    , $"{User.ExchangeName(this.Api.ExchangeID)} {market} 매도신호", stringBuilder.ToString());
                             }
                         }
 
                         //손절 상태가 되면 상숭 후에 다시 내려 갔을떄 진입
-                        if (this.StatusBidAskAlarmMA.CurrentStatus == "손절")
-                            this.StatusBidAskAlarmMA.CurrentStatus = "";
+                        if (statusBidAskAlarmMA.CurrentStatus == "손절")
+                            statusBidAskAlarmMA.CurrentStatus = "";
                     }
                     else if (value_7_30 < 0)
                     {
                         //하락 중
 
                         //포지션이 없을때
-                        if (this.StatusBidAskAlarmMA.CurrentStatus == "")
+                        if (StatusBidAskAlarmMA.CurrentStatus == "")
                         {
                             //이전 값보다 커졌을떄 => 간격이 좁아지면 => 매수를 한다 (보정값으로으로 미세 조정 필요★)
                             // -5 > -6
                             if (value_7_30 > beforValue_7_30)
                             {
-                                this.StatusBidAskAlarmMA.CurrentStatus = "매수";
-                                this.StatusBidAskAlarmMA.BidPrice = item.TradePrice;
+                                statusBidAskAlarmMA.CurrentStatus = "매수";
+                                statusBidAskAlarmMA.BidPrice = item.TradePrice;
 
-                                this.StatusBidAskAlarmMA.StopLossPrice = (this.StatusBidAskAlarmMA.BidPrice * (1M - stopLossRate)).PriceRound(this.Api.ExchangeID, this.Candles.Market ?? "");//손절
+                                statusBidAskAlarmMA.StopLossPrice = (statusBidAskAlarmMA.BidPrice * (1M - stopLossRate)).PriceRound(this.Api.ExchangeID, market);//손절
 
-                                this.StatusBidAskAlarmMA.IsBid = true;
+                                statusBidAskAlarmMA.IsBid = true;
 
-                                this.StatusBidAskAlarmMA.StopLossPrice = item.TradePrice * (1M - stopLossRate);//손절
+                                //StatusBidAskAlarmMA.StopLossPrice = item.TradePrice * (1M - stopLossRate);//손절
 
                                 stringBuilder.Clear();
-                                stringBuilder.AppendLine($"매수가격 : {this.StatusBidAskAlarmMA.BidPrice.PriceToString(this.Api.ExchangeID, this.Candles.Market ?? "")}");
-                                stringBuilder.AppendLine($"손절가격 : {this.StatusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, this.Candles.Market ?? "")} {(stopLossRate * 100M * -1M):N2}%");
-                                stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, this.Candles.Market);
+                                stringBuilder.AppendLine($"매수가격 : {statusBidAskAlarmMA.BidPrice.PriceToString(this.Api.ExchangeID, market)}");
+                                stringBuilder.AppendLine($"목표가격 : {(statusBidAskAlarmMA.BidPrice * (1M + profitRate)).PriceRound(this.Api.ExchangeID, market).PriceToString(this.Api.ExchangeID, market)}");
+                                stringBuilder.AppendLine($"손절가격 : {statusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)} {(stopLossRate * 100M * -1M):N2}%");
+                                stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
 
-                                this.BidAskAlarm_MA(this.AuthState.Token(), this.Candles.Market ?? "", "bid", "limit", item.TradePrice.PriceRound(this.Api.ExchangeID, this.Candles.Market ?? "")
-                                    , $"{User.ExchangeName(this.Api.ExchangeID)} {this.Candles.Market} 매수신호", stringBuilder.ToString());
+                                this.BidAskAlarm_MA(this.AuthState.Token(), market, "bid", "limit", item.TradePrice.PriceRound(this.Api.ExchangeID, market)
+                                    , $"{User.ExchangeName(this.Api.ExchangeID)} {market} 매수신호", stringBuilder.ToString());
                             }
                         }
                     }
@@ -311,13 +311,13 @@ namespace MetaFrm.Stock.Exchange
 
 
 
-        private void CandlesMinute_MA_Diff_TradePrice(int countMA_Left, int countMA_Right)
+        private static void CandlesMinute_MA_Diff_TradePrice(CandlesMinute candles, int countMA_Left, int countMA_Right)
         {
             string keyLeft = $"{countMA_Left}MA_TradePrice";
             string keyRight = $"{countMA_Right}MA_TradePrice";
             string key = $"{countMA_Left} - {countMA_Right}MA_TradePrice";
 
-            var aa = this.Candles?.CandlesMinuteList?
+            var aa = candles.CandlesMinuteList?
                 .Where(x => x.SecondaryIndicator.ContainsKey(keyLeft)
                         && x.SecondaryIndicator.ContainsKey(keyRight)
                         && !x.SecondaryIndicator.ContainsKey(key));
@@ -327,15 +327,15 @@ namespace MetaFrm.Stock.Exchange
                 item.SecondaryIndicator.Add(key, item.SecondaryIndicator[keyLeft] - item.SecondaryIndicator[keyRight]);
             });
         }
-        private void CandlesMinute_MA_TradePrice(int countMA)
+        private static void CandlesMinute_MA_TradePrice(CandlesMinute candles, int countMA)
         {
             string key = $"{countMA}MA_TradePrice";
 
-            var aa = this.Candles?.CandlesMinuteList?.Where(x => !x.SecondaryIndicator.ContainsKey(key));
+            var aa = candles.CandlesMinuteList?.Where(x => !x.SecondaryIndicator.ContainsKey(key));
 
             aa?.AsParallel().WithDegreeOfParallelism(2).ForAll(item =>
             {
-                var sel = this.Candles?.CandlesMinuteList?.Where(x => x.CandleDateTimeKst <= item.CandleDateTimeKst).OrderByDescending(o => o.CandleDateTimeKst).Take(countMA);
+                var sel = candles.CandlesMinuteList?.Where(x => x.CandleDateTimeKst <= item.CandleDateTimeKst).OrderByDescending(o => o.CandleDateTimeKst).Take(countMA);
 
                 if (sel != null && sel.Count() == countMA)
                 {
@@ -349,11 +349,11 @@ namespace MetaFrm.Stock.Exchange
         /// ReadStatusBidAskAlarmMA
         /// </summary>
         /// <returns></returns>
-        public void ReadStatusBidAskAlarmMA()
+        public void ReadStatusBidAskAlarmMA(int unit, string market)
         {
             try
             {
-                string path = $"Run_{this.Api.ExchangeID}_{this.Candles.Market}_StatusBidAskAlarmMA_{this.Candles.Unit}_{this.LeftMA7}_{this.RightMA30}_{this.RightMA60}_{this.StopLossRate}_{this.ProfitRate}.txt";
+                string path = $"Run_{this.Api.ExchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{this.LeftMA7}_{this.RightMA30}_{this.RightMA60}_{this.StopLossRate}_{this.Rate}.txt";
 
                 if (File.Exists(path))
                 {
@@ -366,23 +366,23 @@ namespace MetaFrm.Stock.Exchange
             }
             catch (Exception ex)
             {
-                ex.WriteMessage(true, this.Api.ExchangeID, null, null, this.Candles.Market);
+                ex.WriteMessage(true, this.Api.ExchangeID, null, null, market);
             }
         }
         /// <summary>
         /// SaveStatusBidAskAlarmMA
         /// </summary>
-        public void SaveStatusBidAskAlarmMA()
+        public void SaveStatusBidAskAlarmMA(int unit, string market)
         {
             try
             {
-                string path = $"Run_{this.Api.ExchangeID}_{this.Candles.Market}_StatusBidAskAlarmMA_{this.Candles.Unit}_{this.LeftMA7}_{this.RightMA30}_{this.RightMA60}_{this.StopLossRate}_{this.ProfitRate}.txt";
+                string path = $"Run_{this.Api.ExchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{this.LeftMA7}_{this.RightMA30}_{this.RightMA60}_{this.StopLossRate}_{this.Rate}.txt";
                 using StreamWriter streamWriter = File.CreateText(path);
                 streamWriter.Write(JsonSerializer.Serialize(this.StatusBidAskAlarmMA, this.jsonSerializerOptions));
             }
             catch (Exception ex)
             {
-                ex.WriteMessage(true, this.Api.ExchangeID, null, null, this.Candles.Market);
+                ex.WriteMessage(true, this.Api.ExchangeID, null, null, market);
             }
         }
 

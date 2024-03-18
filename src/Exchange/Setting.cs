@@ -59,6 +59,7 @@ namespace MetaFrm.Stock.Exchange
                 SettingType.GridMartingaleLong => "그리드+마틴 롱",
                 SettingType.GridMartingaleShort => "그리드+마틴 숏",
                 SettingType.Schedule => "스케줄러",
+                SettingType.BidAskMA => "MA",
                 _ => $"{settingType}"
             };
         }

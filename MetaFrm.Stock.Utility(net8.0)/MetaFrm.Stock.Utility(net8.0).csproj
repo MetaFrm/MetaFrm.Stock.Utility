@@ -27,6 +27,7 @@
     <Compile Include="..\src\Console\Utility.cs" Link="Console\Utility.cs" />
     <Compile Include="..\src\Converter.cs" Link="Converter.cs" />
     <Compile Include="..\src\Exchange\BidAskAlarmMA.cs" Link="Exchange\BidAskAlarmMA.cs" />
+    <Compile Include="..\src\Exchange\BidAskMA.cs" Link="Exchange\BidAskMA.cs" />
     <Compile Include="..\src\Exchange\Bithumb\AccountInfo.cs" Link="Exchange\Bithumb\AccountInfo.cs" />
     <Compile Include="..\src\Exchange\Bithumb\BithumbApi.cs" Link="Exchange\Bithumb\BithumbApi.cs" />
     <Compile Include="..\src\Exchange\Bithumb\BithumbData.cs" Link="Exchange\Bithumb\BithumbData.cs" />

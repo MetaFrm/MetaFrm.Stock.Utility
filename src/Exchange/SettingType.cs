@@ -43,6 +43,11 @@
         /// <summary>
         /// Schedule
         /// </summary>
-        Schedule
+        Schedule,
+
+        /// <summary>
+        /// BidAskMA
+        /// </summary>
+        BidAskMA,
     }
 }

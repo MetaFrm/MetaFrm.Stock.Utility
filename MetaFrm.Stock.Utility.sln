@@ -64,6 +64,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Exchange", "Exchange", "{E7B514D8-128A-431F-902B-3B3CFF6AC25A}"
 	ProjectSection(SolutionItems) = preProject
 		src\Exchange\BidAskAlarmMA.cs = src\Exchange\BidAskAlarmMA.cs
+		src\Exchange\BidAskMA.cs = src\Exchange\BidAskMA.cs
 		src\Exchange\Exchanger.cs = src\Exchange\Exchanger.cs
 		src\Exchange\Grid.cs = src\Exchange\Grid.cs
 		src\Exchange\GridMartingaleLong.cs = src\Exchange\GridMartingaleLong.cs
