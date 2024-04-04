@@ -221,7 +221,7 @@ namespace MetaFrm.Stock.Exchange
                         {
                             var order = this.MakeOrderAskMarket(this.Market, item.AskQty);
 
-                            if (order != null && order.State == "done" && item.BidOrder != null)
+                            if (order != null && order.Error == null && order.Trades != null && order.Trades.Count > 0 && item.BidOrder != null)
                             {
                                 foreach (var bidOrder in workDataList)
                                     this.WorkDataList.ForEach(x => x.BidTotalFee += bidOrder.BidOrder?.PaidFee ?? 0);

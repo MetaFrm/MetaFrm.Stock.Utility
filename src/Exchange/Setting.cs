@@ -266,9 +266,17 @@ namespace MetaFrm.Stock.Exchange
                 return;
 
             if (!BID_CANCEL && !ASK_CANCEL && SAVE_WORKDATA)
-                this.SaveWorkDataList(this.User);
+            {
+                if (this.SettingType != SettingType.BidAskMA)
+                    this.SaveWorkDataList(this.User);
+                else if (this is BidAskMA bidAskMA && bidAskMA.StatusBidAskAlarmMA != null)
+                    BidAskAlarmMA.SaveStatusBidAskAlarmMA(this.SettingID, bidAskMA.StatusBidAskAlarmMA, this.ExchangeID, (int)bidAskMA.MinuteCandleType, this.Market, bidAskMA.LeftMA7, bidAskMA.RightMA30, bidAskMA.RightMA60, bidAskMA.StopLossRate, bidAskMA.Rate);
+            }
 
-            this.OrganizedRun(BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, BID_CURRENT_PRICE, this.CurrentInfo);
+            if (this.SettingType != SettingType.BidAskMA)
+                this.OrganizedRun(BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, BID_CURRENT_PRICE, this.CurrentInfo);
+            else if (this is BidAskMA bidAskMA)
+                this.OrganizedRun(bidAskMA, BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, BID_CURRENT_PRICE, this.CurrentInfo);
 
             if (REMOVE_SETTING)
                 this.Clear(this.User, SETTING_ID, BID_CANCEL, ASK_CANCEL, ASK_CURRENT_PRICE, BID_CURRENT_PRICE, SAVE_WORKDATA, REMOVE_SETTING, IS_PROFIT_STOP);
@@ -309,7 +317,7 @@ namespace MetaFrm.Stock.Exchange
                 {
                     try
                     {
-                        order = this.User.Api.Order(this.Market, Models.OrderSide.ask.ToString(), dataRow.BidOrder.UUID);
+                        order = this.User.Api.Order(this.Market, Models.OrderSide.bid.ToString(), dataRow.BidOrder.UUID);
 
                         if (order.Error != null)
                         {
@@ -369,6 +377,113 @@ namespace MetaFrm.Stock.Exchange
                     {
                         ex.WriteMessage(true, this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
                     }
+                }
+            }
+
+            if (ASK > 0 && ASK_CURRENT_PRICE)
+            {
+                var order1 = this.MakeOrderAskMarket(this.Market, ASK);
+
+                if (order1 != null && order1.Error != null)
+                {
+                    this.Message = order1.Error.Message;
+                    this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                }
+            }
+
+            if (BID_KRW > 0 && BID_CURRENT_PRICE)
+            {
+                var order1 = this.MakeOrderBidPrice(this.Market, BID_KRW);
+
+                if (order1 != null && order1.Error != null)
+                {
+                    this.Message = order1.Error.Message;
+                    this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                }
+            }
+        }
+        private void OrganizedRun(BidAskMA bidAskMA, bool BID_CANCEL, bool ASK_CANCEL, bool ASK_CURRENT_PRICE, bool BID_CURRENT_PRICE, Models.Ticker? ticker)
+        {
+            Models.Order order;
+            decimal ASK;
+            decimal BID_KRW;
+            decimal Price;
+            decimal RemainingFee;
+            decimal RemainingVolume;
+
+            if (bidAskMA.StatusBidAskAlarmMA == null) return;
+            if (this.Market == "") return;
+            if (this.User == null) return;
+            if (this.User.Api == null) return;
+            if (this.Market == null) return;
+            if (ticker == null) return;
+
+            ASK = 0;
+            BID_KRW = 0;
+
+            if (BID_CANCEL && bidAskMA.StatusBidAskAlarmMA.TempBidOrder != null && bidAskMA.StatusBidAskAlarmMA.TempBidOrder.State == "wait")
+            {
+                try
+                {
+                    order = this.User.Api.Order(this.Market, Models.OrderSide.bid.ToString(), bidAskMA.StatusBidAskAlarmMA.TempBidOrder.UUID ?? "");
+
+                    if (order.Error != null)
+                    {
+                        this.Message = order.Error.Message;
+                        this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    }
+                    else
+                    {
+                        RemainingVolume = order.RemainingVolume;
+                        Price = order.Price;
+                        RemainingFee = order.RemainingFee;
+
+                        order = this.User.Api.CancelOrder(this.Market, Models.OrderSide.bid.ToString(), bidAskMA.StatusBidAskAlarmMA.TempBidOrder.UUID ?? "");
+
+                        if (order.Error != null)
+                        {
+                            this.Message = order.Error.Message;
+                            this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                        }
+                        else
+                            BID_KRW += (RemainingVolume * Price) + RemainingFee;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ex.WriteMessage(true, this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                }
+            }
+
+            if (ASK_CANCEL && bidAskMA.StatusBidAskAlarmMA.TempAskOrder != null && bidAskMA.StatusBidAskAlarmMA.TempAskOrder.State == "wait")
+            {
+                try
+                {
+                    order = this.User.Api.Order(this.Market, Models.OrderSide.ask.ToString(), bidAskMA.StatusBidAskAlarmMA.TempAskOrder.UUID ?? "");
+
+                    if (order.Error != null)
+                    {
+                        this.Message = order.Error.Message;
+                        this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                    }
+                    else
+                    {
+                        RemainingVolume = order.RemainingVolume;
+
+                        order = this.User.Api.CancelOrder(this.Market, Models.OrderSide.ask.ToString(), bidAskMA.StatusBidAskAlarmMA.TempAskOrder.UUID ?? "");
+
+                        if (order.Error != null)
+                        {
+                            this.Message = order.Error.Message;
+                            this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                        }
+                        else
+                            ASK += RemainingVolume;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ex.WriteMessage(true, this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
                 }
             }
 
@@ -599,6 +714,80 @@ namespace MetaFrm.Stock.Exchange
                     response.Message?.WriteMessage(user.ExchangeID, user.UserID, this.SettingID, this.Market);
             });
         }
+        internal void Loss(User user, int SETTING_ID, int USER_ID, decimal BID_PRICE, decimal BID_QTY, decimal BID_FEE, decimal ASK_PRICE, decimal ASK_QTY, decimal ASK_FEE, decimal PROFIT, string MARKET_ID)
+        {
+            if (this.LossStack.Count > 0)
+                this.LossStack.Peek().AccProfit += PROFIT;
+
+            this.AccProfit += PROFIT;
+
+            StringBuilder stringBuilder = new();
+            ServiceData data = new()
+            {
+                ServiceName = "",
+                TransactionScope = false,
+                Token = user.AuthState.Token(),
+            };
+            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("Setting.Loss");
+            data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
+            data["1"].AddParameter(nameof(BID_PRICE), Database.DbType.Decimal, 25, BID_PRICE);
+            data["1"].AddParameter(nameof(BID_QTY), Database.DbType.Decimal, 25, BID_QTY);
+            data["1"].AddParameter(nameof(BID_FEE), Database.DbType.Decimal, 25, BID_FEE);
+            data["1"].AddParameter(nameof(ASK_PRICE), Database.DbType.Decimal, 25, ASK_PRICE);
+            data["1"].AddParameter(nameof(ASK_QTY), Database.DbType.Decimal, 25, ASK_QTY);
+            data["1"].AddParameter(nameof(ASK_FEE), Database.DbType.Decimal, 25, ASK_FEE);
+            data["1"].AddParameter(nameof(PROFIT), Database.DbType.Decimal, 25, PROFIT);
+            data["1"].AddParameter(nameof(USER_ID), Database.DbType.Int, 3, USER_ID);
+
+            stringBuilder.Append($"{user.ExchangeName()} {this.SettingTypeString} 손절 발생");
+            data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+
+            stringBuilder.Clear();
+            stringBuilder.Append($"{MARKET_ID}");
+            stringBuilder.AppendLine(PROFIT <= -1 ? $" {PROFIT:N0}원 손절" : $" {PROFIT:N2}원 손절");
+
+            string[]? tmps = MARKET_ID?.Split('-');
+
+            //stringBuilder.Append("S ");
+            stringBuilder.Append($"{ASK_QTY:N4} {tmps?[1]}");
+
+            //if (ASK_PRICE >= 100)
+            //    stringBuilder.Append($" | {ASK_PRICE:N0} {tmps?[0]}");
+            //else if (ASK_PRICE >= 1)
+            //    stringBuilder.Append($" | {ASK_PRICE:N2} {tmps?[0]}");
+            //else
+            //    stringBuilder.Append($" | {ASK_PRICE:N4} {tmps?[0]}");
+            stringBuilder.Append($" | {ASK_PRICE.PriceToString(this.ExchangeID, this.Market ?? "")} {tmps?[0]}");
+
+            stringBuilder.AppendLine($" | {(ASK_PRICE * ASK_QTY) - ASK_FEE:N0}원");
+
+
+            //stringBuilder.Append("B ");
+            stringBuilder.Append($"{BID_QTY:N4} {tmps?[1]}");
+
+            //if (BID_PRICE >= 100)
+            //    stringBuilder.Append($" | {BID_PRICE:N0} {tmps?[0]}");
+            //else if (BID_PRICE >= 1)
+            //    stringBuilder.Append($" | {BID_PRICE:N2} {tmps?[0]}");
+            //else
+            //    stringBuilder.Append($" | {BID_PRICE:N4} {tmps?[0]}");
+            stringBuilder.Append($" | {BID_PRICE.PriceToString(this.ExchangeID, this.Market ?? "")} {tmps?[0]}");
+
+            stringBuilder.Append($" | {(BID_PRICE * BID_QTY) + BID_FEE:N0}원");
+
+
+            data["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+
+            Task.Run(() =>
+            {
+                Response response;
+
+                response = this.ServiceRequest(data);
+
+                if (response.Status != Status.OK)
+                    response.Message?.WriteMessage(user.ExchangeID, user.UserID, this.SettingID, this.Market);
+            });
+        }
         internal void ChangeSettingMessage(User user, Setting before, Setting after)
         {
             StringBuilder stringBuilder = new();
@@ -749,10 +938,8 @@ namespace MetaFrm.Stock.Exchange
 
                 if (File.Exists(path))
                 {
-                    using (StreamReader streamReader = File.OpenText(path))
-                        result = JsonSerializer.Deserialize<List<WorkData>>(streamReader.ReadToEnd(), jsonSerializerOptions);
-
-                    File.Delete(path);
+                    using StreamReader streamReader = File.OpenText(path);
+                    result = JsonSerializer.Deserialize<List<WorkData>>(streamReader.ReadToEnd(), jsonSerializerOptions);
                 }
 
                 return result;
@@ -786,10 +973,8 @@ namespace MetaFrm.Stock.Exchange
 
                 if (File.Exists(path))
                 {
-                    using (StreamReader streamReader = File.OpenText(path))
-                        result = JsonSerializer.Deserialize<Stack<Loss>>(streamReader.ReadToEnd(), jsonSerializerOptions);
-
-                    File.Delete(path);
+                    using StreamReader streamReader = File.OpenText(path);
+                    result = JsonSerializer.Deserialize<Stack<Loss>>(streamReader.ReadToEnd(), jsonSerializerOptions);
                 }
 
                 return result;

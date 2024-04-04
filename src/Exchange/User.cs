@@ -692,7 +692,7 @@ namespace MetaFrm.Stock.Exchange
                                     }
                                     else
                                     {
-                                        var a2 = this.Settings.Where(x => x.SettingType == SettingType.TraillingStop || x.SettingType == SettingType.Schedule);
+                                        var a2 = this.Settings.Where(x => x.SettingType == SettingType.TraillingStop || x.SettingType == SettingType.Schedule || x.SettingType == SettingType.BidAskMA);
 
                                         if (a2.Any())
                                         {
@@ -823,6 +823,16 @@ namespace MetaFrm.Stock.Exchange
                             }
                             else
                             {
+                                var a4 = this.Settings.Where(x => x.SettingType == SettingType.BidAskMA).Select(x => (BidAskMA)x).SingleOrDefault(y => y.StatusBidAskAlarmMA != null && y.StatusBidAskAlarmMA.BidOrder != null && y.StatusBidAskAlarmMA.BidOrder.UUID == order.UUID);
+
+                                if (a4 != null && order.Side == "bid")
+                                    this.OrderExecution(a4, order);
+
+                                var a5 = this.Settings.Where(x => x.SettingType == SettingType.BidAskMA).Select(x => (BidAskMA)x).SingleOrDefault(y => y.StatusBidAskAlarmMA != null && y.StatusBidAskAlarmMA.StopLossAskOrder != null && y.StatusBidAskAlarmMA.StopLossAskOrder.UUID == order.UUID);
+
+                                if (a5 != null && order.Side == "ask")
+                                    this.OrderExecution(a5, order);
+
                                 //$"if (aa != null)".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Red);
                             }
                         }

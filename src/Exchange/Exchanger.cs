@@ -507,6 +507,40 @@ namespace MetaFrm.Stock.Exchange
                                     });
 
                                 break;
+
+
+                            case SettingType.BidAskMA:
+                                int? MINUTE_CANDLE_TYPE = item.Int(nameof(MINUTE_CANDLE_TYPE));
+                                int? LEFT_MA7 = item.Int(nameof(LEFT_MA7));
+                                int? RIGHT_MA30 = item.Int(nameof(RIGHT_MA30));
+                                int? RIGHT_MA60 = item.Int(nameof(RIGHT_MA60));
+                                decimal? STOP_LOSS_RATE = item.Decimal(nameof(STOP_LOSS_RATE));
+                                
+                                if (MINUTE_CANDLE_TYPE != null && LEFT_MA7 != null && RIGHT_MA30 != null && RIGHT_MA60 != null && STOP_LOSS_RATE != null)
+                                    user1.AddSetting(new BidAskMA(user1)
+                                    {
+                                        SettingID = (int)SETTING_ID,
+                                        Market = MARKET,
+                                        Invest = (decimal)INVEST,
+                                        BaseInvest = (decimal)BASE_INVEST,
+                                        //BasePrice = (decimal)BASE_PRICE,
+                                        //TopPrice = (decimal)TOP_PRICE,
+                                        //Rate = (decimal)RATE,
+                                        //ListMin = (int)LIST_MIN,
+                                        Fees = (decimal)FEES,
+                                        //TopStop = TOP_STOP,
+                                        //IsProfitStop = IS_PROFIT_STOP,
+                                        //Message = MESSAGE,
+
+                                        MinuteCandleType = MINUTE_CANDLE_TYPE.EnumParse<Models.MinuteCandleType>(),
+                                        LeftMA7 = (int)LEFT_MA7,
+                                        RightMA30 = (int)RIGHT_MA30,
+                                        RightMA60 = (int)RIGHT_MA60,
+                                        StopLossRate = (decimal)STOP_LOSS_RATE,
+                                    });
+
+
+                                break;
                         }
                     }
                 }

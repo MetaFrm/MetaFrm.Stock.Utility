@@ -66,9 +66,9 @@ namespace MetaFrm.Stock.Exchange
         /// <summary>
         /// StatusBidAskAlarmMA
         /// </summary>
-        private StatusBidAskAlarmMA StatusBidAskAlarmMA { get; set; } = new();
+        private StatusBidAskAlarmMA StatusBidAskAlarmMA { get; set; }
 
-        private readonly JsonSerializerOptions jsonSerializerOptions = new() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString };
+        private static readonly JsonSerializerOptions JsonSerializerOptions = new() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString };
 
         /// <summary>
         /// BidAskAlarmMA
@@ -87,8 +87,8 @@ namespace MetaFrm.Stock.Exchange
             this.AuthState = authState;
             this.Api = api;
 
-            if (!BidAskAlarmMA.Candles.ContainsKey(market))
-                BidAskAlarmMA.Candles.Add(market, new(market, api.ExchangeID, unit));
+            if (!BidAskAlarmMA.Candles.ContainsKey($"{market}_{unit}"))
+                BidAskAlarmMA.Candles.Add($"{market}_{unit}", new(market, api.ExchangeID, unit));
 
             this.LeftMA7 = leftMA7;
             this.RightMA30 = rightMA30;
@@ -97,7 +97,7 @@ namespace MetaFrm.Stock.Exchange
             this.Rate = rate;
             this.MinuteCandleType = $"_{unit}".EnumParse<MinuteCandleType>();
 
-            this.ReadStatusBidAskAlarmMA(unit, market);
+            this.StatusBidAskAlarmMA = ReadStatusBidAskAlarmMA(0, api.ExchangeID, unit, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate) ?? new();
         }
 
 
@@ -113,7 +113,7 @@ namespace MetaFrm.Stock.Exchange
             {
                 DateTime dateTime;
                 StringBuilder stringBuilder = new();
-                CandlesMinute candles = BidAskAlarmMA.Candles[market];
+                CandlesMinute candles = BidAskAlarmMA.Candles[$"{market}_{(int)this.MinuteCandleType}"];
 
                 while (this.IsRunReciveData)
                 {
@@ -135,22 +135,7 @@ namespace MetaFrm.Stock.Exchange
 
                         await Task.Delay(2000);
 
-                        lock (BidAskAlarmMA.Candles)
-                        {
-                            this.CandlesMinute(candles, market);
-
-                            if (candles.CandlesMinuteList == null || candles.CandlesMinuteList.Count < this.RightMA60)
-                                ;
-                            else
-                            {
-                                CandlesMinute_MA_TradePrice(candles, this.LeftMA7);
-                                CandlesMinute_MA_TradePrice(candles, this.RightMA30);
-                                CandlesMinute_MA_TradePrice(candles, this.RightMA60);
-
-                                CandlesMinute_MA_Diff_TradePrice(candles, this.LeftMA7, this.RightMA30);
-                                CandlesMinute_MA_Diff_TradePrice(candles, this.LeftMA7, this.RightMA60);
-                            }
-                        }
+                        SecondaryIndicator(this.Api, candles, market, this.MinuteCandleType, this.LeftMA7, this.RightMA30, this.RightMA60);
 
                         this.MA_Test(candles, this.StatusBidAskAlarmMA, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
                     }
@@ -175,7 +160,7 @@ namespace MetaFrm.Stock.Exchange
                     }
                 }
 
-                this.SaveStatusBidAskAlarmMA(candles.Unit, market);
+                SaveStatusBidAskAlarmMA(0, this.StatusBidAskAlarmMA, this.Api.ExchangeID, candles.Unit, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
             });
         }
         internal Ticker? GetCurrentInfo(string market)
@@ -188,36 +173,9 @@ namespace MetaFrm.Stock.Exchange
             return ticker.TickerList[0];
         }
 
-        private void CandlesMinute(CandlesMinute candles, string market)
-        {
-            CandlesMinute? candlesMinute = null;
-            DateTime? candleDateTimeKstMax = null;
-            int rightMA60 = this.RightMA60 + 1;
-
-            candlesMinute = this.Api.CandlesMinute(market, this.MinuteCandleType, DateTime.Now.AddMinutes((int)this.MinuteCandleType * -1), rightMA60);
-
-            if (candlesMinute.CandlesMinuteList != null && candles.CandlesMinuteList != null)
-            {
-                if (candles.CandlesMinuteList.Count == 0)
-                    candleDateTimeKstMax = DateTime.Now.AddMinutes(candles.Unit * rightMA60 * -1);
-                else
-                {
-                    candleDateTimeKstMax = candles.CandlesMinuteList?.Max(x => x.CandleDateTimeKst);
-                    candleDateTimeKstMax ??= DateTime.Now.AddMinutes(candles.Unit * rightMA60 * -1);
-                }
-
-                var list = candlesMinute.CandlesMinuteList.Where(x => x.CandleDateTimeKst > candleDateTimeKstMax).OrderByDescending(o => o.CandleDateTimeKst).ToList();
-
-                if (list != null && list.Count > 0)
-                    candles.CandlesMinuteList?.InsertRange(0, list);
-
-                if (candles.CandlesMinuteList != null && candles.CandlesMinuteList.Count > rightMA60)
-                    candles.CandlesMinuteList.RemoveRange(candles.CandlesMinuteList.Count - (candles.CandlesMinuteList.Count - rightMA60), candles.CandlesMinuteList.Count - rightMA60);
-            }
-        }
 
 
-        private void MA_Test(CandlesMinute candles, StatusBidAskAlarmMA statusBidAskAlarmMA, string market, int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal profitRate)
+        private void MA_Test(CandlesMinute candles, StatusBidAskAlarmMA statusBidAskAlarmMA, string market, int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal rate)
         {
             if (candles.CandlesMinuteList == null)
                 return;
@@ -252,7 +210,7 @@ namespace MetaFrm.Stock.Exchange
                         {
                             //이전 값보다 작아 졌을떄 => 간격이 좁아지면 => 매도를 한다 (보정값으로으로 미세 조정 필요★)
                             // 5 < 6
-                            if (value_7_30 < beforValue_7_30 && item.TradePrice > (statusBidAskAlarmMA.BidPrice * (1M + profitRate)))
+                            if (value_7_30 < beforValue_7_30 && item.TradePrice > (statusBidAskAlarmMA.BidPrice * (1M + rate)))
                             {
                                 statusBidAskAlarmMA.AskPrice = item.TradePrice;
                                 statusBidAskAlarmMA.CurrentStatus = "";
@@ -293,7 +251,7 @@ namespace MetaFrm.Stock.Exchange
 
                                 stringBuilder.Clear();
                                 stringBuilder.AppendLine($"매수가격 : {statusBidAskAlarmMA.BidPrice.PriceToString(this.Api.ExchangeID, market)}");
-                                stringBuilder.AppendLine($"목표가격 : {(statusBidAskAlarmMA.BidPrice * (1M + profitRate)).PriceRound(this.Api.ExchangeID, market).PriceToString(this.Api.ExchangeID, market)}");
+                                stringBuilder.AppendLine($"목표가격 : {(statusBidAskAlarmMA.BidPrice * (1M + rate)).PriceRound(this.Api.ExchangeID, market).PriceToString(this.Api.ExchangeID, market)}");
                                 stringBuilder.AppendLine($"손절가격 : {statusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)} {(stopLossRate * 100M * -1M):N2}%");
                                 stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
 
@@ -310,6 +268,35 @@ namespace MetaFrm.Stock.Exchange
         }
 
 
+        /// <summary>
+        /// SecondaryIndicator
+        /// </summary>
+        /// <param name="api"></param>
+        /// <param name="candles"></param>
+        /// <param name="market"></param>
+        /// <param name="minuteCandleType"></param>
+        /// <param name="leftMA7"></param>
+        /// <param name="rightMA30"></param>
+        /// <param name="rightMA60"></param>
+        public static void SecondaryIndicator(IApi api, CandlesMinute candles, string market, MinuteCandleType minuteCandleType, int leftMA7, int rightMA30, int rightMA60)
+        {
+            lock (BidAskAlarmMA.Candles)
+            {
+                CandlesMinute(api, candles, market, minuteCandleType, rightMA60);
+
+                if (candles.CandlesMinuteList == null || candles.CandlesMinuteList.Count < rightMA60)
+                    ;
+                else
+                {
+                    CandlesMinute_MA_TradePrice(candles, leftMA7);
+                    CandlesMinute_MA_TradePrice(candles, rightMA30);
+                    CandlesMinute_MA_TradePrice(candles, rightMA60);
+
+                    CandlesMinute_MA_Diff_TradePrice(candles, leftMA7, rightMA30);
+                    CandlesMinute_MA_Diff_TradePrice(candles, leftMA7, rightMA60);
+                }
+            }
+        }
 
         private static void CandlesMinute_MA_Diff_TradePrice(CandlesMinute candles, int countMA_Left, int countMA_Right)
         {
@@ -343,46 +330,71 @@ namespace MetaFrm.Stock.Exchange
                 }
             });
         }
+        private static void CandlesMinute(IApi api, CandlesMinute candles, string market, MinuteCandleType minuteCandleType, int rightMA60)
+        {
+            CandlesMinute? candlesMinute = null;
+            DateTime? candleDateTimeKstMax = null;
+            rightMA60 += 1;
 
+            candlesMinute = api.CandlesMinute(market, minuteCandleType, DateTime.Now.AddMinutes((int)minuteCandleType * -1), rightMA60);
+
+            if (candlesMinute.CandlesMinuteList != null && candles.CandlesMinuteList != null)
+            {
+                if (candles.CandlesMinuteList.Count == 0)
+                    candleDateTimeKstMax = DateTime.Now.AddMinutes(candles.Unit * rightMA60 * -1);
+                else
+                {
+                    candleDateTimeKstMax = candles.CandlesMinuteList?.Max(x => x.CandleDateTimeKst);
+                    candleDateTimeKstMax ??= DateTime.Now.AddMinutes(candles.Unit * rightMA60 * -1);
+                }
+
+                var list = candlesMinute.CandlesMinuteList.Where(x => x.CandleDateTimeKst > candleDateTimeKstMax).OrderByDescending(o => o.CandleDateTimeKst).ToList();
+
+                if (list != null && list.Count > 0)
+                    candles.CandlesMinuteList?.InsertRange(0, list);
+
+                if (candles.CandlesMinuteList != null && candles.CandlesMinuteList.Count > rightMA60)
+                    candles.CandlesMinuteList.RemoveRange(candles.CandlesMinuteList.Count - (candles.CandlesMinuteList.Count - rightMA60), candles.CandlesMinuteList.Count - rightMA60);
+            }
+        }
 
         /// <summary>
         /// ReadStatusBidAskAlarmMA
         /// </summary>
         /// <returns></returns>
-        public void ReadStatusBidAskAlarmMA(int unit, string market)
+        public static StatusBidAskAlarmMA? ReadStatusBidAskAlarmMA(int settingID, int exchangeID, int unit, string market, int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal rate)
         {
             try
             {
-                string path = $"Run_{this.Api.ExchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{this.LeftMA7}_{this.RightMA30}_{this.RightMA60}_{this.StopLossRate}_{this.Rate}.txt";
+                string path = $"Run_{settingID}_{exchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{leftMA7}_{rightMA30}_{rightMA60}_{stopLossRate}_{rate}.txt";
 
                 if (File.Exists(path))
                 {
                     using StreamReader streamReader = File.OpenText(path);
-                    StatusBidAskAlarmMA? result = JsonSerializer.Deserialize<StatusBidAskAlarmMA>(streamReader.ReadToEnd(), this.jsonSerializerOptions);
-
-                    if (result != null)
-                        this.StatusBidAskAlarmMA = result;
+                    return JsonSerializer.Deserialize<StatusBidAskAlarmMA>(streamReader.ReadToEnd(), JsonSerializerOptions);
                 }
             }
             catch (Exception ex)
             {
-                ex.WriteMessage(true, this.Api.ExchangeID, null, null, market);
+                ex.WriteMessage(true, exchangeID, null, null, market);
             }
+
+            return new();
         }
         /// <summary>
         /// SaveStatusBidAskAlarmMA
         /// </summary>
-        public void SaveStatusBidAskAlarmMA(int unit, string market)
+        public static void SaveStatusBidAskAlarmMA(int settingID, StatusBidAskAlarmMA statusBidAskAlarmMA, int exchangeID, int unit, string market, int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal rate)
         {
             try
             {
-                string path = $"Run_{this.Api.ExchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{this.LeftMA7}_{this.RightMA30}_{this.RightMA60}_{this.StopLossRate}_{this.Rate}.txt";
+                string path = $"Run_{settingID}_{exchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{leftMA7}_{rightMA30}_{rightMA60}_{stopLossRate}_{rate}.txt";
                 using StreamWriter streamWriter = File.CreateText(path);
-                streamWriter.Write(JsonSerializer.Serialize(this.StatusBidAskAlarmMA, this.jsonSerializerOptions));
+                streamWriter.Write(JsonSerializer.Serialize(statusBidAskAlarmMA, JsonSerializerOptions));
             }
             catch (Exception ex)
             {
-                ex.WriteMessage(true, this.Api.ExchangeID, null, null, market);
+                ex.WriteMessage(true, exchangeID, null, null, market);
             }
         }
 

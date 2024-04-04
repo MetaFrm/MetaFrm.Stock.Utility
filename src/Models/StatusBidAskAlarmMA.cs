@@ -26,8 +26,32 @@
         public decimal AskPrice { get; set; }
 
         /// <summary>
+        /// Qty
+        /// </summary>
+        public decimal Qty { get; set; }
+
+        /// <summary>
         /// IsBid
         /// </summary>
         public bool IsBid { get; set; }
+
+        /// <summary>
+        /// TempBidOrder
+        /// </summary>
+        public Models.Order? TempBidOrder { get; set; }
+        /// <summary>
+        /// TempAskOrder
+        /// </summary>
+        public Models.Order? TempAskOrder { get; set; }
+
+        /// <summary>
+        /// BidOrder
+        /// </summary>
+        public Models.Order? BidOrder { get; set; }
+
+        /// <summary>
+        /// StopLossAskOrder
+        /// </summary>
+        public Models.Order? StopLossAskOrder { get; set; }
     }
 }
