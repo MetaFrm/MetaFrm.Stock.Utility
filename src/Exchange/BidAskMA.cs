@@ -406,7 +406,7 @@ namespace MetaFrm.Stock.Exchange
             }
             finally
             {
-                this.UpdateMessage(this.User, this.SettingID, this.Message ??"");
+                this.UpdateMessage(this.User, this.SettingID, this.Message ?? "");
             }
         }
         private void BidOrder(string market, IApi api, StatusBidAskAlarmMA statusBidAskAlarmMA, int userID)
@@ -466,59 +466,6 @@ namespace MetaFrm.Stock.Exchange
             if (ticker == null || ticker.TickerList == null || ticker.TickerList.Count < 1) return null;
 
             return ticker.TickerList[0];
-        }
-
-        private void Update(User user, int SETTING_ID, decimal BID_PRICE_AVG, decimal TARGET_PRICE, decimal RETURN_PRICE)
-        {
-            StringBuilder stringBuilder = new();
-            ServiceData data = new()
-            {
-                ServiceName = "",
-                TransactionScope = false,
-                Token = user.AuthState.Token(),
-            };
-            data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("TraillingStop.Update");
-            data["1"].AddParameter(nameof(SETTING_ID), Database.DbType.Int, 3, SETTING_ID);
-            data["1"].AddParameter(nameof(BID_PRICE_AVG), Database.DbType.Decimal, 25, BID_PRICE_AVG);
-            data["1"].AddParameter(nameof(TARGET_PRICE), Database.DbType.Decimal, 25, TARGET_PRICE);
-            data["1"].AddParameter(nameof(RETURN_PRICE), Database.DbType.Decimal, 25, RETURN_PRICE);
-            data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, user.UserID);
-
-            stringBuilder.Append($"{user.ExchangeName()} 트레일링 스탑 타겟 알림");
-            data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
-
-            stringBuilder.Clear();
-            stringBuilder.AppendLine($"{this.Market}");
-
-            string[]? tmps = this.Market?.Split('-');
-
-            //if (TARGET_PRICE >= 100)
-            //    stringBuilder.Append($"타겟: {TARGET_PRICE:N0} {tmps?[0]}");
-            //else if (TARGET_PRICE >= 1)
-            //    stringBuilder.Append($"타겟: {TARGET_PRICE:N2} {tmps?[0]}");
-            //else
-            //    stringBuilder.Append($"타겟: {TARGET_PRICE:N4} {tmps?[0]}");
-            stringBuilder.Append($"타겟: {TARGET_PRICE.PriceToString(SETTING_ID, this.Market ?? "")} {tmps?[0]}");
-
-            //if (RETURN_PRICE >= 100)
-            //    stringBuilder.Append($" | 리턴: {RETURN_PRICE:N0} {tmps?[0]}");
-            //else if (RETURN_PRICE >= 1)
-            //    stringBuilder.Append($" | 리턴: {RETURN_PRICE:N2} {tmps?[0]}");
-            //else
-            //    stringBuilder.Append($" | 리턴: {RETURN_PRICE:N4} {tmps?[0]}");
-            stringBuilder.Append($" | 리턴: {RETURN_PRICE.PriceToString(SETTING_ID, this.Market ?? "")} {tmps?[0]}");
-
-            data["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
-
-            Task.Run(() =>
-            {
-                Response response;
-
-                response = this.ServiceRequest(data);
-
-                if (response.Status != Status.OK)
-                    response.Message?.WriteMessage(user.ExchangeID, user.UserID, this.SettingID, this.Market);
-            });
         }
     }
 }

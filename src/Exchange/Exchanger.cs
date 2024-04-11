@@ -525,7 +525,7 @@ namespace MetaFrm.Stock.Exchange
                                         BaseInvest = (decimal)BASE_INVEST,
                                         //BasePrice = (decimal)BASE_PRICE,
                                         //TopPrice = (decimal)TOP_PRICE,
-                                        //Rate = (decimal)RATE,
+                                        Rate = (decimal)RATE,
                                         //ListMin = (int)LIST_MIN,
                                         Fees = (decimal)FEES,
                                         //TopStop = TOP_STOP,
@@ -538,7 +538,6 @@ namespace MetaFrm.Stock.Exchange
                                         RightMA60 = (int)RIGHT_MA60,
                                         StopLossRate = (decimal)STOP_LOSS_RATE,
                                     });
-
 
                                 break;
                         }

@@ -270,7 +270,7 @@ namespace MetaFrm.Stock.Exchange
                 if (this.SettingType != SettingType.BidAskMA)
                     this.SaveWorkDataList(this.User);
                 else if (this is BidAskMA bidAskMA && bidAskMA.StatusBidAskAlarmMA != null)
-                    BidAskAlarmMA.SaveStatusBidAskAlarmMA(this.SettingID, bidAskMA.StatusBidAskAlarmMA, this.ExchangeID, (int)bidAskMA.MinuteCandleType, this.Market, bidAskMA.LeftMA7, bidAskMA.RightMA30, bidAskMA.RightMA60, bidAskMA.StopLossRate, bidAskMA.Rate);
+                    BidAskAlarmMA.SaveStatusBidAskAlarmMA(this.SettingID, bidAskMA.StatusBidAskAlarmMA, this.ExchangeID, (int)bidAskMA.MinuteCandleType, this.Market ?? "", bidAskMA.LeftMA7, bidAskMA.RightMA30, bidAskMA.RightMA60, bidAskMA.StopLossRate, bidAskMA.Rate);
             }
 
             if (this.SettingType != SettingType.BidAskMA)

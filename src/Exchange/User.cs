@@ -733,7 +733,7 @@ namespace MetaFrm.Stock.Exchange
                             if (cntPoint >= 2880000)
                             {
                                 cntPoint = 0;
-                                this.PointCheck();
+                                this.PointMemberCheck();
                             }
                         }
                     }
@@ -909,7 +909,7 @@ namespace MetaFrm.Stock.Exchange
             });
         }
 
-        internal void PointCheck()
+        internal void PointMemberCheck()
         {
             ServiceData data = new()
             {
@@ -928,6 +928,7 @@ namespace MetaFrm.Stock.Exchange
             else
             {
                 if (response.DataSet != null && response.DataSet.DataTables.Count > 0 && response.DataSet.DataTables[0].DataRows.Count >= 1)
+                {
                     if (response.DataSet.DataTables[0].DataRows[0].String("IS_STOP") == "Y")
                     {
                         lock (this.Settings)
@@ -937,6 +938,69 @@ namespace MetaFrm.Stock.Exchange
                                 this.RemoveSetting(item);
                             }
                     }
+
+                    if (response.DataSet != null && response.DataSet.DataTables.Count > 1 && response.DataSet.DataTables[1].DataRows.Count >= 1)
+                    {
+                        StringBuilder stringBuilder = new();
+                        data = new()
+                        {
+                            ServiceName = "",
+                            TransactionScope = false,
+                            Token = this.AuthState.Token(),
+                        };
+                        data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("User.PointCheckLack");
+                        data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.UserID);
+
+                        stringBuilder.Append($"포인트 부족");
+                        data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+
+                        stringBuilder.Clear();
+                        stringBuilder.Append($"남은 포인트 : {response.DataSet.DataTables[1].DataRows[0].Decimal("POINT"):N0}");
+
+                        data["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+
+                        Task.Run(() =>
+                        {
+                            Response response;
+
+                            response = this.ServiceRequest(data);
+
+                            if (response.Status != Status.OK)
+                                response.Message?.WriteMessage(this.ExchangeID, this.UserID, null, null);
+                        });
+                    }
+
+                    if (response.DataSet != null && response.DataSet.DataTables.Count > 2 && response.DataSet.DataTables[2].DataRows.Count >= 1)
+                    {
+                        StringBuilder stringBuilder = new();
+                        data = new()
+                        {
+                            ServiceName = "",
+                            TransactionScope = false,
+                            Token = this.AuthState.Token(),
+                        };
+                        data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("User.AccountMemberInactiveDateLack");
+                        data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.UserID);
+
+                        stringBuilder.Append($"회원제 만료");
+                        data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+
+                        stringBuilder.Clear();
+                        stringBuilder.Append($"만료 일시 : {response.DataSet.DataTables[2].DataRows[0].DateTime("MEMBER_INACTIVE_DATE"):yyyy-MM-dd HH:mm}");
+
+                        data["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+
+                        Task.Run(() =>
+                        {
+                            Response response;
+
+                            response = this.ServiceRequest(data);
+
+                            if (response.Status != Status.OK)
+                                response.Message?.WriteMessage(this.ExchangeID, this.UserID, null, null);
+                        });
+                    }
+                }
             }
         }
 
