@@ -53,5 +53,10 @@
         /// StopLossAskOrder
         /// </summary>
         public Models.Order? StopLossAskOrder { get; set; }
+
+        /// <summary>
+        /// TempInvest
+        /// </summary>
+        public decimal TempInvest { get; set; }
     }
 }

@@ -942,28 +942,28 @@ namespace MetaFrm.Stock.Exchange
                     if (response.DataSet != null && response.DataSet.DataTables.Count > 1 && response.DataSet.DataTables[1].DataRows.Count >= 1)
                     {
                         StringBuilder stringBuilder = new();
-                        data = new()
+                        ServiceData data1 = new()
                         {
                             ServiceName = "",
                             TransactionScope = false,
                             Token = this.AuthState.Token(),
                         };
-                        data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("User.PointCheckLack");
-                        data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.UserID);
+                        data1["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("User.PointCheckLack");
+                        data1["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.UserID);
 
                         stringBuilder.Append($"포인트 부족");
-                        data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+                        data1["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
                         stringBuilder.Clear();
                         stringBuilder.Append($"남은 포인트 : {response.DataSet.DataTables[1].DataRows[0].Decimal("POINT"):N0}");
 
-                        data["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+                        data1["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
                         Task.Run(() =>
                         {
                             Response response;
 
-                            response = this.ServiceRequest(data);
+                            response = this.ServiceRequest(data1);
 
                             if (response.Status != Status.OK)
                                 response.Message?.WriteMessage(this.ExchangeID, this.UserID, null, null);
@@ -973,28 +973,28 @@ namespace MetaFrm.Stock.Exchange
                     if (response.DataSet != null && response.DataSet.DataTables.Count > 2 && response.DataSet.DataTables[2].DataRows.Count >= 1)
                     {
                         StringBuilder stringBuilder = new();
-                        data = new()
+                        ServiceData data1 = new()
                         {
                             ServiceName = "",
                             TransactionScope = false,
                             Token = this.AuthState.Token(),
                         };
-                        data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("User.AccountMemberInactiveDateLack");
-                        data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.UserID);
+                        data1["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("User.AccountMemberInactiveDateLack");
+                        data1["1"].AddParameter("USER_ID", Database.DbType.Int, 3, this.UserID);
 
                         stringBuilder.Append($"회원제 만료");
-                        data["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+                        data1["1"].AddParameter("MESSAGE_TITLE", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
                         stringBuilder.Clear();
                         stringBuilder.Append($"만료 일시 : {response.DataSet.DataTables[2].DataRows[0].DateTime("MEMBER_INACTIVE_DATE"):yyyy-MM-dd HH:mm}");
 
-                        data["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
+                        data1["1"].AddParameter("MESSAGE_BODY", Database.DbType.NVarChar, 4000, stringBuilder.ToString());
 
                         Task.Run(() =>
                         {
                             Response response;
 
-                            response = this.ServiceRequest(data);
+                            response = this.ServiceRequest(data1);
 
                             if (response.Status != Status.OK)
                                 response.Message?.WriteMessage(this.ExchangeID, this.UserID, null, null);

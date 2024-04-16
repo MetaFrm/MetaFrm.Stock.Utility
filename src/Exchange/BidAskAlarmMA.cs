@@ -98,6 +98,9 @@ namespace MetaFrm.Stock.Exchange
             this.MinuteCandleType = $"_{unit}".EnumParse<MinuteCandleType>();
 
             this.StatusBidAskAlarmMA = ReadStatusBidAskAlarmMA(0, api.ExchangeID, unit, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate) ?? new();
+
+            if (this.StatusBidAskAlarmMA.TempInvest <= 0)
+                this.StatusBidAskAlarmMA.TempInvest = 1000000M;
         }
 
 
@@ -148,10 +151,12 @@ namespace MetaFrm.Stock.Exchange
                         if (ticker != null && this.StatusBidAskAlarmMA.StopLossPrice >= ticker.TradePrice)
                         {
                             this.StatusBidAskAlarmMA.CurrentStatus = "손절";
+                            this.StatusBidAskAlarmMA.TempInvest = this.StatusBidAskAlarmMA.StopLossPrice * this.StatusBidAskAlarmMA.Qty * (1M - 0.0005M);
 
                             stringBuilder.Clear();
                             stringBuilder.AppendLine($"손절가격 : {this.StatusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)} -{(this.StopLossRate * 100M):N2}%");
                             stringBuilder.AppendLine($"매수가격 : {this.StatusBidAskAlarmMA.BidPrice.PriceToString(this.Api.ExchangeID, market)}");
+                            stringBuilder.AppendLine($"가상 투자금액 : {this.StatusBidAskAlarmMA.TempInvest:N0}");
                             stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
 
                             this.BidAskAlarm_MA(this.AuthState.Token(), market, "ask", "limit", this.StatusBidAskAlarmMA.StopLossPrice.PriceRound(this.Api.ExchangeID, market)
@@ -214,10 +219,12 @@ namespace MetaFrm.Stock.Exchange
                             {
                                 statusBidAskAlarmMA.AskPrice = item.TradePrice;
                                 statusBidAskAlarmMA.CurrentStatus = "";
+                                statusBidAskAlarmMA.TempInvest = statusBidAskAlarmMA.AskPrice * statusBidAskAlarmMA.Qty * (1M - 0.0005M);
 
                                 stringBuilder.Clear();
                                 stringBuilder.AppendLine($"매수가격 : {statusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)}");
                                 stringBuilder.AppendLine($"매도가격 : {statusBidAskAlarmMA.AskPrice.PriceToString(this.Api.ExchangeID, market)}");
+                                stringBuilder.AppendLine($"가상 투자금액 : {statusBidAskAlarmMA.TempInvest:N0}");
                                 stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
 
                                 this.BidAskAlarm_MA(this.AuthState.Token(), market, "ask", "limit", item.TradePrice.PriceRound(this.Api.ExchangeID, market)
@@ -242,6 +249,7 @@ namespace MetaFrm.Stock.Exchange
                             {
                                 statusBidAskAlarmMA.CurrentStatus = "매수";
                                 statusBidAskAlarmMA.BidPrice = item.TradePrice;
+                                statusBidAskAlarmMA.Qty = (statusBidAskAlarmMA.TempInvest * (1M - 0.0005M)) / statusBidAskAlarmMA.BidPrice;
 
                                 statusBidAskAlarmMA.StopLossPrice = (statusBidAskAlarmMA.BidPrice * (1M - stopLossRate)).PriceRound(this.Api.ExchangeID, market);//손절
 
@@ -253,6 +261,7 @@ namespace MetaFrm.Stock.Exchange
                                 stringBuilder.AppendLine($"매수가격 : {statusBidAskAlarmMA.BidPrice.PriceToString(this.Api.ExchangeID, market)}");
                                 stringBuilder.AppendLine($"목표가격 : {(statusBidAskAlarmMA.BidPrice * (1M + rate)).PriceRound(this.Api.ExchangeID, market).PriceToString(this.Api.ExchangeID, market)}");
                                 stringBuilder.AppendLine($"손절가격 : {statusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)} {(stopLossRate * 100M * -1M):N2}%");
+                                stringBuilder.AppendLine($"가상 투자금액 : {statusBidAskAlarmMA.TempInvest:N0}");
                                 stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
 
                                 this.BidAskAlarm_MA(this.AuthState.Token(), market, "bid", "limit", item.TradePrice.PriceRound(this.Api.ExchangeID, market)
@@ -366,7 +375,7 @@ namespace MetaFrm.Stock.Exchange
         {
             try
             {
-                string path = $"Run_{settingID}_{exchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{leftMA7}_{rightMA30}_{rightMA60}_{stopLossRate}_{rate}.txt";
+                string path = $"Run_{settingID}_{exchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{leftMA7}_{rightMA30}_{rightMA60}_{stopLossRate:N3}_{rate:N3}.txt";
 
                 if (File.Exists(path))
                 {
@@ -388,7 +397,7 @@ namespace MetaFrm.Stock.Exchange
         {
             try
             {
-                string path = $"Run_{settingID}_{exchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{leftMA7}_{rightMA30}_{rightMA60}_{stopLossRate}_{rate}.txt";
+                string path = $"Run_{settingID}_{exchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{leftMA7}_{rightMA30}_{rightMA60}_{stopLossRate:N3}_{rate:N3}.txt";
                 using StreamWriter streamWriter = File.CreateText(path);
                 streamWriter.Write(JsonSerializer.Serialize(statusBidAskAlarmMA, JsonSerializerOptions));
             }
