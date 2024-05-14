@@ -1,5 +1,6 @@
 ﻿using MetaFrm.Control;
 using MetaFrm.Stock.Console;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
@@ -18,6 +19,8 @@ namespace MetaFrm.Stock.Exchange.Upbit
     /// </summary>
     public class UpbitApi : IApi, IAction, IDisposable
     {
+        private readonly Task<AuthenticationState>? AuthState;
+
         private readonly object _lock = new();
         private JwtHeader? JwtHeader;
         private HttpClient? HttpClient { get; set; }
@@ -60,9 +63,11 @@ namespace MetaFrm.Stock.Exchange.Upbit
         /// <summary>
         /// UpbitApi
         /// </summary>
-        public UpbitApi(bool runTickerFromWebSocket, bool runOrderResultFromWebSocket)
+        public UpbitApi(bool runTickerFromWebSocket, bool runOrderResultFromWebSocket, Task<AuthenticationState>? authState)
         {
             this.CreateHttpClient(null);
+
+            this.AuthState = authState;
 
             if (runTickerFromWebSocket && !IsRunTickerFromWebSocket)
             {
@@ -1411,6 +1416,8 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 await WebSocketTickerDB.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg)), WebSocketMessageType.Text, true, CancellationToken.None);
 
                 DateTime dateTime1 = DateTime.Now;
+                int i = 0;
+                string authStateToken = this.AuthState != null ? this.AuthState.Token() : "";
 
                 while (WebSocketTickerDB.State == WebSocketState.Open)
                 {
@@ -1510,8 +1517,16 @@ namespace MetaFrm.Stock.Exchange.Upbit
                                     Lowest52WeekDate = tickerWebSocket.Lowest52WeekDate,
                                     TimeStamp = tickerWebSocket.TimeStamp,
                                 });
+
+                            if (i % 10000 == 0 && !authStateToken.IsNullOrEmpty())
+                            {
+                                User.Upload(this, authStateToken, 1, 0, TickerDB);
+                                i = 0;
+                            }
                         }
                     }
+
+                    i++;
                 }
             }
             catch (Exception ex)

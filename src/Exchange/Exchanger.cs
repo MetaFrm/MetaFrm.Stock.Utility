@@ -104,7 +104,7 @@ namespace MetaFrm.Stock.Exchange
         public IApi? CreateApi()
         {
             lock (this.Users)
-                return CreateApi(this.ExchangeID, this.Users.Count, true);
+                return CreateApi(this.ExchangeID, this.Users.Count, true, this.AuthState);
         }
         /// <summary>
         /// CreateApi
@@ -112,13 +112,14 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="exchangeID"></param>
         /// <param name="userCount"></param>
         /// <param name="runOrderResultFromWebSocket"></param>
+        /// <param name="authState"></param>
         /// <returns></returns>
-        public static IApi? CreateApi(int exchangeID, int userCount, bool runOrderResultFromWebSocket)
+        public static IApi? CreateApi(int exchangeID, int userCount, bool runOrderResultFromWebSocket, Task<AuthenticationState>? authState)
         {
             return exchangeID switch
             {
-                1 => new Stock.Exchange.Upbit.UpbitApi(userCount == 0, runOrderResultFromWebSocket),
-                2 => new Stock.Exchange.Bithumb.BithumbApi(userCount == 0, runOrderResultFromWebSocket),
+                1 => new Stock.Exchange.Upbit.UpbitApi(userCount == 0, runOrderResultFromWebSocket, Factory.Platform == Maui.Devices.DevicePlatform.Server ? authState : null),
+                2 => new Stock.Exchange.Bithumb.BithumbApi(userCount == 0, runOrderResultFromWebSocket, Factory.Platform == Maui.Devices.DevicePlatform.Server ? authState : null),
                 _ => null
             };
         }

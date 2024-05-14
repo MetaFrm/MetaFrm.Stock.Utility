@@ -70,7 +70,7 @@ namespace MetaFrm.Stock.Service
             if (Apis.ContainsKey(EXCHANGE_ID))
                 return;
 
-            IApi? api = Exchanger.CreateApi(EXCHANGE_ID, 0, false);
+            IApi? api = Exchanger.CreateApi(EXCHANGE_ID, 0, false, null);
 
             if (api != null && Markets.ContainsKey(EXCHANGE_ID) && Markets.TryGetValue(EXCHANGE_ID, out Markets? markets) && markets != null && markets.MarketList != null && markets.MarketList.Count > 0)
             {

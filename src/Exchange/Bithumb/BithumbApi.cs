@@ -1,5 +1,6 @@
 ﻿using MetaFrm.Control;
 using MetaFrm.Stock.Console;
+using Microsoft.AspNetCore.Components.Authorization;
 using System.Collections.Specialized;
 using System.Net;
 using System.Net.WebSockets;
@@ -15,6 +16,8 @@ namespace MetaFrm.Stock.Exchange.Bithumb
     /// </summary>
     public class BithumbApi : IApi, IAction, IDisposable
     {
+        private readonly Task<AuthenticationState>? AuthState;
+
         private readonly object _lock = new();
         private HttpClient? HttpClient { get; set; }
         double IApi.TimeoutMilliseconds
@@ -58,9 +61,11 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         /// <summary>
         /// BithumbAPI
         /// </summary>
-        public BithumbApi(bool runTickerFromWebSocket, bool runOrderResultFromWebSocket)
+        public BithumbApi(bool runTickerFromWebSocket, bool runOrderResultFromWebSocket, Task<AuthenticationState>? authState)
         {
             this.CreateHttpClient(null);
+
+            this.AuthState = authState;
 
             if (runTickerFromWebSocket && !IsRunTickerFromWebSocket)
             {
@@ -1910,6 +1915,8 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 await WebSocketTickerDB.SendAsync(new ArraySegment<byte>(Encoding.UTF8.GetBytes(msg)), WebSocketMessageType.Text, true, CancellationToken.None);
 
                 DateTime dateTime1 = DateTime.Now;
+                int i = 0;
+                string authStateToken = this.AuthState != null ? this.AuthState.Token() : "";
 
                 while (WebSocketTickerDB.State == WebSocketState.Open)
                 {
@@ -2078,8 +2085,16 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                         //Lowest52WeekDate = ticker.Lowest52WeekDate,
                                         TimeStamp = ticker.TimeStamp,
                                     });
+
+                                if (i % 10000 == 0 && !authStateToken.IsNullOrEmpty())
+                                {
+                                    User.Upload(this, authStateToken, 2, 0, TickerDB);
+                                    i = 0;
+                                }
                             }
                     }
+
+                    i++;
                 }
             }
             catch (Exception ex)

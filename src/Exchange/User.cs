@@ -615,7 +615,7 @@ namespace MetaFrm.Stock.Exchange
                             order = this.Api.AllOrder("ALL", "desc");
                             if (!isUploadOrder)
                             {
-                                Upload(this, order);
+                                Upload(this, this.AuthState.Token(), this.ExchangeID, this.UserID, order);
                                 isUploadOrder = true;
                             }
 
@@ -660,7 +660,7 @@ namespace MetaFrm.Stock.Exchange
                                     account = this.Api.Account();
                                     if (!isUploadAccount)
                                     {
-                                        Upload(this, account);
+                                        Upload(this, this.AuthState.Token(), this.ExchangeID, this.UserID, account);
                                         isUploadAccount = true;
                                     }
 
@@ -1004,57 +1004,53 @@ namespace MetaFrm.Stock.Exchange
             }
         }
 
+        /// <summary>
+        /// Upload
+        /// - Account
+        /// - Order
+        /// - Ticker
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="core"></param>
+        /// <param name="authenticationStateToken"></param>
+        /// <param name="exchangeID"></param>
+        /// <param name="userID"></param>
+        /// <param name="value"></param>
+        public static void Upload<T>(ICore core, string authenticationStateToken, int exchangeID, int userID, T value)
+        {
+            MemoryServiceSet(core, authenticationStateToken, $"{exchangeID}_{userID}_{typeof(T).FullName}", System.Text.Json.JsonSerializer.Serialize(value));
+        }
 
         /// <summary>
-        /// Upload
+        /// Download
+        /// - Account
+        /// - Order
+        /// - Ticker
         /// </summary>
-        /// <param name="user"></param>
-        /// <param name="account"></param>
-        public static void Upload(User user, Models.Account account)
-        {
-            Upload(user, user.AuthState, user.ExchangeID, user.UserID, account);
-        }
-        /// <summary>
-        /// Upload
-        /// </summary>
+        /// <typeparam name="T"></typeparam>
         /// <param name="core"></param>
-        /// <param name="authenticationState"></param>
+        /// <param name="authenticationStateToken"></param>
         /// <param name="exchangeID"></param>
         /// <param name="userID"></param>
-        /// <param name="account"></param>
-        public static void Upload(ICore core, Task<AuthenticationState> authenticationState, int exchangeID, int userID, Models.Account account)
+        /// <returns></returns>
+        public static async Task<T?> Download<T>(ICore core, string authenticationStateToken, int exchangeID, int userID)
         {
-            MemoryServiceSet(core, authenticationState, $"{exchangeID}_{userID}_Accounts", System.Text.Json.JsonSerializer.Serialize(account));
+            var result = await MemoryServiceGet(core, authenticationStateToken, $"{exchangeID}_{userID}_{typeof(T).FullName}");
+
+            if (result != null)
+                return System.Text.Json.JsonSerializer.Deserialize<T?>(result);
+            else
+                return default;
         }
-        /// <summary>
-        /// Upload
-        /// </summary>
-        /// <param name="user"></param>
-        /// <param name="order"></param>
-        public static void Upload(User user, Models.Order order)
-        {
-            Upload(user, user.AuthState, user.ExchangeID, user.UserID, order);
-        }
-        /// <summary>
-        /// Upload
-        /// </summary>
-        /// <param name="core"></param>
-        /// <param name="authenticationState"></param>
-        /// <param name="exchangeID"></param>
-        /// <param name="userID"></param>
-        /// <param name="order"></param>
-        public static void Upload(ICore core, Task<AuthenticationState> authenticationState, int exchangeID, int userID, Models.Order order)
-        {
-            MemoryServiceSet(core, authenticationState, $"{exchangeID}_{userID}_Orders", System.Text.Json.JsonSerializer.Serialize(order));
-        }
-        private static void MemoryServiceSet(ICore core, Task<AuthenticationState> authenticationState, string key, string value)
+
+        private static void MemoryServiceSet(ICore core, string authenticationStateToken, string key, string value)
         {
             Response response;
             ServiceData data = new()
             {
                 ServiceName = "MetaFrm.Service.MemoryService",
                 TransactionScope = false,
-                Token = authenticationState.Token(),
+                Token = authenticationStateToken,
             };
             data["1"].CommandText = "Set";
             data["1"].AddParameter("KEY", Database.DbType.NVarChar, 0, key);
@@ -1072,47 +1068,14 @@ namespace MetaFrm.Stock.Exchange
                     $"{key} : {response.Message}"?.WriteMessage();
             });
         }
-
-        /// <summary>
-        /// DownloadAccount
-        /// </summary>
-        /// <param name="core"></param>
-        /// <param name="authenticationState"></param>
-        /// <param name="exchangeID"></param>
-        /// <returns></returns>
-        public static async Task<Models.Account?> DownloadAccount(ICore core, Task<AuthenticationState> authenticationState, int exchangeID)
-        {
-            var result = await MemoryServiceGet(core, authenticationState, $"{exchangeID}_{authenticationState.UserID()}_Accounts");
-
-            if (result != null)
-                return System.Text.Json.JsonSerializer.Deserialize<Models.Account?>(result);
-            else
-                return null;
-        }
-        /// <summary>
-        /// DownloadAccount
-        /// </summary>
-        /// <param name="core"></param>
-        /// <param name="authenticationState"></param>
-        /// <param name="exchangeID"></param>
-        /// <returns></returns>
-        public static async Task<Models.Order?> DownloadOrder(ICore core, Task<AuthenticationState> authenticationState, int exchangeID)
-        {
-            var result = await MemoryServiceGet(core, authenticationState, $"{exchangeID}_{authenticationState.UserID()}_Orders");
-
-            if (result != null)
-                return System.Text.Json.JsonSerializer.Deserialize<Models.Order?>(result);
-            else
-                return null;
-        }
-        private static async Task<string?> MemoryServiceGet(ICore core, Task<AuthenticationState> authenticationState, string key)
+        private static async Task<string?> MemoryServiceGet(ICore core, string authenticationStateToken, string key)
         {
             Response response;
             ServiceData data = new()
             {
                 ServiceName = "MetaFrm.Service.MemoryService",
                 TransactionScope = false,
-                Token = authenticationState.Token(),
+                Token = authenticationStateToken,
             };
             data["1"].CommandText = "Get";
             data["1"].AddParameter("KEY", Database.DbType.NVarChar, 0, key);
