@@ -292,10 +292,8 @@ namespace MetaFrm.Stock.Exchange
             lock (BidAskAlarmMA.Candles)
             {
                 CandlesMinute(api, candles, market, minuteCandleType, rightMA60);
-
-                if (candles.CandlesMinuteList == null || candles.CandlesMinuteList.Count < rightMA60)
-                    ;
-                else
+                
+                if (candles.CandlesMinuteList != null && candles.CandlesMinuteList.Count >= rightMA60)
                 {
                     CandlesMinute_MA_TradePrice(candles, leftMA7);
                     CandlesMinute_MA_TradePrice(candles, rightMA30);
