@@ -134,7 +134,7 @@ namespace MetaFrm.Stock.Exchange
                         if (this.StatusBidAskAlarmMA.CurrentStatus == "매수" && this.StatusBidAskAlarmMA.IsBid)
                             this.StatusBidAskAlarmMA.IsBid = false;
 
-                        System.Console.WriteLine($"실행 {this.Api.ExchangeID} {market} {this.lassRunDateTime:yyyy-MM-dd HH:mm:ss}");
+                        //System.Console.WriteLine($"실행 {this.Api.ExchangeID} {market} {this.lassRunDateTime:yyyy-MM-dd HH:mm:ss}");
 
                         await Task.Delay(2000);
 

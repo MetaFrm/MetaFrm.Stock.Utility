@@ -195,7 +195,7 @@ namespace MetaFrm.Stock.Exchange
                     if (this.StatusBidAskAlarmMA.CurrentStatus == "매수" && this.StatusBidAskAlarmMA.IsBid)
                         this.StatusBidAskAlarmMA.IsBid = false;
 
-                    System.Console.WriteLine($"실행 {this.SettingTypeString} {this.ExchangeID} {this.Market} {this.lassRunDateTime:yyyy-MM-dd HH:mm:ss}");
+                    //System.Console.WriteLine($"실행 {this.SettingTypeString} {this.ExchangeID} {this.Market} {this.lassRunDateTime:yyyy-MM-dd HH:mm:ss}");
 
                     BidAskAlarmMA.SecondaryIndicator(this.User.Api, this.Candles, this.Market, this.MinuteCandleType, this.LeftMA7, this.RightMA30, this.RightMA60);
 
