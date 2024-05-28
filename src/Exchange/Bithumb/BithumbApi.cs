@@ -1908,7 +1908,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 string msg = @"{
 ""type"" : ""ticker"", 
 ""symbols"" : [" + codes + @"], 
-""tickTypes"" : [""24H""]
+""tickTypes"" : [""MID""]
 }";
 //""tickTypes"" : [""30M"", ""1H"", ""12H"", ""24H"", ""MID""]
                 //DEFAULT   SIMPLE

@@ -10,7 +10,9 @@ namespace MetaFrm.Stock.Service
     /// </summary>
     public class Service : IService
     {
-        private static readonly Dictionary<int, Markets> Markets = new();
+        /// <summary>
+        /// Markets
+        /// </summary>
         public static readonly Dictionary<int, Markets> Markets = new();
         private static readonly Dictionary<int, IApi?> Apis = new();
 
