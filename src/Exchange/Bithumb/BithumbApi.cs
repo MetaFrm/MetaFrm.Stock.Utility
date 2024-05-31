@@ -1209,9 +1209,14 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         #region "서비스 정보"
         Models.ApiKyes IApi.ApiKyes()
         {
-            Models.ApiKyes result = new()
-            {
-                ApiKyesList = new()
+            Models.Account account = (this as IApi).Account();
+
+            if (account == null || account.Error != null)
+                return new();
+            else
+                return new()
+                {
+                    ApiKyesList = new()
                 {
                     new()
                     {
@@ -1219,9 +1224,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                         ExpireAt = DateTime.Now.AddYears(10),
                     }
                 }
-            };
-
-            return result;
+                };
         }
         #endregion
 
