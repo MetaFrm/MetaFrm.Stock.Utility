@@ -658,6 +658,9 @@ namespace MetaFrm.Stock.Exchange
                                     Models.Account account;
 
                                     account = this.Api.Account();
+
+                                    if (account.Error != null) $"Start : {account.Error?.Message}".WriteMessage(this.ExchangeID, this.UserID);
+
                                     if (!isUploadAccount)
                                     {
                                         Upload(this, this.AuthState.Token(), this.ExchangeID, this.UserID, account);
