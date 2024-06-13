@@ -608,7 +608,7 @@ namespace MetaFrm.Stock.Exchange
                 string tmp = MESSAGE;
 
                 //System.Console.WriteLine(tmp);
-                tmp = $"{tmp[..7]} {tmp[12..]}";
+                tmp = $"{tmp[..2]} {tmp[12..]}";
                 //System.Console.WriteLine(tmp);
 
                 if (this.LastMessageTmp.Equals(tmp)) return;
