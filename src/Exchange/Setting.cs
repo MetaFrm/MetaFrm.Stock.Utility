@@ -938,10 +938,17 @@ namespace MetaFrm.Stock.Exchange
 
                 if (File.Exists(path))
                 {
-                    using StreamReader streamReader = File.OpenText(path);
-                    result = JsonSerializer.Deserialize<List<WorkData>>(streamReader.ReadToEnd(), jsonSerializerOptions);
+                    using (StreamReader streamReader = File.OpenText(path))
+                        result = JsonSerializer.Deserialize<List<WorkData>>(streamReader.ReadToEnd(), jsonSerializerOptions);
 
-                    File.Move(path, $"{path}d");
+                    try
+                    {
+                        File.Move(path, $"{DateTime.Now:MM dd HH mm}_{path}");
+                    }
+                    catch (Exception ex)
+                    {
+                        ex.WriteMessage(true, user.ExchangeID, user.UserID, this.SettingID, this.Market);
+                    }
                 }
 
                 return result;
@@ -975,10 +982,17 @@ namespace MetaFrm.Stock.Exchange
 
                 if (File.Exists(path))
                 {
-                    using StreamReader streamReader = File.OpenText(path);
-                    result = JsonSerializer.Deserialize<Stack<Loss>>(streamReader.ReadToEnd(), jsonSerializerOptions);
+                    using (StreamReader streamReader = File.OpenText(path))
+                        result = JsonSerializer.Deserialize<Stack<Loss>>(streamReader.ReadToEnd(), jsonSerializerOptions);
 
-                    File.Move(path, $"{path}d");
+                    try
+                    {
+                        File.Move(path, $"{DateTime.Now:MM dd HH mm}_{path}");
+                    }
+                    catch (Exception ex)
+                    {
+                        ex.WriteMessage(true, user.ExchangeID, user.UserID, this.SettingID, this.Market);
+                    }
                 }
 
                 return result;

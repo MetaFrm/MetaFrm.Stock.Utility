@@ -378,10 +378,17 @@ namespace MetaFrm.Stock.Exchange
 
                 if (File.Exists(path))
                 {
-                    using StreamReader streamReader = File.OpenText(path);
-                    result = JsonSerializer.Deserialize<StatusBidAskAlarmMA>(streamReader.ReadToEnd(), JsonSerializerOptions);
+                    using (StreamReader streamReader = File.OpenText(path))
+                        result = JsonSerializer.Deserialize<StatusBidAskAlarmMA>(streamReader.ReadToEnd(), JsonSerializerOptions);
 
-                    File.Move(path, $"{path}d");
+                    try
+                    {
+                        File.Move(path, $"{DateTime.Now:MM dd HH mm}_{path}");
+                    }
+                    catch (Exception ex)
+                    {
+                        ex.WriteMessage(true, exchangeID, null, null, market);
+                    }
                 }
 
                 return result;
