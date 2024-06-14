@@ -59,7 +59,7 @@ namespace MetaFrm.Stock.Exchange
                     this.WorkDataList ??= this.ReadWorkDataList(this.User);
 
                     if (this.WorkDataList == null)
-                        if (this.Invest == 0)
+                        if (this.BaseInvest == 0)
                         {
                             var orderChance = this.User.Api.OrderChance(this.Market);
                             if (orderChance != null && orderChance.AskAccount != null)

@@ -901,14 +901,15 @@ namespace MetaFrm.Stock.Exchange.Upbit
             string? tmp;
             Markets[]? list;
             Models.Markets result = new();
+            DateTime dateTime = DateTime.Now;
 
             try
             {
                 if (!((IApi)this).AccessKey.IsNullOrEmpty())
                     lock (MarketsDB)
-                        if (MarketsDB.MarketList == null || MarketsDB.MarketList.Count == 0 || MarketsDB.LastDateTime.Hour != DateTime.Now.Hour)
+                        if (MarketsDB.MarketList == null || MarketsDB.MarketList.Count == 0 || (MarketsDB.LastDateTime.Minute != dateTime.Minute && dateTime.Minute % 2 == 0))
                         {
-                            MarketsDB.LastDateTime = DateTime.Now;
+                            MarketsDB.LastDateTime = dateTime;
 
                             tmp = this.CallAPI($"{this.BaseUrl}market/all", null, HttpMethod.Get);
 

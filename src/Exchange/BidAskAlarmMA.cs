@@ -373,13 +373,18 @@ namespace MetaFrm.Stock.Exchange
         {
             try
             {
+                StatusBidAskAlarmMA? result = null;
                 string path = $"Run_{settingID}_{exchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{leftMA7}_{rightMA30}_{rightMA60}_{stopLossRate:N3}_{rate:N3}.txt";
 
                 if (File.Exists(path))
                 {
                     using StreamReader streamReader = File.OpenText(path);
-                    return JsonSerializer.Deserialize<StatusBidAskAlarmMA>(streamReader.ReadToEnd(), JsonSerializerOptions);
+                    result = JsonSerializer.Deserialize<StatusBidAskAlarmMA>(streamReader.ReadToEnd(), JsonSerializerOptions);
+
+                    File.Move(path, $"{path}d");
                 }
+
+                return result;
             }
             catch (Exception ex)
             {

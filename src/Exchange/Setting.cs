@@ -940,6 +940,8 @@ namespace MetaFrm.Stock.Exchange
                 {
                     using StreamReader streamReader = File.OpenText(path);
                     result = JsonSerializer.Deserialize<List<WorkData>>(streamReader.ReadToEnd(), jsonSerializerOptions);
+
+                    File.Move(path, $"{path}d");
                 }
 
                 return result;
@@ -975,6 +977,8 @@ namespace MetaFrm.Stock.Exchange
                 {
                     using StreamReader streamReader = File.OpenText(path);
                     result = JsonSerializer.Deserialize<Stack<Loss>>(streamReader.ReadToEnd(), jsonSerializerOptions);
+
+                    File.Move(path, $"{path}d");
                 }
 
                 return result;

@@ -1236,14 +1236,15 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             Models.Ticker ticker1;
             Models.Ticker ticker2;
             Models.Markets result = new();
+            DateTime dateTime = DateTime.Now;
 
             try
             {
                 if (!((IApi)this).AccessKey.IsNullOrEmpty())
                     lock (MarketsDB)
-                        if (MarketsDB.MarketList == null || MarketsDB.MarketList.Count == 0 || MarketsDB.LastDateTime.Hour != DateTime.Now.Hour)
+                        if (MarketsDB.MarketList == null || MarketsDB.MarketList.Count == 0 || (MarketsDB.LastDateTime.Minute != dateTime.Minute && dateTime.Minute % 2 == 0))
                         {
-                            MarketsDB.LastDateTime = DateTime.Now;
+                            MarketsDB.LastDateTime = dateTime;
 
                             ticker1 = this.TickerAll("KRW");
                             if (ticker1.Error != null)
