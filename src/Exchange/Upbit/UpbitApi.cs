@@ -1446,7 +1446,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     var tickerWebSocket = JsonSerializer.Deserialize<TickerWebSocket>(data);
                     //var tickerWebSocket = JsonSerializer.Deserialize<TickerWebSocket>(Encoding.UTF8.GetString(bytesReceived.Array, 0, result.Count));
 
-                    if (tickerWebSocket != null)
+                    if (tickerWebSocket != null && tickerWebSocket.TradePrice != null)
                     {
                         lock (TickerDB)
                         {
@@ -1464,24 +1464,24 @@ namespace MetaFrm.Stock.Exchange.Upbit
                                 //sel.TradeDateKst = tickerWebSocket.TradeDate;
                                 //sel.TradeTimeKst = tickerWebSocket.TradeTime;
                                 sel.TradeTimeStamp = tickerWebSocket.TradeTimeStamp;
-                                sel.OpeningPrice = tickerWebSocket.OpeningPrice;
-                                sel.HighPrice = tickerWebSocket.HighPrice;
-                                sel.LowPrice = tickerWebSocket.LowPrice;
-                                sel.TradePrice = tickerWebSocket.TradePrice;
-                                sel.PrevClosingPrice = tickerWebSocket.PrevClosingPrice;
+                                sel.OpeningPrice = tickerWebSocket.OpeningPrice ?? 0M;
+                                sel.HighPrice = tickerWebSocket.HighPrice ?? 0M;
+                                sel.LowPrice = tickerWebSocket.LowPrice ?? 0M;
+                                sel.TradePrice = tickerWebSocket.TradePrice ?? 0M;
+                                sel.PrevClosingPrice = tickerWebSocket.PrevClosingPrice ?? 0M;
                                 sel.Change = tickerWebSocket.Change;
-                                sel.ChangePrice = tickerWebSocket.ChangePrice;
+                                sel.ChangePrice = tickerWebSocket.ChangePrice ?? 0M;
                                 sel.ChangeRate = tickerWebSocket.ChangeRate;
-                                sel.SignedChangePrice = tickerWebSocket.SignedChangePrice;
+                                sel.SignedChangePrice = tickerWebSocket.SignedChangePrice ?? 0M;
                                 sel.SignedChangeRate = tickerWebSocket.SignedChangeRate;
-                                sel.TradeVolume = tickerWebSocket.TradeVolume;
+                                sel.TradeVolume = tickerWebSocket.TradeVolume ?? 0M;
                                 sel.AccTradePrice = tickerWebSocket.AccTradePrice;
                                 sel.AccTradePrice24h = tickerWebSocket.AccTradePrice24h;
                                 sel.AccTradeVolume = tickerWebSocket.AccTradeVolume;
                                 sel.AccTradeVolume24h = tickerWebSocket.AccTradeVolume24h;
-                                sel.Highest52WeekPrice = tickerWebSocket.Highest52WeekPrice;
+                                sel.Highest52WeekPrice = tickerWebSocket.Highest52WeekPrice ?? 0M;
                                 sel.Highest52WeekDate = tickerWebSocket.Highest52WeekDate;
-                                sel.Lowest52WeekPrice = tickerWebSocket.Lowest52WeekPrice;
+                                sel.Lowest52WeekPrice = tickerWebSocket.Lowest52WeekPrice ?? 0M;
                                 sel.Lowest52WeekDate = tickerWebSocket.Lowest52WeekDate;
                                 sel.TimeStamp = tickerWebSocket.TimeStamp;
                             }
@@ -1497,24 +1497,24 @@ namespace MetaFrm.Stock.Exchange.Upbit
                                     //TradeDateKst = tickerWebSocket.TradeDate,
                                     //TradeTimeKst = tickerWebSocket.TradeTime,
                                     TradeTimeStamp = tickerWebSocket.TradeTimeStamp,
-                                    OpeningPrice = tickerWebSocket.OpeningPrice,
-                                    HighPrice = tickerWebSocket.HighPrice,
-                                    LowPrice = tickerWebSocket.LowPrice,
-                                    TradePrice = tickerWebSocket.TradePrice,
-                                    PrevClosingPrice = tickerWebSocket.PrevClosingPrice,
+                                    OpeningPrice = tickerWebSocket.OpeningPrice ?? 0M,
+                                    HighPrice = tickerWebSocket.HighPrice ?? 0M,
+                                    LowPrice = tickerWebSocket.LowPrice ?? 0M,
+                                    TradePrice = tickerWebSocket.TradePrice ?? 0M,
+                                    PrevClosingPrice = tickerWebSocket.PrevClosingPrice ?? 0M,
                                     Change = tickerWebSocket.Change,
-                                    ChangePrice = tickerWebSocket.ChangePrice,
+                                    ChangePrice = tickerWebSocket.ChangePrice ?? 0M,
                                     ChangeRate = tickerWebSocket.ChangeRate,
-                                    SignedChangePrice = tickerWebSocket.SignedChangePrice,
+                                    SignedChangePrice = tickerWebSocket.SignedChangePrice ?? 0M,
                                     SignedChangeRate = tickerWebSocket.SignedChangeRate,
-                                    TradeVolume = tickerWebSocket.TradeVolume,
+                                    TradeVolume = tickerWebSocket.TradeVolume ?? 0M,
                                     AccTradePrice = tickerWebSocket.AccTradePrice,
                                     AccTradePrice24h = tickerWebSocket.AccTradePrice24h,
                                     AccTradeVolume = tickerWebSocket.AccTradeVolume,
                                     AccTradeVolume24h = tickerWebSocket.AccTradeVolume24h,
-                                    Highest52WeekPrice = tickerWebSocket.Highest52WeekPrice,
+                                    Highest52WeekPrice = tickerWebSocket.Highest52WeekPrice ?? 0M,
                                     Highest52WeekDate = tickerWebSocket.Highest52WeekDate,
-                                    Lowest52WeekPrice = tickerWebSocket.Lowest52WeekPrice,
+                                    Lowest52WeekPrice = tickerWebSocket.Lowest52WeekPrice ?? 0M,
                                     Lowest52WeekDate = tickerWebSocket.Lowest52WeekDate,
                                     TimeStamp = tickerWebSocket.TimeStamp,
                                 });

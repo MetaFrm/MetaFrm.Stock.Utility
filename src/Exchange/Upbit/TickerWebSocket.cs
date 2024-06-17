@@ -64,31 +64,31 @@ namespace MetaFrm.Stock.Exchange.Upbit
         /// 시가
         /// </summary>
         [JsonPropertyName("op")]
-        public decimal OpeningPrice { get; set; }
+        public decimal? OpeningPrice { get; set; }
 
         /// <summary>
         /// 고가
         /// </summary>
         [JsonPropertyName("hp")]
-        public decimal HighPrice { get; set; }
+        public decimal? HighPrice { get; set; }
 
         /// <summary>
         /// 저가
         /// </summary>
         [JsonPropertyName("lp")]
-        public decimal LowPrice { get; set; }
+        public decimal? LowPrice { get; set; }
 
         /// <summary>
         /// 현재가
         /// </summary>
         [JsonPropertyName("tp")]
-        public decimal TradePrice { get; set; }
+        public decimal? TradePrice { get; set; }
 
         /// <summary>
         /// 전일 종가
         /// </summary>
         [JsonPropertyName("pcp")]
-        public decimal PrevClosingPrice { get; set; }
+        public decimal? PrevClosingPrice { get; set; }
 
         /// <summary>
         /// 누적 거래대금(UTC 0시 기준)
@@ -109,13 +109,13 @@ namespace MetaFrm.Stock.Exchange.Upbit
         /// 부호 없는 전일 대비 값
         /// </summary>
         [JsonPropertyName("cp")]
-        public decimal ChangePrice { get; set; }
+        public decimal? ChangePrice { get; set; }
 
         /// <summary>
         /// 전일 대비 값
         /// </summary>
         [JsonPropertyName("scp")]
-        public decimal SignedChangePrice { get; set; }
+        public decimal? SignedChangePrice { get; set; }
 
         /// <summary>
         /// 부호 없는 전일 대비 등락율
@@ -141,7 +141,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         /// 가장 최근 거래량
         /// </summary>
         [JsonPropertyName("tv")]
-        public decimal TradeVolume { get; set; }
+        public decimal? TradeVolume { get; set; }
 
         /// <summary>
         /// 누적 거래량(UTC 0시 기준)
@@ -165,25 +165,25 @@ namespace MetaFrm.Stock.Exchange.Upbit
         /// 체결 타임스탬프 (milliseconds)
         /// </summary>
         [JsonPropertyName("ttms")]
-        public long TradeTimeStamp { get; set; }
+        public long? TradeTimeStamp { get; set; }
 
         /// <summary>
         /// 누적 매도량
         /// </summary>
         [JsonPropertyName("aav")]
-        public decimal AccAskVolume { get; set; }
+        public decimal? AccAskVolume { get; set; }
 
         /// <summary>
         /// 누적 매수량
         /// </summary>
         [JsonPropertyName("abv")]
-        public decimal AccBidVolume { get; set; }
+        public decimal? AccBidVolume { get; set; }
 
         /// <summary>
         /// 52주 최고가
         /// </summary>
         [JsonPropertyName("h52wp")]
-        public decimal Highest52WeekPrice { get; set; }
+        public decimal? Highest52WeekPrice { get; set; }
 
         /// <summary>
         /// 52주 최고가 달성일
@@ -195,7 +195,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         /// 52주 최저가
         /// </summary>
         [JsonPropertyName("l52wp")]
-        public decimal Lowest52WeekPrice { get; set; }
+        public decimal? Lowest52WeekPrice { get; set; }
 
         /// <summary>
         /// 52주 최저가 달성일
