@@ -44,6 +44,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         string IApi.SecretKey { get; set; } = "";
         private string BaseUrl { get; set; } = "https://api.upbit.com/v1/";
         private string BaseWebSocketUrl { get; set; } = "wss://api.upbit.com/websocket/v1";
+        private string BaseWebSocketUrlPrivate { get; set; } = "wss://api.upbit.com/websocket/v1/private";
 
         private double BaseTimeoutMin { get; set; } = 1000;
         private int CallCount = 0;
@@ -705,22 +706,34 @@ namespace MetaFrm.Stock.Exchange.Upbit
         }
         private async void OrderResultFromWebSocket(string accessKey, string secretKey)
         {
+            string codes;
+            Models.Markets? markets;
+
             try
             {
                 if (this.WebSocketOrder == null)
                     return;
 
+                markets = ((IApi)this).Markets();
+
+                if (markets == null || markets.MarketList == null || markets.MarketList.Count == 0)
+                    return;
+
+                codes = string.Join(',', markets.MarketList.Where(x => x.Market != null && x.Market.StartsWith("KRW-")).Select(x => $"\"{x.Market}\""));
+
                 this.WebSocketOrder.Options.SetRequestHeader("Authorization", $"Bearer {this.JWT(null, accessKey, secretKey)}");
 
-                await this.WebSocketOrder.ConnectAsync(new(this.BaseWebSocketUrl), CancellationToken.None);
+                await this.WebSocketOrder.ConnectAsync(new(this.BaseWebSocketUrlPrivate), CancellationToken.None);
 
                 string msg = @"[
   {
     ""ticket"": ""OrderResult""
   },
   {
-    ""type"": ""myTrade"",
-    ""codes"": []
+    ""type"": ""myOrder"",
+    ""codes"": [
+      " + codes + @"
+    ]
     },
   {
     ""format"": ""SIMPLE""
@@ -765,9 +778,17 @@ namespace MetaFrm.Stock.Exchange.Upbit
                             Side = orderWebSocket.AskBid?.ToLower(),
                             OrdType = orderWebSocket.OrderType,
                             Price = orderWebSocket.Price,
-                            State = "wait",
+                            AvgPrice = orderWebSocket.AvgPrice,
+                            State = orderWebSocket.State,
                             Market = orderWebSocket.Code,
-                            ExecutedVolume = orderWebSocket.Volume,
+                            Volume = orderWebSocket.Volume,
+                            RemainingVolume = orderWebSocket.RemainingVolume,
+                            ReservedFee = orderWebSocket.ReservedFee,
+                            RemainingFee = orderWebSocket.RemainingFee,
+                            PaidFee = orderWebSocket.PaidFee,
+                            Locked = orderWebSocket.Locked,
+                            ExecutedVolume = orderWebSocket.ExecutedVolume,
+                            TradesCount = orderWebSocket.TradesCount,
                         };
 
                         this.Action?.Invoke(this, new() { Action = "OrderExecution", Value = order });
@@ -1395,7 +1416,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 if (markets == null || markets.MarketList == null || markets.MarketList.Count == 0)
                     return;
 
-                codes = string.Join(',', markets.MarketList.Select(x => $"\"{x.Market}\""));
+                codes = string.Join(',', markets.MarketList.Where(x => x.Market != null && x.Market.StartsWith("KRW-")).Select(x => $"\"{x.Market}\""));
 
                 await WebSocketTickerDB.ConnectAsync(new(this.BaseWebSocketUrl), CancellationToken.None);
 

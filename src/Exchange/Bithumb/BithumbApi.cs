@@ -1905,7 +1905,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 if (markets == null || markets.MarketList == null || markets.MarketList.Count == 0)
                     return;
 
-                codes = string.Join(',', markets.MarketList.Select(x => $"\"{(x.Market ?? "-").Split('-')[1]}_{(x.Market ?? "-").Split('-')[0]}\""));
+                codes = string.Join(',', markets.MarketList.Where(x => x.Market != null && x.Market.StartsWith("KRW-")).Select(x => $"\"{(x.Market ?? "-").Split('-')[1]}_{(x.Market ?? "-").Split('-')[0]}\""));
 
                 await WebSocketTickerDB.ConnectAsync(new(this.BaseWebSocketUrl), CancellationToken.None);
 
