@@ -861,7 +861,7 @@ namespace MetaFrm.Stock.Exchange
         {
             if (setting.User == null) return;
 
-            if (order.ExecutedVolume <= 0M) return;
+            if (order.ExecutedVolume <= 0M || order.State == "cancel") return;
 
             StringBuilder stringBuilder = new();
             ServiceData data = new()

@@ -708,6 +708,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         {
             string codes;
             Models.Markets? markets;
+            string data = "";
 
             try
             {
@@ -760,7 +761,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     if (bytesReceived.Array == null)
                         continue;
 
-                    var data = Encoding.UTF8.GetString(bytesReceived.Array, 0, result.Count);
+                    data = Encoding.UTF8.GetString(bytesReceived.Array, 0, result.Count);
 
                     if (data.IsNullOrEmpty())
                         continue;
@@ -800,7 +801,10 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 this.Action?.Invoke(this, new() { Action = "OrderExecution", Value = null });
 
                 if (ex.Message != "Aborted")
+                {
                     ex.WriteMessage(false, ((IApi)this).ExchangeID);
+                    data.WriteMessage();
+                }
                 this.OrderResultFromWebSocketClose();
             }
         }
