@@ -859,9 +859,17 @@ namespace MetaFrm.Stock.Exchange
 
         internal void OrderExecution(Setting setting, Models.Order order)
         {
+            //JsonSerializer.Serialize(order).WriteMessage();
+
             if (setting.User == null) return;
 
-            if (order.ExecutedVolume <= 0M || order.State == "cancel") return;
+            if (order.ExecutedVolume <= 0M) return;
+
+            //if (order.State != "trade" && order.State != "done") return;
+
+            //if (order.State == "trade" && order.ExecutedVolume == order.Volume) return;
+
+            if (order.State != "trade") return;
 
             StringBuilder stringBuilder = new();
             ServiceData data = new()

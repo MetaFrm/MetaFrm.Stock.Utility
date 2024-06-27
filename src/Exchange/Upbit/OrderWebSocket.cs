@@ -77,19 +77,19 @@ namespace MetaFrm.Stock.Exchange.Upbit
         /// 체결량
         /// </summary>
         [JsonPropertyName("v")]
-        public decimal Volume { get; set; }
+        public decimal? Volume { get; set; }
 
         /// <summary>
         /// 체결 후 남은 주문 양
         /// </summary>
         [JsonPropertyName("rv")]
-        public decimal RemainingVolume { get; set; }
+        public decimal? RemainingVolume { get; set; }
 
         /// <summary>
         /// 체결된 양
         /// </summary>
         [JsonPropertyName("ev")]
-        public decimal ExecutedVolume { get; set; }
+        public decimal? ExecutedVolume { get; set; }
 
         /// <summary>
         /// 해당 주문에 걸린 체결 수

@@ -782,13 +782,13 @@ namespace MetaFrm.Stock.Exchange.Upbit
                             AvgPrice = orderWebSocket.AvgPrice,
                             State = orderWebSocket.State,
                             Market = orderWebSocket.Code,
-                            Volume = orderWebSocket.Volume,
-                            RemainingVolume = orderWebSocket.RemainingVolume,
+                            Volume = orderWebSocket.Volume ?? 0M,
+                            RemainingVolume = orderWebSocket.RemainingVolume ?? 0M,
                             ReservedFee = orderWebSocket.ReservedFee,
                             RemainingFee = orderWebSocket.RemainingFee,
                             PaidFee = orderWebSocket.PaidFee,
                             Locked = orderWebSocket.Locked,
-                            ExecutedVolume = orderWebSocket.ExecutedVolume,
+                            ExecutedVolume = orderWebSocket.ExecutedVolume ?? 0M,
                             TradesCount = orderWebSocket.TradesCount,
                         };
 

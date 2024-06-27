@@ -816,9 +816,9 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                         {
                             this.BithumbOrders.Add(new(result));
                             this.Action?.Invoke(this, new() { Action = "OrderExecution", Value = result });
-                            System.Console.ForegroundColor = ConsoleColor.Red;
-                            System.Console.WriteLine($"if (!this.BithumbOrders.Any(x => x.Order.UUID == result.UUID)) {result.State} {result.UUID} {result.ExecutedVolume}");
-                            System.Console.ResetColor();
+                            //System.Console.ForegroundColor = ConsoleColor.Red;
+                            //System.Console.WriteLine($"if (!this.BithumbOrders.Any(x => x.Order.UUID == result.UUID)) {result.State} {result.UUID} {result.ExecutedVolume}");
+                            //System.Console.ResetColor();
                         }
                         else
                         {
@@ -844,9 +844,9 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                     }
                                 });
 
-                                System.Console.ForegroundColor = ConsoleColor.Red;
-                                System.Console.WriteLine($"if (item != null) {result.State} {result.UUID} {result.ExecutedVolume}");
-                                System.Console.ResetColor();
+                                //System.Console.ForegroundColor = ConsoleColor.Red;
+                                //System.Console.WriteLine($"if (item != null) {result.State} {result.UUID} {result.ExecutedVolume}");
+                                //System.Console.ResetColor();
                             }
                         }
 
@@ -860,9 +860,9 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     foreach (var item in delete)
                     {
                         this.BithumbOrders.Remove(item);
-                        System.Console.ForegroundColor = ConsoleColor.Red;
-                        System.Console.WriteLine($"this.BithumbOrders.Remove(item); {item.Order.State} {item.InsertDateTime} {item.Order.UUID} {item.Order.ExecutedVolume}");
-                        System.Console.ResetColor();
+                        //System.Console.ForegroundColor = ConsoleColor.Red;
+                        //System.Console.WriteLine($"this.BithumbOrders.Remove(item); {item.Order.State} {item.InsertDateTime} {item.Order.UUID} {item.Order.ExecutedVolume}");
+                        //System.Console.ResetColor();
                     }
                 }
             }
