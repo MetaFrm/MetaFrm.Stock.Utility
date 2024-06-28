@@ -778,7 +778,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                             UUID = orderWebSocket.OrderUUID,
                             Side = orderWebSocket.AskBid?.ToLower(),
                             OrdType = orderWebSocket.OrderType,
-                            Price = orderWebSocket.Price,
+                            Price = orderWebSocket.Price ?? 0M,
                             AvgPrice = orderWebSocket.AvgPrice,
                             State = orderWebSocket.State,
                             Market = orderWebSocket.Code,

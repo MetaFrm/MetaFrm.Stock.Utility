@@ -65,7 +65,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         /// 체결 가격
         /// </summary>
         [JsonPropertyName("p")]
-        public decimal Price { get; set; }
+        public decimal? Price { get; set; }
 
         /// <summary>
         /// 평균 체결 가격
