@@ -99,7 +99,7 @@ namespace MetaFrm.Stock.Console
             if ((Factory.DeviceInfo != null && Factory.DeviceInfo.Platform != Maui.Devices.DevicePlatform.Server))
                 return;
 
-            if (message.Contains("주문가능한") || message.Contains("주문량이 사용가능") || message.Contains("too_many_requests") || message.Contains("최소주문금액")
+            if (message.Contains("주문가능한") || message.Contains("주문량이 사용가능") || message.Contains("too_many_requests") || message.Contains("최소주문금액") || message.Contains("최소 주문금액")
                 || (Factory.DeviceInfo != null && Factory.DeviceInfo.Platform != Maui.Devices.DevicePlatform.Server))
                 return;
 

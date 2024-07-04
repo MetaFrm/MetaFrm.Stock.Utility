@@ -161,7 +161,7 @@ namespace MetaFrm.Stock.Exchange
                 //매수가 ""인데 매도가 wait 이면
                 //매수를 done로 만들고 UUID를 임시번호로 할당
                 workDataList = this.WorkDataList.Where(x => x.AskOrder != null && x.AskOrder.UUID != null && x.AskOrder.UUID != "" && x.AskOrder.State == "wait"
-                                                            && (x.BidOrder == null || x.BidOrder.UUID == "" || x.AskOrder.State == ""));
+                                                            && (x.BidOrder == null || x.BidOrder.UUID == null || x.BidOrder.UUID == "" || x.AskOrder.State == ""));
                 foreach (var item in workDataList)
                 {
                     item.BidOrder = new()
@@ -271,8 +271,7 @@ namespace MetaFrm.Stock.Exchange
 
                 if (workDataList.Any())
                 {
-                    var minBidPrice = this.WorkDataList.Where(x => x.BidOrder != null && x.BidOrder.UUID != null && x.BidOrder.UUID != "" && x.BidOrder.State == "done"
-                                                        && (x.AskOrder == null || x.AskOrder.UUID == null || x.AskOrder.UUID == "")).Min(y => y.BidPrice);
+                    var minBidPrice = workDataList.Min(y => y.BidPrice);
 
                     workDataList = this.WorkDataList.Where(x => x.BidOrder != null && x.BidOrder.UUID != null && x.BidOrder.UUID != "" && x.BidOrder.State == "done" && x.BidPrice != minBidPrice);
 
@@ -451,8 +450,8 @@ namespace MetaFrm.Stock.Exchange
                 }
 
                 //매수/매도 주문이 하나도 없으면 매수 주문
-                workDataList = this.WorkDataList.Where(x => (x.BidOrder == null || x.BidOrder.UUID == null && x.BidOrder.UUID == "")
-                                                        && (x.AskOrder == null || x.AskOrder.UUID == null && x.AskOrder.UUID == "")).OrderByDescending(y => y.BidPrice);
+                workDataList = this.WorkDataList.Where(x => (x.BidOrder == null || x.BidOrder.UUID == null || x.BidOrder.UUID == "")
+                                                        && (x.AskOrder == null || x.AskOrder.UUID == null || x.AskOrder.UUID == "")).OrderByDescending(y => y.BidPrice);
                 foreach (var item in workDataList)
                 {
                     var order = this.User.Api.MakeOrder(this.Market, Models.OrderSide.bid, item.BidQty, item.BidPrice);
@@ -468,7 +467,7 @@ namespace MetaFrm.Stock.Exchange
 
                 //매수가 있고 매수 완료 이면, 매도 없고, 매도 상태가 클리어 이면 매도 주문 생성
                 workDataList = this.WorkDataList.Where(x => x.BidOrder != null && x.BidOrder.UUID != null && x.BidOrder.UUID != "" && x.BidOrder.State == "done"
-                                                        && (x.AskOrder == null || x.AskOrder.UUID == null && x.AskOrder.UUID == ""));
+                                                        && (x.AskOrder == null || x.AskOrder.UUID == null || x.AskOrder.UUID == ""));
                 if (workDataList.Count() == 1)
                 {
                     var bidOrder = workDataList.ToArray()[0];

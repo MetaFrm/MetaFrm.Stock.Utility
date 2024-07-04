@@ -865,11 +865,16 @@ namespace MetaFrm.Stock.Exchange
 
             if (order.ExecutedVolume <= 0M) return;
 
-            //if (order.State != "trade" && order.State != "done") return;
+            if (order.State == "cancel") return;
 
-            //if (order.State == "trade" && order.ExecutedVolume == order.Volume) return;
+            if (setting.ExchangeID == 1)
+            {
+                //if (order.State != "trade" && order.State != "done") return;
 
-            if (order.State != "trade") return;
+                //if (order.State == "trade" && order.ExecutedVolume == order.Volume) return;
+
+                if (order.State != "trade") return;
+            }
 
             StringBuilder stringBuilder = new();
             ServiceData data = new()

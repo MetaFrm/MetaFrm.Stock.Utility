@@ -458,9 +458,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
             try
             {
                 if (market == null || market == "" || market == "ALL")
-                    tmp = this.CallAPI(this.BaseUrl + "orders", new NameValueCollection { { "page", page.ToString() }, { "order_by", order_by } }, HttpMethod.Get);
+                    tmp = this.CallAPI(this.BaseUrl + "orders/open", new NameValueCollection { { "page", page.ToString() }, { "order_by", order_by } }, HttpMethod.Get);
                 else
-                    tmp = this.CallAPI(this.BaseUrl + "orders", new NameValueCollection { { "market", market }, { "page", page.ToString() }, { "order_by", order_by } }, HttpMethod.Get);
+                    tmp = this.CallAPI(this.BaseUrl + "orders/open", new NameValueCollection { { "market", market }, { "page", page.ToString() }, { "order_by", order_by } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
