@@ -809,13 +809,16 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         {
             if (result.ExecutedVolume > 0 && this.IsRunOrderResultFromWebSocket)
             {
-                lock (this.BithumbOrders)
+                if (result.State != "cancel")
                 {
-                    if (result.State != "cancel")
+                    MetaFrmEventArgs? metaFrmEventArgs = null;
+
+                    lock (this.BithumbOrders)
+                    {
                         if (!this.BithumbOrders.Any(x => x.Order.UUID == result.UUID) && result.State != "done")
                         {
                             this.BithumbOrders.Add(new(result));
-                            this.Action?.Invoke(this, new() { Action = "OrderExecution", Value = result });
+                            metaFrmEventArgs = new() { Action = "OrderExecution", Value = result };
                             //System.Console.ForegroundColor = ConsoleColor.Red;
                             //System.Console.WriteLine($"if (!this.BithumbOrders.Any(x => x.Order.UUID == result.UUID)) {result.State} {result.UUID} {result.ExecutedVolume}");
                             //System.Console.ResetColor();
@@ -830,7 +833,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                 if (result.State != "done")
                                     this.BithumbOrders.Add(new(result));
 
-                                this.Action?.Invoke(this, new()
+                                metaFrmEventArgs = new()
                                 {
                                     Action = "OrderExecution",
                                     Value = new Models.Order()
@@ -842,29 +845,21 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                         Market = result.Market,
                                         ExecutedVolume = result.ExecutedVolume - item.Order.ExecutedVolume,
                                     }
-                                });
+                                };
 
                                 //System.Console.ForegroundColor = ConsoleColor.Red;
                                 //System.Console.WriteLine($"if (item != null) {result.State} {result.UUID} {result.ExecutedVolume}");
                                 //System.Console.ResetColor();
                             }
                         }
-
-                    List<BithumbOrder> delete = new();
-                    foreach (var item in this.BithumbOrders)
-                    {
-                        if ((item.Order.State == "done" || item.Order.State == "cancel") || item.InsertDateTime < DateTime.Now.AddDays(-15))
-                            delete.Add(item);
                     }
 
-                    foreach (var item in delete)
-                    {
-                        this.BithumbOrders.Remove(item);
-                        //System.Console.ForegroundColor = ConsoleColor.Red;
-                        //System.Console.WriteLine($"this.BithumbOrders.Remove(item); {item.Order.State} {item.InsertDateTime} {item.Order.UUID} {item.Order.ExecutedVolume}");
-                        //System.Console.ResetColor();
-                    }
+                    if (metaFrmEventArgs != null)
+                        this.Action?.Invoke(this, metaFrmEventArgs);
                 }
+
+                lock (this.BithumbOrders)
+                    this.BithumbOrders.RemoveAll(x => x.Order.State == "done" || x.Order.State == "cancel" || x.InsertDateTime < DateTime.Now.AddDays(-15));
             }
         }
 
@@ -1241,45 +1236,55 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             try
             {
                 if (!((IApi)this).AccessKey.IsNullOrEmpty())
+                {
+                    bool isRun = false;
+
                     lock (MarketsDB)
-                        if (MarketsDB.MarketList == null || MarketsDB.MarketList.Count == 0 || (MarketsDB.LastDateTime.Minute != dateTime.Minute && dateTime.Minute % 2 == 0))
-                        {
+                    {
+                        isRun = (MarketsDB.MarketList == null || MarketsDB.MarketList.Count == 0 || (MarketsDB.LastDateTime.Minute != dateTime.Minute && dateTime.Minute % 2 == 0));
+
+                        if (isRun)
                             MarketsDB.LastDateTime = dateTime;
+                    }
 
-                            ticker1 = this.TickerAll("KRW");
-                            if (ticker1.Error != null)
-                            {
-                                GetError(ticker1.Error.Code, ticker1.Error.Message);
-                                return MarketsDB;
-                            }
-
-                            ticker2 = this.TickerAll("BTC");
-                            if (ticker2.Error != null)
-                            {
-                                GetError(ticker2.Error.Code, ticker2.Error.Message);
-                                return MarketsDB;
-                            }
-
-                            result.MarketList = new();
-                            if (ticker1.TickerList != null && ticker1.TickerList.Count > 0)
-                            {
-                                if (ticker2.TickerList != null && ticker2.TickerList.Count > 0)
-                                    ticker1.TickerList.AddRange(ticker2.TickerList);
-
-                                foreach (var item in ticker1.TickerList)
-                                {
-                                    result.MarketList.Add(new()
-                                    {
-                                        Market = item.Market,
-                                        KoreanName = item.Market,
-                                        EnglishName = item.Market,
-
-                                    });
-                                }
-
-                                MarketsDB = result;
-                            }
+                    if (isRun)
+                    {
+                        ticker1 = this.TickerAll("KRW");
+                        if (ticker1.Error != null)
+                        {
+                            GetError(ticker1.Error.Code, ticker1.Error.Message);
+                            return MarketsDB;
                         }
+
+                        ticker2 = this.TickerAll("BTC");
+                        if (ticker2.Error != null)
+                        {
+                            GetError(ticker2.Error.Code, ticker2.Error.Message);
+                            return MarketsDB;
+                        }
+
+                        result.MarketList = new();
+                        if (ticker1.TickerList != null && ticker1.TickerList.Count > 0)
+                        {
+                            if (ticker2.TickerList != null && ticker2.TickerList.Count > 0)
+                                ticker1.TickerList.AddRange(ticker2.TickerList);
+
+                            foreach (var item in ticker1.TickerList)
+                            {
+                                result.MarketList.Add(new()
+                                {
+                                    Market = item.Market,
+                                    KoreanName = item.Market,
+                                    EnglishName = item.Market,
+
+                                });
+                            }
+
+                            lock (MarketsDB)
+                                MarketsDB = result;
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -1963,66 +1968,67 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     if (tickerWebSocket != null)
                     {
                         if (tickerWebSocket.Content != null)
+                        {
+                            DateTime dateTime = DateTime.Now;
+                            Models.Ticker ticker = new();
+
+                            foreach (var item in tickerWebSocket.Content)
+                            {
+                                switch (item.Key)
+                                {
+                                    case "symbol":
+                                        ticker.LastDateTime = dateTime;
+                                        tmps = item.Value.Split('_');
+                                        ticker.Market = $"{tmps[1]}-{tmps[0]}";
+                                        break;
+                                    case "date":
+                                        ticker.TradeDate = item.Value;
+                                        if (ticker.TradeTime != null)
+                                            ticker.TradeTimeStamp = ((DateTimeOffset)DateTime.Parse($"{ticker.TradeDate[..4]}-{ticker.TradeDate.Substring(4, 2)}-{ticker.TradeDate.Substring(6, 2)} {ticker.TradeTime[..2]}:{ticker.TradeTime.Substring(2, 2)}:{ticker.TradeTime.Substring(4, 2)}")).ToUnixTimeSeconds();
+                                        break;
+                                    case "time":
+                                        ticker.TradeTime = item.Value;
+                                        if (ticker.TradeDate != null)
+                                            ticker.TradeTimeStamp = ((DateTimeOffset)DateTime.Parse($"{ticker.TradeDate[..4]}-{ticker.TradeDate.Substring(4, 2)}-{ticker.TradeDate.Substring(6, 2)} {ticker.TradeTime[..2]}:{ticker.TradeTime.Substring(2, 2)}:{ticker.TradeTime.Substring(4, 2)}")).ToUnixTimeSeconds();
+                                        break;
+                                    case "openPrice":
+                                        ticker.OpeningPrice = item.Value.ToDecimal();
+                                        break;
+                                    case "closePrice":
+                                        ticker.TradePrice = item.Value.ToDecimal();
+                                        break;
+                                    case "lowPrice":
+                                        ticker.LowPrice = item.Value.ToDecimal();
+                                        break;
+                                    case "highPrice":
+                                        ticker.HighPrice = item.Value.ToDecimal();
+                                        break;
+                                    case "value":
+                                        ticker.AccTradePrice = item.Value.ToDecimal();
+                                        ticker.AccTradePrice24h = ticker.AccTradePrice;
+                                        break;
+                                    case "volume":
+                                        ticker.AccTradeVolume = item.Value.ToDecimal();
+                                        ticker.TradeVolume = ticker.AccTradeVolume;
+                                        ticker.AccTradeVolume24h = ticker.AccTradeVolume;
+                                        break;
+                                    case "prevClosePrice":
+                                        ticker.PrevClosingPrice = item.Value.ToDecimal();
+                                        break;
+                                    case "chgRate":
+                                        ticker.SignedChangeRate = item.Value.ToDecimal() / 100M;
+                                        ticker.ChangeRate = Math.Abs(ticker.SignedChangeRate);
+                                        break;
+                                    case "chgAmt":
+                                        ticker.SignedChangePrice = item.Value.ToDecimal();
+                                        ticker.ChangePrice = Math.Abs(ticker.SignedChangePrice);
+                                        ticker.Change = (ticker.TradePrice + ticker.SignedChangePrice) == ticker.PrevClosingPrice ? "EVEN" : (ticker.TradePrice > ticker.PrevClosingPrice) ? "RISE" : "FALL";
+                                        break;
+                                }
+                            }
+
                             lock (TickerDB)
                             {
-                                DateTime dateTime = DateTime.Now;
-                                Models.Ticker ticker = new();
-
-                                foreach (var item in tickerWebSocket.Content)
-                                {
-                                    switch (item.Key)
-                                    {
-                                        case "symbol":
-                                            ticker.LastDateTime = dateTime;
-                                            tmps = item.Value.Split('_');
-                                            ticker.Market = $"{tmps[1]}-{tmps[0]}";
-                                            break;
-                                        case "date":
-                                            ticker.TradeDate = item.Value;
-                                            if (ticker.TradeTime != null)
-                                                ticker.TradeTimeStamp = ((DateTimeOffset)DateTime.Parse($"{ticker.TradeDate[..4]}-{ticker.TradeDate.Substring(4, 2)}-{ticker.TradeDate.Substring(6, 2)} {ticker.TradeTime[..2]}:{ticker.TradeTime.Substring(2, 2)}:{ticker.TradeTime.Substring(4, 2)}")).ToUnixTimeSeconds();
-                                            break;
-                                        case "time":
-                                            ticker.TradeTime = item.Value;
-                                            if (ticker.TradeDate != null)
-                                                ticker.TradeTimeStamp = ((DateTimeOffset)DateTime.Parse($"{ticker.TradeDate[..4]}-{ticker.TradeDate.Substring(4, 2)}-{ticker.TradeDate.Substring(6, 2)} {ticker.TradeTime[..2]}:{ticker.TradeTime.Substring(2, 2)}:{ticker.TradeTime.Substring(4, 2)}")).ToUnixTimeSeconds();
-                                            break;
-                                        case "openPrice":
-                                            ticker.OpeningPrice = item.Value.ToDecimal();
-                                            break;
-                                        case "closePrice":
-                                            ticker.TradePrice = item.Value.ToDecimal();
-                                            break;
-                                        case "lowPrice":
-                                            ticker.LowPrice = item.Value.ToDecimal();
-                                            break;
-                                        case "highPrice":
-                                            ticker.HighPrice = item.Value.ToDecimal();
-                                            break;
-                                        case "value":
-                                            ticker.AccTradePrice = item.Value.ToDecimal();
-                                            ticker.AccTradePrice24h = ticker.AccTradePrice;
-                                            break;
-                                        case "volume":
-                                            ticker.AccTradeVolume = item.Value.ToDecimal();
-                                            ticker.TradeVolume = ticker.AccTradeVolume;
-                                            ticker.AccTradeVolume24h = ticker.AccTradeVolume;
-                                            break;
-                                        case "prevClosePrice":
-                                            ticker.PrevClosingPrice = item.Value.ToDecimal();
-                                            break;
-                                        case "chgRate":
-                                            ticker.SignedChangeRate = item.Value.ToDecimal() / 100M;
-                                            ticker.ChangeRate = Math.Abs(ticker.SignedChangeRate);
-                                            break;
-                                        case "chgAmt":
-                                            ticker.SignedChangePrice = item.Value.ToDecimal();
-                                            ticker.ChangePrice = Math.Abs(ticker.SignedChangePrice);
-                                            ticker.Change = (ticker.TradePrice + ticker.SignedChangePrice) == ticker.PrevClosingPrice ? "EVEN" : (ticker.TradePrice > ticker.PrevClosingPrice) ? "RISE" : "FALL";
-                                            break;
-                                    }
-                                }
-
                                 var sel = TickerDB.TickerList.SingleOrDefault(x => x.Market == ticker.Market);
                                 if (sel != null)
                                 {
@@ -2096,6 +2102,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                                     i = 0;
                                 }
                             }
+                        }
                     }
 
                     i++;

@@ -60,17 +60,22 @@ namespace MetaFrm.Stock.Exchange
             User? user;
 
             lock (this.Users)
-            {
                 user = this.Users.SingleOrDefault(x => x.UserID == userID);
 
-                if (user != null)
-                    return user;
+            if (user != null)
+                return user;
+
+            bool isAdd = false;
+
+            lock (this.Users)
+            {
+                int count = this.Users.Count;
 
                 user = new(this.AuthState)
                 {
                     ExchangeID = this.ExchangeID,
                     UserID = userID,
-                    Api = CreateApi()
+                    Api = CreateApi(count)
                 };
 
                 if (user.Api == null)
@@ -79,20 +84,25 @@ namespace MetaFrm.Stock.Exchange
                 user.Api.AccessKey = accessKey;
                 user.Api.SecretKey = secretKey;
 
-                user.IsFirstUser = (this.Users.Count == 0);
+                user.IsFirstUser = (count == 0);
+
                 this.Users.Add(user);
+                isAdd = true;
             }
 
-            user.Start();
-            $"Added User".WriteMessage(this.ExchangeID, user.UserID);
-
-            if (this.ExchangeID == 1 && user.IsFirstUser)
+            if (isAdd)
             {
-                this.BidAskAlarmMA_BTC = new(this.AuthState, user.Api, "KRW-BTC", 10, 7, 30, 60, 0.030M, 0.08M);
-                this.BidAskAlarmMA_BTC.Run("KRW-BTC");
+                user.Start();
+                $"Added User".WriteMessage(this.ExchangeID, user.UserID);
 
-                this.BidAskAlarmMA_ETH = new(this.AuthState, user.Api, "KRW-ETH", 15, 6, 30, 60, 0.025M, 0.12M);
-                this.BidAskAlarmMA_ETH.Run("KRW-ETH");
+                if (this.ExchangeID == 1 && user.IsFirstUser)
+                {
+                    this.BidAskAlarmMA_BTC = new(this.AuthState, user.Api, "KRW-BTC", 10, 7, 30, 60, 0.030M, 0.08M);
+                    this.BidAskAlarmMA_BTC.Run("KRW-BTC");
+
+                    this.BidAskAlarmMA_ETH = new(this.AuthState, user.Api, "KRW-ETH", 15, 6, 30, 60, 0.025M, 0.12M);
+                    this.BidAskAlarmMA_ETH.Run("KRW-ETH");
+                }
             }
 
             return user;
@@ -101,10 +111,9 @@ namespace MetaFrm.Stock.Exchange
         /// CreateApi
         /// </summary>
         /// <returns></returns>
-        public IApi? CreateApi()
+        public IApi? CreateApi(int count)
         {
-            lock (this.Users)
-                return CreateApi(this.ExchangeID, this.Users.Count, true, this.AuthState);
+            return CreateApi(this.ExchangeID, count, true, this.AuthState);
         }
         /// <summary>
         /// CreateApi
@@ -132,10 +141,13 @@ namespace MetaFrm.Stock.Exchange
         /// <returns></returns>
         public async Task<bool> RemoveUser(int userID, bool saveWorkDataList)
         {
-            var sel = this.Users.SingleOrDefault(x => x.UserID == userID);
+            User? user = null;
 
-            if (sel != null)
-                return await this.RemoveUser(sel, saveWorkDataList  );
+            lock (this.Users)
+                user = this.Users.SingleOrDefault(x => x.UserID == userID);
+
+            if (user != null)
+                return await this.RemoveUser(user, saveWorkDataList  );
 
             return false;
         }
@@ -147,14 +159,19 @@ namespace MetaFrm.Stock.Exchange
         /// <returns></returns>
         public async Task<bool> RemoveUser(User user, bool saveWorkDataList)
         {
-            if (this.Users.Contains(user))
+            bool isContains = false;
+
+            lock (this.Users)
+                isContains = this.Users.Contains(user);
+
+            if (isContains)
             {
                 user.SaveWorkDataList = saveWorkDataList;
                 user.IsStopped = true;
 
                 while (true)
                 {
-                    await Task.Delay(1000);
+                    await Task.Delay(3000);
 
                     lock (user.Settings)
                         if (user.Settings.Count != 0)
@@ -163,19 +180,18 @@ namespace MetaFrm.Stock.Exchange
                     break;
                 }
 
-                lock (Users)
+                if (!user.IsFirstUser)
                 {
-                    if (!user.IsFirstUser)
-                    {
-                        ((IDisposable?)user.Api)?.Dispose();
-                        $"Removed User".WriteMessage(this.ExchangeID, user.UserID);
+                    ((IDisposable?)user.Api)?.Dispose();
+                    $"Removed User".WriteMessage(this.ExchangeID, user.UserID);
+
+                    lock (this.Users)
                         return this.Users.Remove(user);
-                    }
-                    else
-                    {
-                        $"FirstUser !!".WriteMessage(this.ExchangeID, user.UserID);
-                        return false;
-                    }
+                }
+                else
+                {
+                    $"FirstUser !!".WriteMessage(this.ExchangeID, user.UserID);
+                    return false;
                 }
             }
 
@@ -206,24 +222,32 @@ namespace MetaFrm.Stock.Exchange
                 if (this.BidAskAlarmMA_ETH != null)
                     this.BidAskAlarmMA_ETH.IsRunReciveData = false;
 
-                await Task.Delay(2000);
+                await Task.Delay(10000);
+
+                int count = 0;
 
                 lock (this.Users)
+                    count = this.Users.Count;
+
+                if (count == 1)
                 {
-                    if (this.Users.Count == 1)
-                        lock (this.Users[0].Settings)
-                            if (this.Users[0].Settings.Count == 0)
-                            {
-                                ((IDisposable?)this.Users[0].Api)?.Dispose();
-                                $"Removed User".WriteMessage(this.ExchangeID, this.Users[0].UserID);
-                                this.Users.Remove(this.Users[0]);
+                    lock (this.Users[0].Settings)
+                        count = this.Users[0].Settings.Count;
 
-                                return true;
-                            }
+                    if (count == 0)
+                    {
+                        ((IDisposable?)this.Users[0].Api)?.Dispose();
+                        $"Removed User".WriteMessage(this.ExchangeID, this.Users[0].UserID);
 
-                    if (this.Users.Count == 0)
+                        lock (this.Users)
+                            this.Users.Remove(this.Users[0]);
+
                         return true;
+                    }
                 }
+
+                if (count == 0)
+                    return true;
             }
         }
 

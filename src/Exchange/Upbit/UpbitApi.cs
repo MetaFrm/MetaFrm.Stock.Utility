@@ -224,7 +224,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         #region "자산"
         Models.Account IApi.Account()
         {
-            string? tmp;
+            string? tmp = "";
             List<Account>? list;
             Models.Account result = new();
 
@@ -254,6 +254,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"Account:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -264,7 +265,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         #region "주문"
         Models.OrderChance IApi.OrderChance(string market)
         {
-            string? tmp;
+            string? tmp = "";
             OrderChance? orderChance;
             Models.OrderChance result = new();
 
@@ -348,6 +349,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"OrderChance:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -355,7 +357,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
         Models.Order IApi.Order(string market, string sideName, string uuid)
         {
-            string? tmp;
+            string? tmp = "";
             Order? order;
             Models.Order result = new();
 
@@ -414,6 +416,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"Order:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -451,7 +454,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         }
         Models.Order IApi.AllOrder(string market, int page, string order_by)
         {
-            string? tmp;
+            string? tmp = "";
             Order[]? list;
             Models.Order result = new();
 
@@ -516,6 +519,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"AllOrder:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -523,7 +527,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
         Models.Order IApi.CancelOrder(string market, string sideName, string uuid)
         {
-            string? tmp;
+            string? tmp = "";
             Order? order;
             Models.Order result = new();
 
@@ -582,6 +586,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"CancelOrder:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -589,7 +594,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
         Models.Order IApi.MakeOrder(string market, Models.OrderSide side, decimal volume, decimal price, Models.OrderType ord_type)
         {
-            string? tmp;
+            string? tmp = "";
             Order? order;
             Models.Order result = new();
 
@@ -662,6 +667,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"MakeOrder:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -835,7 +841,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         #region "입금"
         Models.Deposits IApi.Deposits(string currency, int imit, int page, string order_by)
         {
-            string? tmp;
+            string? tmp = "";
             Deposits[]? list;
             Models.Deposits result = new();
 
@@ -873,6 +879,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"Deposits:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -883,7 +890,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         #region "서비스 정보"
         Models.ApiKyes IApi.ApiKyes()
         {
-            string? tmp;
+            string? tmp = "";
             ApiKyes[]? list;
             Models.ApiKyes result = new();
 
@@ -912,6 +919,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"ApiKyes:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -923,7 +931,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         private static Models.Markets MarketsDB = new() { MarketList = new() };
         Models.Markets IApi.Markets()
         {
-            string? tmp;
+            string? tmp = "";
             Markets[]? list;
             Models.Markets result = new();
             DateTime dateTime = DateTime.Now;
@@ -931,36 +939,45 @@ namespace MetaFrm.Stock.Exchange.Upbit
             try
             {
                 if (!((IApi)this).AccessKey.IsNullOrEmpty())
+                {
+                    bool isRun = false;
                     lock (MarketsDB)
-                        if (MarketsDB.MarketList == null || MarketsDB.MarketList.Count == 0 || (MarketsDB.LastDateTime.Minute != dateTime.Minute && dateTime.Minute % 2 == 0))
-                        {
+                    {
+                        isRun = (MarketsDB.MarketList == null || MarketsDB.MarketList.Count == 0 || (MarketsDB.LastDateTime.Minute != dateTime.Minute && dateTime.Minute % 2 == 0));
+                        if (isRun)
                             MarketsDB.LastDateTime = dateTime;
+                    }
 
-                            tmp = this.CallAPI($"{this.BaseUrl}market/all", null, HttpMethod.Get);
+                    if (isRun)
+                    {
+                        tmp = this.CallAPI($"{this.BaseUrl}market/all", null, HttpMethod.Get);
 
-                            if (string.IsNullOrEmpty(tmp)) return MarketsDB;
-                            if (tmp.Contains("error")) { result.Error = GetError(tmp); return MarketsDB; }
-                            if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return MarketsDB; }
+                        if (string.IsNullOrEmpty(tmp)) return MarketsDB;
+                        if (tmp.Contains("error")) { result.Error = GetError(tmp); return MarketsDB; }
+                        if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return MarketsDB; }
 
-                            list = JsonSerializer.Deserialize<Markets[]>(tmp, jsonSerializerOptions);
+                        list = JsonSerializer.Deserialize<Markets[]>(tmp, jsonSerializerOptions);
 
-                            if (list == null) return MarketsDB;
+                        if (list == null) return MarketsDB;
 
-                            result.MarketList = new();
-                            foreach (var item in list)
-                                result.MarketList.Add(new()
-                                {
-                                    Market = item.Market,
-                                    KoreanName = item.KoreanName,
-                                    EnglishName = item.EnglishName,
-                                });
+                        result.MarketList = new();
+                        foreach (var item in list)
+                            result.MarketList.Add(new()
+                            {
+                                Market = item.Market,
+                                KoreanName = item.KoreanName,
+                                EnglishName = item.EnglishName,
+                            });
 
+                        lock (MarketsDB)
                             MarketsDB = result;
-                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"Markets:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return MarketsDB;
@@ -971,7 +988,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         #region "시세 캔들 조회"
         Models.CandlesMinute IApi.CandlesMinute(string market, Models.MinuteCandleType unit, DateTime to, int count)
         {
-            string? tmp;
+            string? tmp = "";
             CandlesMinute[]? list;
             Models.CandlesMinute result = new(market, 1, (int)unit);
 
@@ -1009,6 +1026,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"CandlesMinute:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -1017,7 +1035,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         private readonly JsonSerializerOptions jsonSerializerOptions1 = new() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals };
         Models.CandlesDay IApi.CandlesDay(string market, DateTime to, int count, string convertingPriceUnit)
         {
-            string? tmp;
+            string? tmp = "";
             CandlesDay[]? list;
             Models.CandlesDay result = new();
 
@@ -1058,6 +1076,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"CandlesDay:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -1065,7 +1084,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
         Models.CandlesWeek IApi.CandlesWeek(string market, DateTime to, int count)
         {
-            string? tmp;
+            string? tmp = "";
             CandlesWeek[]? list;
             Models.CandlesWeek result = new();
 
@@ -1103,6 +1122,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"CandlesWeek:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -1110,7 +1130,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
         Models.CandlesMonth IApi.CandlesMonth(string market, DateTime to, int count)
         {
-            string? tmp;
+            string? tmp = "";
             CandlesMonth[]? list;
             Models.CandlesMonth result = new();
 
@@ -1148,6 +1168,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"CandlesMonth:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -1158,7 +1179,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         #region "시세 체결 조회/최근 체결 내역"
         Models.Ticks IApi.Ticks(string market, DateTime to, int count)
         {
-            string? tmp;
+            string? tmp = "";
             Ticks[]? list;
             Models.Ticks result = new();
 
@@ -1195,6 +1216,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"Ticks:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;
@@ -1208,7 +1230,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         private static DateTime RunTickerFromWebSocketDateTime;
         Models.Ticker IApi.Ticker(string markets)
         {
-            string? tmp;
+            string? tmp = "";
             Ticker[]? list;
             string[]? tmps = null;
             DateTime dateTime = DateTime.Now.AddSeconds(-60);
@@ -1353,6 +1375,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 ex.WriteMessage(false, ((IApi)this).ExchangeID);
+                $"Ticker:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             Models.Ticker result = new();
@@ -1584,7 +1607,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         #region "시세 호가 정보(Orderbook) 조회/호가 정보 조회"
         Models.Orderbook IApi.Orderbook(string markets)
         {
-            string? tmp;
+            string? tmp = "";
             Orderbook[]? list;
             Models.Orderbook result = new();
 
@@ -1631,6 +1654,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
+                $"Orderbook:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;

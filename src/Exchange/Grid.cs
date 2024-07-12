@@ -506,7 +506,7 @@ namespace MetaFrm.Stock.Exchange
             catch (Exception ex)
             {
                 this.Message = ex.Message;
-                this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                ex.ToString()?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
             }
             finally
             {

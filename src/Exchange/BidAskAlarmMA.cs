@@ -290,10 +290,15 @@ namespace MetaFrm.Stock.Exchange
         public static void SecondaryIndicator(IApi api, CandlesMinute candles, string market, MinuteCandleType minuteCandleType, int leftMA7, int rightMA30, int rightMA60)
         {
             lock (BidAskAlarmMA.Candles)
-            {
                 CandlesMinute(api, candles, market, minuteCandleType, rightMA60);
-                
-                if (candles.CandlesMinuteList != null && candles.CandlesMinuteList.Count >= rightMA60)
+
+            bool isRun = false;
+
+            lock (BidAskAlarmMA.Candles)
+                isRun = (candles.CandlesMinuteList != null && candles.CandlesMinuteList.Count >= rightMA60);
+
+            if (isRun)
+                lock (BidAskAlarmMA.Candles)
                 {
                     CandlesMinute_MA_TradePrice(candles, leftMA7);
                     CandlesMinute_MA_TradePrice(candles, rightMA30);
@@ -302,7 +307,6 @@ namespace MetaFrm.Stock.Exchange
                     CandlesMinute_MA_Diff_TradePrice(candles, leftMA7, rightMA30);
                     CandlesMinute_MA_Diff_TradePrice(candles, leftMA7, rightMA60);
                 }
-            }
         }
 
         private static void CandlesMinute_MA_Diff_TradePrice(CandlesMinute candles, int countMA_Left, int countMA_Right)
