@@ -508,246 +508,246 @@ namespace MetaFrm.Stock.Exchange
                             foreach (var item in this.Settings)
                                 this.RemoveSettingQueue.Enqueue(item);
 
-                        while (this.RemoveSettingQueue.Count > 0)
+                        lock (this.Settings)
                         {
-                            bool isContains = false;
+                            while (this.RemoveSettingQueue.Count > 0)
+                            {
+                                bool isContains = false;
 
-                            var setting = this.RemoveSettingQueue.Dequeue();
+                                var setting = this.RemoveSettingQueue.Dequeue();
 
-                            lock (this.Settings)
                                 isContains = this.Settings.Contains(setting);
 
-                            if (isContains)
-                            {
-                                if (this.SaveWorkDataList)//서버 프로그램 종료시 저장
+                                if (isContains)
                                 {
-                                    if (setting.SettingType == SettingType.GridMartingaleShort)
-                                    {
-                                        setting.SaveLossStack(this);
-
-                                        (((GridMartingaleShort)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true, false);
-                                    }
-                                    else if (setting.SettingType == SettingType.GridMartingaleLong)
-                                    {
-                                        setting.SaveLossStack(this);
-
-                                        (((GridMartingaleLong)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true, false);
-                                    }
-                                    else
-                                        (setting as ISettingAction).Organized(setting.SettingID, false, false, false, false, true, true, false);
-                                }
-                                else
-                                {
-                                    //사용자 세팅 중지 요청
-                                    if (setting.BidCancel || setting.AskCancel || setting.AskCurrentPrice || setting.BidCurrentPrice)
+                                    if (this.SaveWorkDataList)//서버 프로그램 종료시 저장
                                     {
                                         if (setting.SettingType == SettingType.GridMartingaleShort)
                                         {
-                                            GridMartingaleShort set2 = (GridMartingaleShort)setting;
+                                            setting.SaveLossStack(this);
 
-                                            if (set2.Current?.SettingType == SettingType.MartingaleShort)
-                                                (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
-                                            else if (set2.Current?.SettingType == SettingType.Grid)
-                                                (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                            (((GridMartingaleShort)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true, false);
                                         }
                                         else if (setting.SettingType == SettingType.GridMartingaleLong)
                                         {
-                                            GridMartingaleLong set2 = (GridMartingaleLong)setting;
+                                            setting.SaveLossStack(this);
 
-                                            if (set2.Current?.SettingType == SettingType.MartingaleLong)
-                                                (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
-                                            else if (set2.Current?.SettingType == SettingType.Grid)
-                                                (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                            (((GridMartingaleLong)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true, false);
                                         }
                                         else
-                                            (setting as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                            (setting as ISettingAction).Organized(setting.SettingID, false, false, false, false, true, true, false);
                                     }
                                     else
                                     {
-                                        //서버 프로그램에서 개별 세팅 중지
-                                        if (setting.SettingType == SettingType.MartingaleShort)
-                                            (setting as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true, true);
-
-                                        else if (setting.SettingType == SettingType.GridMartingaleShort)
+                                        //사용자 세팅 중지 요청
+                                        if (setting.BidCancel || setting.AskCancel || setting.AskCurrentPrice || setting.BidCurrentPrice)
                                         {
-                                            GridMartingaleShort set2 = (GridMartingaleShort)setting;
+                                            if (setting.SettingType == SettingType.GridMartingaleShort)
+                                            {
+                                                GridMartingaleShort set2 = (GridMartingaleShort)setting;
 
-                                            if (set2.Current?.SettingType == SettingType.MartingaleShort)
-                                                (set2.Current as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true, true);
-                                            else if (set2.Current?.SettingType == SettingType.Grid)
-                                                (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
-                                        }
-                                        else if (setting.SettingType == SettingType.GridMartingaleLong)
-                                        {
-                                            GridMartingaleLong set2 = (GridMartingaleLong)setting;
+                                                if (set2.Current?.SettingType == SettingType.MartingaleShort)
+                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                                else if (set2.Current?.SettingType == SettingType.Grid)
+                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                            }
+                                            else if (setting.SettingType == SettingType.GridMartingaleLong)
+                                            {
+                                                GridMartingaleLong set2 = (GridMartingaleLong)setting;
 
-                                            if (set2.Current?.SettingType == SettingType.MartingaleLong)
-                                                (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
-                                            else if (set2.Current?.SettingType == SettingType.Grid)
-                                                (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                                if (set2.Current?.SettingType == SettingType.MartingaleLong)
+                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                                else if (set2.Current?.SettingType == SettingType.Grid)
+                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                            }
+                                            else
+                                                (setting as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
                                         }
                                         else
-                                            (setting as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                        {
+                                            //서버 프로그램에서 개별 세팅 중지
+                                            if (setting.SettingType == SettingType.MartingaleShort)
+                                                (setting as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true, true);
+
+                                            else if (setting.SettingType == SettingType.GridMartingaleShort)
+                                            {
+                                                GridMartingaleShort set2 = (GridMartingaleShort)setting;
+
+                                                if (set2.Current?.SettingType == SettingType.MartingaleShort)
+                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true, true);
+                                                else if (set2.Current?.SettingType == SettingType.Grid)
+                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                            }
+                                            else if (setting.SettingType == SettingType.GridMartingaleLong)
+                                            {
+                                                GridMartingaleLong set2 = (GridMartingaleLong)setting;
+
+                                                if (set2.Current?.SettingType == SettingType.MartingaleLong)
+                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                                else if (set2.Current?.SettingType == SettingType.Grid)
+                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                            }
+                                            else
+                                                (setting as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                        }
                                     }
+
+                                    this.Settings.Remove(setting);
+                                    $"Removed setting".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
+                                }
+                            }
+
+                            while (this.AddSettingQueue.Count > 0)
+                            {
+                                var setting = this.AddSettingQueue.Dequeue();
+
+                                setting.User = this;
+
+                                this.Settings.Add(setting);
+                                $"Added {setting.SettingTypeString}".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
+
+                                if (Exchanger.IsUnLock)
+                                    setting.SettingInOut(setting.User, setting.SettingID, true);
+
+                                if (setting.Market != null)
+                                    addSettingsOrder.Add(new() { Market = setting.Market });
+                            }
+
+                            //중지 요청이고 세팅이 모두 제거 되었다면 while 빠져나가기
+                            if (this.IsStopped && this.Settings.Count == 0)
+                                break;
+
+                            if (this.Api != null && this.Settings.Count != 0)
+                            {
+                                Models.Order order;
+
+                                order = this.Api.AllOrder("ALL", "desc");
+                                if (!isUploadOrder)
+                                {
+                                    //Upload(this, this.AuthState.Token(), this.ExchangeID, this.UserID, order);
+                                    isUploadOrder = true;
                                 }
 
-                                lock (this.Settings)
-                                    this.Settings.Remove(setting);
-                                $"Removed setting".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
-                            }
-                        }
-
-                        while (this.AddSettingQueue.Count > 0)
-                        {
-                            var setting = this.AddSettingQueue.Dequeue();
-
-                            setting.User = this;
-
-                            lock (this.Settings)
-                                this.Settings.Add(setting);
-                            $"Added {setting.SettingTypeString}".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
-
-                            if (Exchanger.IsUnLock)
-                                setting.SettingInOut(setting.User, setting.SettingID, true);
-
-                            if (setting.Market != null)
-                                addSettingsOrder.Add(new() { Market = setting.Market });
-                        }
-
-                        //중지 요청이고 세팅이 모두 제거 되었다면 while 빠져나가기
-                        if (this.IsStopped && this.Settings.Count == 0)
-                            break;
-
-                        if (this.Api != null && this.Settings.Count != 0)
-                        {
-                            Models.Order order;
-
-                            order = this.Api.AllOrder("ALL", "desc");
-                            if (!isUploadOrder)
-                            {
-                                //Upload(this, this.AuthState.Token(), this.ExchangeID, this.UserID, order);
-                                isUploadOrder = true;
-                            }
-
-                            if (addSettingsOrder.Count > 0)
-                            {
-                                $"addOrderSettings:{addSettingsOrder.Count} ".WriteMessage(this.ExchangeID, this.UserID);
-                                foreach (var item in addSettingsOrder)
-                                    $"{item.Market}".WriteMessage(this.ExchangeID, this.UserID);
-                                ;
-                                this.Run(addSettingsOrder, order);
-                                //cnt = 0;
-                                cnt = 60000;
-                                isUploadOrder = false;
-                                isUploadAccount = false;
-                            }
-                            else if (cnt >= 60000)
-                            {
-                                //$"cnt >= 60:{cnt} ".WriteMessage(this.ExchangeID, this.UserID);
-
-                                Models.Markets markets = this.Api.Markets();
-                                List<Models.Order> orders = new();
-
-                                if (markets != null && markets.MarketList != null)
+                                if (addSettingsOrder.Count > 0)
                                 {
-                                    foreach (var item in markets.MarketList)
-                                        orders.Add(new() { Market = item.Market });
-
-                                    this.Run(orders, order);
+                                    $"addOrderSettings:{addSettingsOrder.Count} ".WriteMessage(this.ExchangeID, this.UserID);
+                                    foreach (var item in addSettingsOrder)
+                                        $"{item.Market}".WriteMessage(this.ExchangeID, this.UserID);
+                                    ;
+                                    this.Run(addSettingsOrder, order);
+                                    //cnt = 0;
+                                    cnt = 60000;
                                     isUploadOrder = false;
                                     isUploadAccount = false;
                                 }
-
-                                if (cnt >= 60000)
-                                    cnt = 0;
-                            }
-                            else
-                            {
-                                if (mod == 0)
+                                else if (cnt >= 60000)
                                 {
-                                    Models.Account account;
+                                    //$"cnt >= 60:{cnt} ".WriteMessage(this.ExchangeID, this.UserID);
 
-                                    account = this.Api.Account();
+                                    Models.Markets markets = this.Api.Markets();
+                                    List<Models.Order> orders = new();
 
-                                    if (account.Error != null) $"Start : {account.Error?.Message}".WriteMessage(this.ExchangeID, this.UserID);
-
-                                    if (!isUploadAccount)
+                                    if (markets != null && markets.MarketList != null)
                                     {
-                                        Upload(this, this.AuthState.Token(), this.ExchangeID, this.UserID, account);
-                                        isUploadAccount = true;
+                                        foreach (var item in markets.MarketList)
+                                            orders.Add(new() { Market = item.Market });
+
+                                        this.Run(orders, order);
+                                        isUploadOrder = false;
+                                        isUploadAccount = false;
                                     }
 
-                                    this.Accounts ??= account;
-
-                                    var a1 = this.Accounts.AccountList.Except(account.AccountList);
-                                    var b1 = account.AccountList.Except(this.Accounts.AccountList);
-                                    var c1 = a1.Union(b1);
-
-                                    if (c1.Any())
-                                    {
-                                        //$"Accounts Except:{c1.Count()} ".WriteMessage(this.ExchangeID, this.UserID);
-                                        //foreach (var item in c1)
-                                        //    $"{item.Currency} Balance:{item.Balance}\tLocked:{item.Locked}".WriteMessage(this.ExchangeID, this.UserID);
-
-                                        Models.Markets markets = this.Api.Markets();
-                                        List<Models.Order> orders = new();
-
-                                        if (markets != null && markets.MarketList != null)
-                                        {
-                                            foreach (var item in markets.MarketList)
-                                                orders.Add(new() { Market = item.Market });
-
-                                            this.Run(orders, order);
-                                            cnt = 0;
-                                            isUploadOrder = false;
-                                            isUploadAccount = false;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        var a2 = this.Settings.Where(x => x.SettingType == SettingType.TraillingStop || x.SettingType == SettingType.Schedule || x.SettingType == SettingType.BidAskMA);
-
-                                        if (a2.Any())
-                                        {
-                                            List<Models.Order> orders = new();
-
-                                            foreach (var item in a2)
-                                                orders.Add(new() { Market = item.Market });
-
-                                            this.Run(orders, order);
-                                            //isUploadOrder = false;
-                                            //isUploadAccount = false;
-                                        }
-                                    }
-
-                                    this.Accounts = account;
+                                    if (cnt >= 60000)
+                                        cnt = 0;
                                 }
                                 else
                                 {
-                                    if (this.Orders != null && this.Orders.OrderList != null && order != null && order.OrderList != null)
+                                    if (mod == 0)
                                     {
-                                        var aa = this.Orders.OrderList.Except(order.OrderList);
-                                        var bb = order.OrderList.Except(this.Orders.OrderList);
-                                        var cc = aa.Union(bb);
+                                        Models.Account account;
 
-                                        if (cc.Any())
+                                        account = this.Api.Account();
+
+                                        if (account.Error != null) $"Start : {account.Error?.Message}".WriteMessage(this.ExchangeID, this.UserID);
+
+                                        if (!isUploadAccount)
                                         {
-                                            this.Run(cc, order);
-                                            isUploadOrder = false;
-                                            isUploadAccount = false;
+                                            Upload(this, this.AuthState.Token(), this.ExchangeID, this.UserID, account);
+                                            isUploadAccount = true;
                                         }
-                                        //cnt = 0;
+
+                                        this.Accounts ??= account;
+
+                                        var a1 = this.Accounts.AccountList.Except(account.AccountList);
+                                        var b1 = account.AccountList.Except(this.Accounts.AccountList);
+                                        var c1 = a1.Union(b1);
+
+                                        if (c1.Any())
+                                        {
+                                            //$"Accounts Except:{c1.Count()} ".WriteMessage(this.ExchangeID, this.UserID);
+                                            //foreach (var item in c1)
+                                            //    $"{item.Currency} Balance:{item.Balance}\tLocked:{item.Locked}".WriteMessage(this.ExchangeID, this.UserID);
+
+                                            Models.Markets markets = this.Api.Markets();
+                                            List<Models.Order> orders = new();
+
+                                            if (markets != null && markets.MarketList != null)
+                                            {
+                                                foreach (var item in markets.MarketList)
+                                                    orders.Add(new() { Market = item.Market });
+
+                                                this.Run(orders, order);
+                                                cnt = 0;
+                                                isUploadOrder = false;
+                                                isUploadAccount = false;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            var a2 = this.Settings.Where(x => x.SettingType == SettingType.TraillingStop || x.SettingType == SettingType.Schedule || x.SettingType == SettingType.BidAskMA);
+
+                                            if (a2.Any())
+                                            {
+                                                List<Models.Order> orders = new();
+
+                                                foreach (var item in a2)
+                                                    orders.Add(new() { Market = item.Market });
+
+                                                this.Run(orders, order);
+                                                //isUploadOrder = false;
+                                                //isUploadAccount = false;
+                                            }
+                                        }
+
+                                        this.Accounts = account;
+                                    }
+                                    else
+                                    {
+                                        if (this.Orders != null && this.Orders.OrderList != null && order != null && order.OrderList != null)
+                                        {
+                                            var aa = this.Orders.OrderList.Except(order.OrderList);
+                                            var bb = order.OrderList.Except(this.Orders.OrderList);
+                                            var cc = aa.Union(bb);
+
+                                            if (cc.Any())
+                                            {
+                                                this.Run(cc, order);
+                                                isUploadOrder = false;
+                                                isUploadAccount = false;
+                                            }
+                                            //cnt = 0;
+                                        }
                                     }
                                 }
-                            }
 
-                            this.Orders = order;
-
-                            if (cntPoint >= 2880000)
-                            {
-                                cntPoint = 0;
-                                this.PointMemberCheck();
+                                this.Orders = order;
                             }
+                        }
+
+                        if (cntPoint >= 2880000)
+                        {
+                            cntPoint = 0;
+                            this.PointMemberCheck();
                         }
                     }
                     catch (Exception ex)
@@ -774,14 +774,13 @@ namespace MetaFrm.Stock.Exchange
                     if (this.IsRun) return;
                     this.IsRun = true;
 
-                    lock (this.Settings)
-                        foreach (var item in this.Settings)
+                    foreach (var item in this.Settings)
+                    {
+                        if (item.Market != null && item is ISettingAction action && (orders == null || orders.Any(x => x.Market == item.Market)))
                         {
-                            if (item.Market != null && item is ISettingAction action && (orders == null || orders.Any(x => x.Market == item.Market)))
-                            {
-                                action.Run(allOrder);
-                            }
+                            action.Run(allOrder);
                         }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -869,8 +868,8 @@ namespace MetaFrm.Stock.Exchange
                     }
                     //this.OrderExecution(null, order);
 
-                    this.Orders = this.Api.AllOrder("ALL", "");
-                    this.Run(new List<Models.Order>() { { new() { Market = order.Market } } }, this.Orders);
+                    //this.Orders = this.Api.AllOrder("ALL", "");
+                    //this.Run(new List<Models.Order>() { { new() { Market = order.Market } } }, this.Orders);
                 }
             }
 
