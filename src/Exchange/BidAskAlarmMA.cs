@@ -118,54 +118,39 @@ namespace MetaFrm.Stock.Exchange
                 StringBuilder stringBuilder = new();
                 CandlesMinute candles = BidAskAlarmMA.Candles[$"{market}_{(int)this.MinuteCandleType}"];
 
-                while (this.IsRunReciveData)
+                try
                 {
-                    await Task.Delay(2000);
-
-                    dateTime = DateTime.Now;
-
-                    if (this.lassRunDateTime == DateTime.MinValue
-                        || candles.CandlesMinuteList == null || candles.CandlesMinuteList.Count < this.RightMA60
-                        || (this.lassRunDateTime.Minute != dateTime.Minute && dateTime.Minute % candles.Unit == 0))
+                    while (this.IsRunReciveData)
                     {
-                        this.lassRunDateTime = dateTime;
-
-                        //다음 Unit에서 손절 평가
-                        if (this.StatusBidAskAlarmMA.CurrentStatus == "매수" && this.StatusBidAskAlarmMA.IsBid)
-                            this.StatusBidAskAlarmMA.IsBid = false;
-
-                        //System.Console.WriteLine($"실행 {this.Api.ExchangeID} {market} {this.lassRunDateTime:yyyy-MM-dd HH:mm:ss}");
-
                         await Task.Delay(2000);
 
-                        SecondaryIndicator(this.Api, candles, market, this.MinuteCandleType, this.LeftMA7, this.RightMA30, this.RightMA60);
+                        dateTime = DateTime.Now;
 
-                        this.MA_Test(candles, this.StatusBidAskAlarmMA, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
-                    }
-
-                    if (this.StatusBidAskAlarmMA.CurrentStatus == "매수" && !this.StatusBidAskAlarmMA.IsBid)
-                    {
-                        Ticker? ticker = this.GetCurrentInfo(market);
-
-                        //매수 상태이고 스탑로스 가격 보다 떨어지면 손절
-                        if (ticker != null && this.StatusBidAskAlarmMA.StopLossPrice >= ticker.TradePrice)
+                        if (this.lassRunDateTime == DateTime.MinValue
+                            || candles.CandlesMinuteList == null || candles.CandlesMinuteList.Count < this.RightMA60
+                            || (this.lassRunDateTime.Minute != dateTime.Minute && dateTime.Minute % candles.Unit == 0))
                         {
-                            this.StatusBidAskAlarmMA.CurrentStatus = "손절";
-                            this.StatusBidAskAlarmMA.TempInvest = this.StatusBidAskAlarmMA.StopLossPrice * this.StatusBidAskAlarmMA.Qty * (1M - 0.0005M);
+                            this.lassRunDateTime = dateTime;
 
-                            stringBuilder.Clear();
-                            stringBuilder.AppendLine($"손절가격 : {this.StatusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)} -{(this.StopLossRate * 100M):N2}%");
-                            stringBuilder.AppendLine($"매수가격 : {this.StatusBidAskAlarmMA.BidPrice.PriceToString(this.Api.ExchangeID, market)}");
-                            stringBuilder.AppendLine($"가상 투자금액 : {this.StatusBidAskAlarmMA.TempInvest:N0}");
-                            stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
+                            //System.Console.WriteLine($"실행 {this.Api.ExchangeID} {market} {this.lassRunDateTime:yyyy-MM-dd HH:mm:ss}");
 
-                            this.BidAskAlarm_MA(this.AuthState.Token(), market, "ask", "limit", this.StatusBidAskAlarmMA.StopLossPrice.PriceRound(this.Api.ExchangeID, market)
-                                , $"{User.ExchangeName(this.Api.ExchangeID)} {market} 손절신호", stringBuilder.ToString());
+                            await Task.Delay(2000);
+
+                            SecondaryIndicator(this.Api, candles, market, this.MinuteCandleType, this.LeftMA7, this.RightMA30, this.RightMA60);
+
+                            this.MA_Test(candles, this.StatusBidAskAlarmMA, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
                         }
                     }
-                }
 
-                SaveStatusBidAskAlarmMA(0, this.StatusBidAskAlarmMA, this.Api.ExchangeID, candles.Unit, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
+                }
+                catch (Exception ex)
+                {
+                    ex.WriteMessage(true, this.Api.ExchangeID, null, null, market);
+                }
+                finally
+                {
+                    SaveStatusBidAskAlarmMA(0, this.StatusBidAskAlarmMA, this.Api.ExchangeID, candles.Unit, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
+                }
             });
         }
         internal Ticker? GetCurrentInfo(string market)
@@ -217,19 +202,32 @@ namespace MetaFrm.Stock.Exchange
                             // 5 < 6
                             if (value_7_30 < beforValue_7_30 && item.TradePrice > (statusBidAskAlarmMA.BidPrice * (1M + rate)))
                             {
-                                statusBidAskAlarmMA.AskPrice = item.TradePrice;
-                                statusBidAskAlarmMA.CurrentStatus = "";
-                                statusBidAskAlarmMA.TempInvest = statusBidAskAlarmMA.AskPrice * statusBidAskAlarmMA.Qty * (1M - 0.0005M);
+                                if (statusBidAskAlarmMA.EnterCount1 == 0 && market != "KRW-ETH")
+                                    statusBidAskAlarmMA.EnterCount1 += 1;
+                                else if (statusBidAskAlarmMA.EnterCount1 == 1 || market == "KRW-ETH")
+                                {
+                                    statusBidAskAlarmMA.EnterCount1 = 0;
 
-                                stringBuilder.Clear();
-                                stringBuilder.AppendLine($"매수가격 : {statusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)}");
-                                stringBuilder.AppendLine($"매도가격 : {statusBidAskAlarmMA.AskPrice.PriceToString(this.Api.ExchangeID, market)}");
-                                stringBuilder.AppendLine($"가상 투자금액 : {statusBidAskAlarmMA.TempInvest:N0}");
-                                stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
+                                    statusBidAskAlarmMA.AskPrice = item.TradePrice;
+                                    statusBidAskAlarmMA.CurrentStatus = "";
+                                    statusBidAskAlarmMA.TempInvest = statusBidAskAlarmMA.AskPrice * statusBidAskAlarmMA.Qty * (1M - 0.0005M);
 
-                                this.BidAskAlarm_MA(this.AuthState.Token(), market, "ask", "limit", item.TradePrice.PriceRound(this.Api.ExchangeID, market)
-                                    , $"{User.ExchangeName(this.Api.ExchangeID)} {market} 매도신호", stringBuilder.ToString());
+                                    stringBuilder.Clear();
+                                    stringBuilder.AppendLine($"매수가격 : {statusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)}");
+                                    stringBuilder.AppendLine($"매도가격 : {statusBidAskAlarmMA.AskPrice.PriceToString(this.Api.ExchangeID, market)}");
+                                    stringBuilder.AppendLine($"가상 투자금액 : {statusBidAskAlarmMA.TempInvest:N0}");
+                                    stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
+
+
+
+
+
+                                    this.BidAskAlarm_MA(this.AuthState.Token(), market, "ask", "limit", item.TradePrice.PriceRound(this.Api.ExchangeID, market)
+                                        , $"{User.ExchangeName(this.Api.ExchangeID)} {market} 매도신호", stringBuilder.ToString());
+                                }
                             }
+                            else
+                                statusBidAskAlarmMA.EnterCount1 = 0;
                         }
 
                         //손절 상태가 되면 상숭 후에 다시 내려 갔을떄 진입
@@ -241,37 +239,78 @@ namespace MetaFrm.Stock.Exchange
                         //하락 중
 
                         //포지션이 없을때
-                        if (StatusBidAskAlarmMA.CurrentStatus == "")
+                        if (statusBidAskAlarmMA.CurrentStatus == "")
                         {
                             //이전 값보다 커졌을떄 => 간격이 좁아지면 => 매수를 한다 (보정값으로으로 미세 조정 필요★)
                             // -5 > -6
                             if (value_7_30 > beforValue_7_30)
                             {
-                                statusBidAskAlarmMA.CurrentStatus = "매수";
-                                statusBidAskAlarmMA.BidPrice = item.TradePrice;
-                                statusBidAskAlarmMA.Qty = (statusBidAskAlarmMA.TempInvest * (1M - 0.0005M)) / statusBidAskAlarmMA.BidPrice;
+                                if (statusBidAskAlarmMA.EnterCount2 == 0 && market != "KRW-ETH")
+                                    statusBidAskAlarmMA.EnterCount2 += 1;
+                                else if (statusBidAskAlarmMA.EnterCount2 == 1 || market == "KRW-ETH")
+                                {
+                                    statusBidAskAlarmMA.EnterCount2 = 0;
 
-                                statusBidAskAlarmMA.StopLossPrice = (statusBidAskAlarmMA.BidPrice * (1M - stopLossRate)).PriceRound(this.Api.ExchangeID, market);//손절
+                                    statusBidAskAlarmMA.CurrentStatus = "매수";
+                                    statusBidAskAlarmMA.BidPrice = item.TradePrice;
+                                    statusBidAskAlarmMA.Qty = (statusBidAskAlarmMA.TempInvest * (1M - 0.0005M)) / statusBidAskAlarmMA.BidPrice;
 
-                                statusBidAskAlarmMA.IsBid = true;
+                                    statusBidAskAlarmMA.StopLossPrice = (statusBidAskAlarmMA.BidPrice * (1M - stopLossRate)).PriceRound(this.Api.ExchangeID, market);//손절
 
-                                //StatusBidAskAlarmMA.StopLossPrice = item.TradePrice * (1M - stopLossRate);//손절
+                                    statusBidAskAlarmMA.IsBid = true;
+
+                                    //statusBidAskAlarmMA.StopLossPrice = item.TradePrice * (1M - stopLossRate);//손절
+
+                                    stringBuilder.Clear();
+                                    stringBuilder.AppendLine($"매수가격 : {statusBidAskAlarmMA.BidPrice.PriceToString(this.Api.ExchangeID, market)}");
+                                    stringBuilder.AppendLine($"목표가격 : {(statusBidAskAlarmMA.BidPrice * (1M + rate)).PriceRound(this.Api.ExchangeID, market).PriceToString(this.Api.ExchangeID, market)}");
+                                    stringBuilder.AppendLine($"손절가격 : {statusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)} {(stopLossRate * 100M * -1M):N2}%");
+                                    stringBuilder.AppendLine($"가상 투자금액 : {statusBidAskAlarmMA.TempInvest:N0}");
+                                    stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
+
+                                    this.BidAskAlarm_MA(this.AuthState.Token(), market, "bid", "limit", item.TradePrice.PriceRound(this.Api.ExchangeID, market)
+                                        , $"{User.ExchangeName(this.Api.ExchangeID)} {market} 매수신호", stringBuilder.ToString());
+                                }
+                            }
+                            else
+                                statusBidAskAlarmMA.EnterCount2 = 0;
+                        }
+                    }
+
+
+                    if (statusBidAskAlarmMA.CurrentStatus == "매수")
+                    {
+                        if (statusBidAskAlarmMA.StopLossPrice > item.LowPrice && !statusBidAskAlarmMA.IsBid)
+                        {
+                            if (statusBidAskAlarmMA.EnterCount3 == 0)
+                                statusBidAskAlarmMA.EnterCount3 += 1;
+                            else if (statusBidAskAlarmMA.EnterCount3 == 1)
+                            {
+                                statusBidAskAlarmMA.EnterCount3 = 0;
+
+                                statusBidAskAlarmMA.CurrentStatus = "손절";
+                                statusBidAskAlarmMA.TempInvest = statusBidAskAlarmMA.StopLossPrice * statusBidAskAlarmMA.Qty * (1M - 0.0005M);
 
                                 stringBuilder.Clear();
+                                stringBuilder.AppendLine($"손절가격 : {statusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)} -{(this.StopLossRate * 100M):N2}%");
                                 stringBuilder.AppendLine($"매수가격 : {statusBidAskAlarmMA.BidPrice.PriceToString(this.Api.ExchangeID, market)}");
-                                stringBuilder.AppendLine($"목표가격 : {(statusBidAskAlarmMA.BidPrice * (1M + rate)).PriceRound(this.Api.ExchangeID, market).PriceToString(this.Api.ExchangeID, market)}");
-                                stringBuilder.AppendLine($"손절가격 : {statusBidAskAlarmMA.StopLossPrice.PriceToString(this.Api.ExchangeID, market)} {(stopLossRate * 100M * -1M):N2}%");
                                 stringBuilder.AppendLine($"가상 투자금액 : {statusBidAskAlarmMA.TempInvest:N0}");
                                 stringBuilder.ToString().WriteMessage(this.Api.ExchangeID, null, null, market);
 
-                                this.BidAskAlarm_MA(this.AuthState.Token(), market, "bid", "limit", item.TradePrice.PriceRound(this.Api.ExchangeID, market)
-                                    , $"{User.ExchangeName(this.Api.ExchangeID)} {market} 매수신호", stringBuilder.ToString());
+
+
+
+                                this.BidAskAlarm_MA(this.AuthState.Token(), market, "ask", "limit", statusBidAskAlarmMA.StopLossPrice.PriceRound(this.Api.ExchangeID, market)
+                                    , $"{User.ExchangeName(this.Api.ExchangeID)} {market} 손절신호", stringBuilder.ToString());
                             }
                         }
+                        else
+                            statusBidAskAlarmMA.EnterCount3 = 0;
                     }
 
                     beforValue_7_30 = value_7_30;
                     beforValue_7_60 = value_7_60;
+                    statusBidAskAlarmMA.IsBid = false;
                 }
             }
         }
@@ -440,7 +479,7 @@ namespace MetaFrm.Stock.Exchange
 
                 if (response.Status != Status.OK)
                     response.Message?.WriteMessage(this.Api.ExchangeID, null, null, MARKET);
-                else 
+                else
                 {
                     if (response.DataSet != null && response.DataSet.DataTables.Count > 0)
                     {

@@ -58,5 +58,20 @@
         /// TempInvest
         /// </summary>
         public decimal TempInvest { get; set; }
+
+        /// <summary>
+        /// EnterCount1
+        /// </summary>
+        public decimal EnterCount1 { get; set; }
+
+        /// <summary>
+        /// EnterCount2
+        /// </summary>
+        public decimal EnterCount2 { get; set; }
+
+        /// <summary>
+        /// EnterCount3
+        /// </summary>
+        public decimal EnterCount3 { get; set; }
     }
 }
