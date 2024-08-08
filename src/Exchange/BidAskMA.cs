@@ -106,6 +106,20 @@ namespace MetaFrm.Stock.Exchange
                     {
                         var bidOrder = allOrderList.SingleOrDefault(x => x.UUID == this.StatusBidAskAlarmMA.TempBidOrder.UUID);
 
+                        if (bidOrder == null && this.StatusBidAskAlarmMA.TempBidOrder.UUID != null)
+                        {
+                            var order1 = this.User.Api.Order(this.Market, Models.OrderSide.bid.ToString(), this.StatusBidAskAlarmMA.TempBidOrder.UUID);
+
+                            if (order1.Error == null)//에러가 아니면
+                                bidOrder = order1;
+                            else
+                            {
+                                this.Message = order1.Error.Message;
+                                this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                                return;
+                            }
+                        }
+
                         if (bidOrder != null)
                         {
                             if (bidOrder.State == "done")
@@ -144,6 +158,20 @@ namespace MetaFrm.Stock.Exchange
                     else
                     {
                         var askOrder = allOrderList.SingleOrDefault(x => x.UUID == this.StatusBidAskAlarmMA.TempAskOrder.UUID);
+
+                        if (askOrder == null && this.StatusBidAskAlarmMA.TempAskOrder.UUID != null)
+                        {
+                            var order1 = this.User.Api.Order(this.Market, Models.OrderSide.bid.ToString(), this.StatusBidAskAlarmMA.TempAskOrder.UUID);
+
+                            if (order1.Error == null)//에러가 아니면
+                                askOrder = order1;
+                            else
+                            {
+                                this.Message = order1.Error.Message;
+                                this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                                return;
+                            }
+                        }
 
                         if (askOrder != null && this.StatusBidAskAlarmMA.BidOrder != null)
                         {
@@ -245,50 +273,59 @@ namespace MetaFrm.Stock.Exchange
 
                                     if (value_7_30 < beforValue_7_30 && this.StatusBidAskAlarmMA.TempAskOrder != null && this.StatusBidAskAlarmMA.TempAskOrder.UUID != null && item.TradePrice > (bidPrice * (1M + (this.Rate / 100M))))
                                     {
-                                        var order = this.User.Api.CancelOrder(this.Market, "ask", this.StatusBidAskAlarmMA.TempAskOrder.UUID);
-
-                                        if (order.Error != null)
+                                        if (this.StatusBidAskAlarmMA.EnterCount1 == 0 && this.Market != "KRW-ETH")
+                                            this.StatusBidAskAlarmMA.EnterCount1 += 1;
+                                        else if (this.StatusBidAskAlarmMA.EnterCount1 == 1 || this.Market == "KRW-ETH")
                                         {
-                                            order = this.User.Api.CancelOrder(this.Market, "ask", this.StatusBidAskAlarmMA.TempAskOrder.UUID);
+                                            this.StatusBidAskAlarmMA.EnterCount1 = 0;
+
+                                            var order = this.User.Api.CancelOrder(this.Market, "ask", this.StatusBidAskAlarmMA.TempAskOrder.UUID);
 
                                             if (order.Error != null)
                                             {
-                                                this.Message = order.Error.Message;
-                                                this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
-                                                return;
+                                                order = this.User.Api.CancelOrder(this.Market, "ask", this.StatusBidAskAlarmMA.TempAskOrder.UUID);
+
+                                                if (order.Error != null)
+                                                {
+                                                    this.Message = order.Error.Message;
+                                                    this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                                                    return;
+                                                }
                                             }
-                                        }
 
-                                        if (order.Error == null && this.StatusBidAskAlarmMA.BidOrder != null)
-                                        {
-                                            order = this.MakeOrderAskMarket(this.Market, bidQty);
-
-                                            if (order != null && order.Error == null && order.Trades != null && order.Trades.Count > 0)
+                                            if (order.Error == null && this.StatusBidAskAlarmMA.BidOrder != null)
                                             {
-                                                this.StatusBidAskAlarmMA.CurrentStatus = "";
+                                                order = this.MakeOrderAskMarket(this.Market, bidQty);
 
-                                                decimal askQty = order.Trades.Sum(x => x.Volume);
-                                                decimal askPrice = order.Trades.Sum(x => x.Volume * x.Price) / askQty;
+                                                if (order != null && order.Error == null && order.Trades != null && order.Trades.Count > 0)
+                                                {
+                                                    this.StatusBidAskAlarmMA.CurrentStatus = "";
 
-                                                decimal ASK = (askPrice * askQty) - order.PaidFee;
-                                                decimal BID = (bidPrice * bidQty) + this.StatusBidAskAlarmMA.BidOrder.PaidFee;
+                                                    decimal askQty = order.Trades.Sum(x => x.Volume);
+                                                    decimal askPrice = order.Trades.Sum(x => x.Volume * x.Price) / askQty;
 
-                                                this.Invest = Math.Truncate(ASK);
+                                                    decimal ASK = (askPrice * askQty) - order.PaidFee;
+                                                    decimal BID = (bidPrice * bidQty) + this.StatusBidAskAlarmMA.BidOrder.PaidFee;
 
-                                                this.Profit(this.User, this.SettingID, this.User.UserID
-                                                    , bidPrice, bidQty, this.StatusBidAskAlarmMA.BidOrder.PaidFee
-                                                    , askPrice, askQty, order.PaidFee
-                                                    , ASK - BID
-                                                    , this.Market);
+                                                    this.Invest = Math.Truncate(ASK);
 
-                                                this.StatusBidAskAlarmMA.TempAskOrder = null;
-                                                this.StatusBidAskAlarmMA.BidOrder = null;
-                                                this.StatusBidAskAlarmMA.TempBidOrder = null;
+                                                    this.Profit(this.User, this.SettingID, this.User.UserID
+                                                        , bidPrice, bidQty, this.StatusBidAskAlarmMA.BidOrder.PaidFee
+                                                        , askPrice, askQty, order.PaidFee
+                                                        , ASK - BID
+                                                        , this.Market);
 
-                                                return;
+                                                    this.StatusBidAskAlarmMA.TempAskOrder = null;
+                                                    this.StatusBidAskAlarmMA.BidOrder = null;
+                                                    this.StatusBidAskAlarmMA.TempBidOrder = null;
+
+                                                    return;
+                                                }
                                             }
                                         }
                                     }
+                                    else
+                                        this.StatusBidAskAlarmMA.EnterCount1 = 0;
                                 }
 
                                 //손절 상태가 되면 상숭 후에 다시 내려 갔을떄 진입
@@ -306,11 +343,66 @@ namespace MetaFrm.Stock.Exchange
                                     // -5 > -6
                                     if (value_7_30 > beforValue_7_30 && this.StatusBidAskAlarmMA.TempBidOrder != null && this.StatusBidAskAlarmMA.TempBidOrder.UUID != null)
                                     {
-                                        var order = this.User.Api.CancelOrder(this.Market, "bid", this.StatusBidAskAlarmMA.TempBidOrder.UUID);
+                                        if (this.StatusBidAskAlarmMA.EnterCount2 == 0 && this.Market != "KRW-ETH")
+                                            this.StatusBidAskAlarmMA.EnterCount2 += 1;
+                                        else if (this.StatusBidAskAlarmMA.EnterCount2 == 1 || this.Market == "KRW-ETH")
+                                        {
+                                            this.StatusBidAskAlarmMA.EnterCount2 = 0;
+
+                                            var order = this.User.Api.CancelOrder(this.Market, "bid", this.StatusBidAskAlarmMA.TempBidOrder.UUID);
+
+                                            if (order.Error != null)
+                                            {
+                                                order = this.User.Api.CancelOrder(this.Market, "bid", this.StatusBidAskAlarmMA.TempBidOrder.UUID);
+
+                                                if (order.Error != null)
+                                                {
+                                                    this.Message = order.Error.Message;
+                                                    this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                                                    return;
+                                                }
+                                            }
+
+                                            if (order.Error == null)
+                                            {
+                                                order = this.MakeOrderBidPrice(this.Market, this.Invest * (1M - (this.Fees / 100M)));
+
+                                                //order = this.User.Api.Order(this.Market, Models.OrderSide.bid.ToString(), "ff0ca8b9-4df9-4413-b95f-d4f99af3c79d");
+
+                                                if (order != null && order.Error == null && order.Trades != null && order.Trades.Count > 0)
+                                                {
+                                                    this.StatusBidAskAlarmMA.CurrentStatus = "매수";
+                                                    this.StatusBidAskAlarmMA.BidOrder = order;
+                                                    this.StatusBidAskAlarmMA.StopLossPrice = ((order.Trades.Sum(x => x.Volume * x.Price) / order.Trades.Sum(x => x.Volume)) * (1M - (this.StopLossRate / 100M))).PriceRound(this.ExchangeID, this.Market);//손절
+                                                    this.StatusBidAskAlarmMA.IsBid = true;
+                                                    this.StatusBidAskAlarmMA.TempBidOrder = null;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else
+                                        this.StatusBidAskAlarmMA.EnterCount2 = 0;
+                                }
+                            }
+
+                            if (this.StatusBidAskAlarmMA.CurrentStatus == "매수")
+                            {
+                                //매수 상태이고 스탑로스 가격 보다 떨어지면 손절
+                                if (this.StatusBidAskAlarmMA.StopLossPrice > item.LowPrice && this.StatusBidAskAlarmMA.TempAskOrder != null && this.StatusBidAskAlarmMA.TempAskOrder.UUID != null && !this.StatusBidAskAlarmMA.IsBid)
+                                {
+                                    if (this.StatusBidAskAlarmMA.EnterCount3 == 0)
+                                        this.StatusBidAskAlarmMA.EnterCount3 += 1;
+                                    else if (this.StatusBidAskAlarmMA.EnterCount3 == 1)
+                                    {
+                                        this.StatusBidAskAlarmMA.EnterCount3 = 0;
+
+                                        this.StatusBidAskAlarmMA.CurrentStatus = "손절";
+
+                                        var order = this.User.Api.CancelOrder(this.Market, "ask", this.StatusBidAskAlarmMA.TempAskOrder.UUID);
 
                                         if (order.Error != null)
                                         {
-                                            order = this.User.Api.CancelOrder(this.Market, "bid", this.StatusBidAskAlarmMA.TempBidOrder.UUID);
+                                            order = this.User.Api.CancelOrder(this.Market, "ask", this.StatusBidAskAlarmMA.TempAskOrder.UUID);
 
                                             if (order.Error != null)
                                             {
@@ -320,84 +412,46 @@ namespace MetaFrm.Stock.Exchange
                                             }
                                         }
 
-                                        if (order.Error == null)
+                                        if (order.Error == null && this.StatusBidAskAlarmMA.BidOrder != null)
                                         {
-                                            order = this.MakeOrderBidPrice(this.Market, this.Invest * (1M - (this.Fees / 100M)));
+                                            order = this.MakeOrderAskMarket(this.Market
+                                                , this.StatusBidAskAlarmMA.BidOrder.Trades != null ? this.StatusBidAskAlarmMA.BidOrder.Trades.Sum(x => x.Volume) : this.StatusBidAskAlarmMA.BidOrder.Volume
+                                                );
 
-                                            //order = this.User.Api.Order(this.Market, Models.OrderSide.bid.ToString(), "ff0ca8b9-4df9-4413-b95f-d4f99af3c79d");
-
-                                            if (order != null && order.Error == null && order.Trades != null && order.Trades.Count > 0)
+                                            if (order != null && order.Error == null && order.Trades != null && order.Trades.Count > 0 && this.StatusBidAskAlarmMA.BidOrder.Trades != null)
                                             {
-                                                this.StatusBidAskAlarmMA.CurrentStatus = "매수";
-                                                this.StatusBidAskAlarmMA.BidOrder = order;
-                                                this.StatusBidAskAlarmMA.StopLossPrice = ((order.Trades.Sum(x => x.Volume * x.Price) / order.Trades.Sum(x => x.Volume)) * (1M - (this.StopLossRate / 100M))).PriceRound(this.ExchangeID, this.Market);//손절
-                                                this.StatusBidAskAlarmMA.IsBid = true;
+                                                decimal bidQty = this.StatusBidAskAlarmMA.BidOrder.Trades.Sum(x => x.Volume);
+                                                decimal bidPrice = this.StatusBidAskAlarmMA.BidOrder.Trades.Sum(x => x.Volume * x.Price) / bidQty;
+
+                                                decimal askQty = order.Trades.Sum(x => x.Volume);
+                                                decimal askPrice = order.Trades.Sum(x => x.Volume * x.Price) / askQty;
+
+                                                decimal ASK = (askPrice * askQty) - order.PaidFee;
+                                                decimal BID = (bidPrice * bidQty) + this.StatusBidAskAlarmMA.BidOrder.PaidFee;
+
+                                                this.Invest = Math.Truncate(ASK);
+
+                                                this.Loss(this.User, this.SettingID, this.User.UserID
+                                                    , bidPrice, bidQty, this.StatusBidAskAlarmMA.BidOrder.PaidFee
+                                                    , askPrice, askQty, order.PaidFee
+                                                    , ASK - BID
+                                                    , this.Market);
+
+                                                this.StatusBidAskAlarmMA.TempAskOrder = null;
+                                                this.StatusBidAskAlarmMA.BidOrder = null;
                                                 this.StatusBidAskAlarmMA.TempBidOrder = null;
+                                                this.StatusBidAskAlarmMA.StopLossAskOrder = order;
                                             }
                                         }
                                     }
                                 }
+                                else
+                                    this.StatusBidAskAlarmMA.EnterCount3 = 0;
                             }
 
                             beforValue_7_30 = value_7_30;
                             beforValue_7_60 = value_7_60;
-                        }
-                    }
-                }
-
-                if (this.StatusBidAskAlarmMA.CurrentStatus == "매수" && !this.StatusBidAskAlarmMA.IsBid)
-                {
-                    Ticker? ticker = this.GetCurrentInfo(this.Market);
-
-                    //매수 상태이고 스탑로스 가격 보다 떨어지면 손절
-                    if (ticker != null && this.StatusBidAskAlarmMA.StopLossPrice >= ticker.TradePrice && this.StatusBidAskAlarmMA.TempAskOrder != null && this.StatusBidAskAlarmMA.TempAskOrder.UUID != null)
-                    {
-                        this.StatusBidAskAlarmMA.CurrentStatus = "손절";
-
-                        var order = this.User.Api.CancelOrder(this.Market, "ask", this.StatusBidAskAlarmMA.TempAskOrder.UUID);
-
-                        if (order.Error != null)
-                        {
-                            order = this.User.Api.CancelOrder(this.Market, "ask", this.StatusBidAskAlarmMA.TempAskOrder.UUID);
-
-                            if (order.Error != null)
-                            {
-                                this.Message = order.Error.Message;
-                                this.Message?.WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
-                                return;
-                            }
-                        }
-
-                        if (order.Error == null && this.StatusBidAskAlarmMA.BidOrder != null)
-                        {
-                            order = this.MakeOrderAskMarket(this.Market
-                                , this.StatusBidAskAlarmMA.BidOrder.Trades != null ? this.StatusBidAskAlarmMA.BidOrder.Trades.Sum(x => x.Volume) : this.StatusBidAskAlarmMA.BidOrder.Volume
-                                );
-
-                            if (order != null && order.Error == null && order.Trades != null && order.Trades.Count > 0 && this.StatusBidAskAlarmMA.BidOrder.Trades != null)
-                            {
-                                decimal bidQty = this.StatusBidAskAlarmMA.BidOrder.Trades.Sum(x => x.Volume);
-                                decimal bidPrice = this.StatusBidAskAlarmMA.BidOrder.Trades.Sum(x => x.Volume * x.Price) / bidQty;
-
-                                decimal askQty = order.Trades.Sum(x => x.Volume);
-                                decimal askPrice = order.Trades.Sum(x => x.Volume * x.Price) / askQty;
-
-                                decimal ASK = (askPrice * askQty) - order.PaidFee;
-                                decimal BID = (bidPrice * bidQty) + this.StatusBidAskAlarmMA.BidOrder.PaidFee;
-
-                                this.Invest = Math.Truncate(ASK);
-
-                                this.Loss(this.User, this.SettingID, this.User.UserID
-                                    , bidPrice, bidQty, this.StatusBidAskAlarmMA.BidOrder.PaidFee
-                                    , askPrice, askQty, order.PaidFee
-                                    , ASK - BID
-                                    , this.Market);
-
-                                this.StatusBidAskAlarmMA.TempAskOrder = null;
-                                this.StatusBidAskAlarmMA.BidOrder = null;
-                                this.StatusBidAskAlarmMA.TempBidOrder = null;
-                                this.StatusBidAskAlarmMA.StopLossAskOrder = order;
-                            }
+                            this.StatusBidAskAlarmMA.IsBid = false;
                         }
                     }
                 }

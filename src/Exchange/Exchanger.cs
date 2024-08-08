@@ -100,7 +100,7 @@ namespace MetaFrm.Stock.Exchange
                     this.BidAskAlarmMA_BTC = new(this.AuthState, user.Api, "KRW-BTC", 15, 7, 30, 60, 0.025M, 0.12M);
                     this.BidAskAlarmMA_BTC.Run("KRW-BTC");
 
-                    this.BidAskAlarmMA_ETH = new(this.AuthState, user.Api, "KRW-ETH", 15, 6, 30, 60, 0.025M, 0.13M);
+                    this.BidAskAlarmMA_ETH = new(this.AuthState, user.Api, "KRW-ETH", 15, 5, 30, 60, 0.02M, 0.13M);
                     this.BidAskAlarmMA_ETH.Run("KRW-ETH");
                 }
             }
