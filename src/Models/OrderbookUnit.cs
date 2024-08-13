@@ -24,5 +24,15 @@
         /// 매수 잔량
         /// </summary>
         public decimal BidSize { get; set; }
+
+        /// <summary>
+        /// AskKrw
+        /// </summary>
+        public decimal AskKrw { get; set; }
+
+        /// <summary>
+        /// BidKrw
+        /// </summary>
+        public decimal BidKrw { get; set; }
     }
 }

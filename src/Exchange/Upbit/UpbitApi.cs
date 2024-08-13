@@ -1605,7 +1605,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
 
         #region "시세 호가 정보(Orderbook) 조회/호가 정보 조회"
-        Models.Orderbook IApi.Orderbook(string markets)
+        Models.Orderbook IApi.Orderbook(string markets, decimal level)
         {
             string? tmp = "";
             Orderbook[]? list;
@@ -1613,7 +1613,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
             try
             {
-                tmp = this.CallAPI($"{this.BaseUrl}orderbook", new NameValueCollection { { "markets", markets } }, HttpMethod.Get);
+                tmp = this.CallAPI($"{this.BaseUrl}orderbook", new NameValueCollection { { "level", $"{level}" }, { "markets", markets } }, HttpMethod.Get);
 
                 if (string.IsNullOrEmpty(tmp)) return result;
                 if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
@@ -1626,35 +1626,85 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 result.OrderbookList = new();
                 foreach (var item in list)
                 {
-                    result.OrderbookList.Add(new()
+                    Models.Orderbook orderbook = new()
                     {
                         Market = item.Market,
                         TimeStamp = item.TimeStamp,
                         TotalAskSize = item.TotalAskSize,
                         TotalBidSize = item.TotalBidSize,
-                    });
+                        Level = item.Level,
+                    };
+
+                    result.OrderbookList.Add(orderbook);
 
                     if (item.OrderbookUnits != null)
                     {
-                        result.OrderbookUnits = new();
+                        orderbook.OrderbookUnits = new();
                         foreach (var itemUnit in item.OrderbookUnits)
                         {
-                            result.OrderbookUnits.Add(new()
+                            orderbook.OrderbookUnits.Add(new()
                             {
                                 AskPrice = itemUnit.AskPrice,
                                 BidPrice = itemUnit.BidPrice,
                                 AskSize = itemUnit.AskSize,
                                 BidSize = itemUnit.BidSize,
+                                AskKrw = itemUnit.AskPrice * itemUnit.AskSize,
+                                BidKrw = itemUnit.BidPrice * itemUnit.BidSize,
                             });
                         }
-                    }
 
+                        orderbook.TotalBidKrw = orderbook.OrderbookUnits.Sum(x => x.BidPrice * x.BidSize);
+                        orderbook.TotalAskKrw = orderbook.OrderbookUnits.Sum(x => x.AskPrice * x.AskSize);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 result.Error = this.GetError(ex, true);
                 $"Orderbook:{tmp}".WriteMessage(((IApi)this).ExchangeID);
+            }
+
+            return result;
+        }
+
+        Models.OrderbookSupportedLevel IApi.OrderbookSupportedLevels(string markets)
+        {
+            string? tmp = "";
+            OrderbookSupportedLevel[]? list;
+            Models.OrderbookSupportedLevel result = new();
+
+            try
+            {
+                tmp = this.CallAPI($"{this.BaseUrl}orderbook/supported_levels", new NameValueCollection { { "markets", markets } }, HttpMethod.Get);
+
+                if (string.IsNullOrEmpty(tmp)) return result;
+                if (tmp.Contains("error")) { result.Error = GetError(tmp); return result; }
+                if (tmp.Contains("name") && tmp.Contains("too_")) { result.Error = GetErrorName(tmp); return result; }
+
+                list = JsonSerializer.Deserialize<OrderbookSupportedLevel[]>(tmp, jsonSerializerOptions);
+
+                if (list == null) return result;
+
+                result.OrderbookSupportedLevelList = new();
+                foreach (var item in list)
+                {
+                    List<decimal> decimals = new();
+
+                    if (item.SupportedLevels != null)
+                        foreach (var item2 in item.SupportedLevels)
+                            decimals.Add((decimal)item2);
+
+                    result.OrderbookSupportedLevelList.Add(new()
+                    {
+                        Market = item.Market,
+                        SupportedLevels = item.SupportedLevels,
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Error = this.GetError(ex, true);
+                $"OrderbookSupportedLevels:{tmp}".WriteMessage(((IApi)this).ExchangeID);
             }
 
             return result;

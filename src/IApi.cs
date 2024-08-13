@@ -101,8 +101,16 @@ namespace MetaFrm.Stock
         /// 호가 정보 조회
         /// </summary>
         /// <param name="markets">Market ID</param>
+        /// <param name="level"></param>
         /// <returns></returns>
-        Orderbook Orderbook(string markets);
+        Orderbook Orderbook(string markets, decimal level);
+
+        /// <summary>
+        /// OrderbookSupportedLevels
+        /// </summary>
+        /// <param name="markets"></param>
+        /// <returns></returns>
+        OrderbookSupportedLevel OrderbookSupportedLevels(string markets);
 
         /// <summary>
         /// 주문 가능 정보

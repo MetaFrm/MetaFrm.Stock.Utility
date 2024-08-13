@@ -2135,7 +2135,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
 
         #region "시세 호가 정보(Orderbook) 조회/호가 정보 조회"
-        Models.Orderbook IApi.Orderbook(string markets)
+        Models.Orderbook IApi.Orderbook(string markets, decimal level)
         {
             string? tmp;
             string[] tmps;
@@ -2221,6 +2221,11 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             }
 
             return result;
+        }
+
+        Models.OrderbookSupportedLevel IApi.OrderbookSupportedLevels(string markets)
+        {
+            throw new NotImplementedException();
         }
         #endregion
 

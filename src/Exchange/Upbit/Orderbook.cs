@@ -43,6 +43,12 @@ namespace MetaFrm.Stock.Exchange.Upbit
         public IList<OrderbookUnit>? OrderbookUnits { get; set; }
 
         /// <summary>
+        /// 호가 모아보기 단위 (default: 0, 기본 호가단위)
+        /// </summary>
+        [JsonPropertyName("level")]
+        public decimal Level { get; set; }
+
+        /// <summary>
         /// 에러
         /// </summary>
         public Error? Error { get; set; }
