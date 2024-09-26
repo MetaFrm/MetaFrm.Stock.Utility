@@ -23,6 +23,8 @@
             return tmp0 * tmp1;
         }
 
+
+        private static readonly List<string> PriceRoundPointEtc = new() { "KRW-ADA", "KRW-ALGO", "KRW-BLUR", "KRW-CELO", "KRW-ELF", "KRW-EOS", "KRW-GRS", "KRW-GRT", "KRW-ICX", "KRW-MANA", "KRW-MINA", "KRW-POL", "KRW-SAND", "KRW-SEI", "KRW-STG", "KRW-TRX" };
         /// <summary>
         /// 호가 단위
         /// </summary>
@@ -41,7 +43,10 @@
                     decimal value when value >= 100000.00M && value < 500000.00M => 50M,
                     decimal value when value >= 10000.00M && value < 100000.00M => 10M,
                     decimal value when value >= 1000.00M && value < 10000.00M => 1M,
+
+                    decimal value when value >= 100.00M && value < 1000.00M && DateTime.Now > new DateTime(2024, 10, 1) && PriceRoundPointEtc.Contains(market) => 1M,
                     decimal value when value >= 100.00M && value < 1000.00M => 0.1M,
+
                     decimal value when value >= 10.00M && value < 100.00M => 0.01M,
                     decimal value when value >= 1.00M && value < 10.00M => 0.001M,
                     decimal value when value >= 0.10M && value < 1.00M => 0.0001M,
@@ -88,7 +93,10 @@
                     decimal value when value >= 100000.00M && value < 500000.00M => price.ToString("#,###,###,##0"),
                     decimal value when value >= 10000.00M && value < 100000.00M => price.ToString("#,###,###,##0"),
                     decimal value when value >= 1000.00M && value < 10000.00M => price.ToString("#,###,###,###"),
+
+                    decimal value when value >= 100.00M && value < 1000.00M && DateTime.Now > new DateTime(2024, 10, 1) && PriceRoundPointEtc.Contains(market) => price.ToString("#,###,###,###"),
                     decimal value when value >= 100.00M && value < 1000.00M => price.ToString("#,###,###,##0.0"),
+
                     decimal value when value >= 10.00M && value < 100.00M => price.ToString("#,###,###,##0.00"),
                     decimal value when value >= 1.00M && value < 10.00M => price.ToString("#,###,###,##0.000"),
                     decimal value when value >= 0.10M && value < 1.00M => price.ToString("#,###,###,##0.0000"),
@@ -136,7 +144,10 @@
                     decimal value when value >= 100000.00M && value < 500000.00M => changePrice.ToString("#,###,###,##0"),
                     decimal value when value >= 10000.00M && value < 100000.00M => changePrice.ToString("#,###,###,##0"),
                     decimal value when value >= 1000.00M && value < 10000.00M => changePrice.ToString("#,###,###,###"),
+
+                    decimal value when value >= 100.00M && value < 1000.00M && DateTime.Now > new DateTime(2024, 10, 1) && PriceRoundPointEtc.Contains(market) => changePrice.ToString("#,###,###,###"),
                     decimal value when value >= 100.00M && value < 1000.00M => changePrice.ToString("#,###,###,##0.0"),
+
                     decimal value when value >= 10.00M && value < 100.00M => changePrice.ToString("#,###,###,##0.00"),
                     decimal value when value >= 1.00M && value < 10.00M => changePrice.ToString("#,###,###,##0.000"),
                     decimal value when value >= 0.10M && value < 1.00M => changePrice.ToString("#,###,###,##0.0000"),
