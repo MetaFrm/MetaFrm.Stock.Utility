@@ -259,7 +259,7 @@ namespace MetaFrm.Stock.Exchange
                     this.BidCancel = true;
                     this.User.RemoveSetting(this);
                     //this.Organized(this.SettingID, true, false, false, false, false, true, true);
-                    this.WorkDataList = null;
+                    //this.WorkDataList = null;
                     return;
                 }
 
@@ -403,8 +403,10 @@ namespace MetaFrm.Stock.Exchange
                                     this.User.RemoveSetting(this);
                                 }
                                 else
+                                {
                                     this.Organized(this.SettingID, true, true, false, false, false, this.IsProfitStop, this.IsProfitStop);
-                                this.WorkDataList = null;
+                                    this.WorkDataList = null;
+                                }
                                 return;
                             }
                         }
@@ -441,8 +443,10 @@ namespace MetaFrm.Stock.Exchange
                                     this.User.RemoveSetting(this);
                                 }
                                 else
+                                {
                                     this.Organized(this.SettingID, true, true, false, false, false, this.IsProfitStop, this.IsProfitStop);
-                                this.WorkDataList = null;
+                                    this.WorkDataList = null;
+                                }
                                 return;
                             }
                         }
