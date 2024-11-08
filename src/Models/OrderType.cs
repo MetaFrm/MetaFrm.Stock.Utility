@@ -19,6 +19,11 @@
         /// <summary>
         /// 시장가 주문(매도)
         /// </summary>
-        market
+        market,
+
+        /// <summary>
+        /// 시장가 주문(매수,매도)
+        /// </summary>
+        price_market,
     }
 }

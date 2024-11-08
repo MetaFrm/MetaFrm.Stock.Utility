@@ -501,13 +501,13 @@ namespace MetaFrm.Stock.Exchange
 
                             case SettingType.Schedule:
                                 string? ORDER_SIDE = item.String(nameof(ORDER_SIDE));
-                                string? ORDER_TYPE = item.String(nameof(ORDER_TYPE));
+                                string? ORDER_TYPE1 = item.String("ORDER_TYPE");
                                 int? INTERVAL = item.Int(nameof(INTERVAL));
                                 DateTime? START_DATE = item.DateTime(nameof(START_DATE));
                                 DateTime? END_DATE = item.DateTime(nameof(END_DATE));
                                 DateTime? EXECUTE_DATE = item.DateTime(nameof(EXECUTE_DATE));
 
-                                if (ORDER_SIDE != null && ORDER_TYPE != null && INTERVAL != null && START_DATE != null && END_DATE != null)
+                                if (ORDER_SIDE != null && ORDER_TYPE1 != null && INTERVAL != null && START_DATE != null && END_DATE != null)
                                     user1.AddSetting(new Schedule(user1)
                                     {
                                         SettingID = (int)SETTING_ID,
@@ -524,7 +524,7 @@ namespace MetaFrm.Stock.Exchange
                                         //Message = MESSAGE,
 
                                         OrderSide = ORDER_SIDE.EnumParse<Models.OrderSide>(),
-                                        OrderType = ORDER_TYPE.EnumParse<Models.OrderType>(),
+                                        OrderType = ORDER_TYPE1.EnumParse<Models.OrderType>(),
                                         Interval = (int)INTERVAL,
                                         StartDate = (DateTime)START_DATE,
                                         EndDate = (DateTime)END_DATE,
@@ -535,12 +535,13 @@ namespace MetaFrm.Stock.Exchange
 
 
                             case SettingType.BidAskMA:
+                                string? ORDER_TYPE2 = item.String("ORDER_TYPE");
                                 int? MINUTE_CANDLE_TYPE = item.Int(nameof(MINUTE_CANDLE_TYPE));
                                 int? LEFT_MA7 = item.Int(nameof(LEFT_MA7));
                                 int? RIGHT_MA30 = item.Int(nameof(RIGHT_MA30));
                                 int? RIGHT_MA60 = item.Int(nameof(RIGHT_MA60));
                                 decimal? STOP_LOSS_RATE = item.Decimal(nameof(STOP_LOSS_RATE));
-                                
+
                                 if (MINUTE_CANDLE_TYPE != null && LEFT_MA7 != null && RIGHT_MA30 != null && RIGHT_MA60 != null && STOP_LOSS_RATE != null)
                                     user1.AddSetting(new BidAskMA(user1)
                                     {
@@ -557,6 +558,7 @@ namespace MetaFrm.Stock.Exchange
                                         //IsProfitStop = IS_PROFIT_STOP,
                                         //Message = MESSAGE,
 
+                                        OrderType = ORDER_TYPE2.IsNullOrEmpty() ? Models.OrderType.price_market : ORDER_TYPE2.EnumParse<Models.OrderType>(),
                                         MinuteCandleType = MINUTE_CANDLE_TYPE.EnumParse<Models.MinuteCandleType>(),
                                         LeftMA7 = (int)LEFT_MA7,
                                         RightMA30 = (int)RIGHT_MA30,

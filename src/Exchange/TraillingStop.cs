@@ -113,7 +113,7 @@ namespace MetaFrm.Stock.Exchange
                 //★ 주문 리스트에서 반영되지 않은 내역 반영 Start
                 foreach (WorkData dataRow in this.WorkDataList)
                 {
-                    var bidOrder = allOrderList.SingleOrDefault(x => x.Side == "bid" && x.Price == dataRow.BidPrice && x.Volume == dataRow.BidQty);
+                    var bidOrder = allOrderList.FirstOrDefault(x => x.Side == "bid" && x.Price == dataRow.BidPrice && x.Volume == dataRow.BidQty);
                     if (bidOrder != null)
                     {
                         dataRow.BidOrder = bidOrder;
