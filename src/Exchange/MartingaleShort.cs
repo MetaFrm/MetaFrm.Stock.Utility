@@ -305,11 +305,11 @@ namespace MetaFrm.Stock.Exchange
 
                     foreach (var item in workDataDelete)
                     {
-                        $"Remove".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                        //$"Remove".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
 
                         if (item.BidOrder != null && item.BidOrder.UUID != null && item.BidOrder.UUID != "")
                         {
-                            $"CancelOrder BidUUID:{item.BidOrder.UUID}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
+                            //$"CancelOrder BidUUID:{item.BidOrder.UUID}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
 
                             var order = this.User.Api.CancelOrder(this.Market, Models.OrderSide.bid.ToString(), item.BidOrder.UUID);
 

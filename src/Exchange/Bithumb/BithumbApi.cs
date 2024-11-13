@@ -96,7 +96,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 lock (this._lock)
                     if (this.HttpClient != null)
                     {
-                        Thread.Sleep(20);
+                        Thread.Sleep(25);
 
                         var response = this.HttpClient.GetAsync(url + (nvc == null ? "" : ("?" + ToQueryString(nvc)))).Result;
                         result = response.Content.ReadAsStringAsync().Result;
@@ -139,7 +139,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 lock (this._lock)
                     if (this.HttpClient != null)
                     {
-                        Thread.Sleep(70);
+                        Thread.Sleep(75);
 
                         var requestMessage = this.BuildHttpRequestMessage(url, nvc);
                         var response = this.HttpClient.SendAsync(requestMessage).Result;

@@ -83,8 +83,8 @@ namespace MetaFrm.Stock.Exchange
 
                 if (this.Api != null)
                 {
-                    ((IAction)this.Api).Action -= Exchange_Action;
-                    ((IAction)this.Api).Action += Exchange_Action;
+                    //((IAction)this.Api).Action -= Exchange_Action;
+                    //((IAction)this.Api).Action += Exchange_Action;
                 }
             });
         }
@@ -124,6 +124,12 @@ namespace MetaFrm.Stock.Exchange
         /// <returns></returns>
         public static bool SettingValidation(int ExchangeID, int UserID, Setting setting, out string? message)
         {
+            if (Factory.Platform == Maui.Devices.DevicePlatform.Server)
+            {
+                message = "";
+                return true;
+            }
+
             if (setting.Market == null || setting.Market.IsNullOrEmpty() || setting.Market.Length < 4)
             {
                 message = "'종목'을 입력하세요.";
@@ -482,7 +488,7 @@ namespace MetaFrm.Stock.Exchange
                 this.RemoveSettingQueue.Enqueue(setting);
         }
 
-        private int StartRunDelay = 2000;
+        private int StartRunDelay = 3000;
         /// <summary>
         /// Start
         /// </summary>
