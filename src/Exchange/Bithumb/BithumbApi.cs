@@ -87,28 +87,48 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 this.HttpClient.Timeout = (TimeSpan)timeSpan;
         }
 
-        private string CallAPI_Public(string url, NameValueCollection? nvc, int reTryCount = 2)
+        private string CallAPI_Public(string url, NameValueCollection? nvc)
+        {
+            return CallAPI(url, nvc, true);
+        }
+        private string CallAPI_Private_WithParam(string url, NameValueCollection? nvc)
+        {
+            return CallAPI(url, nvc, false);
+        }
+        private string CallAPI(string url, NameValueCollection? nvc, bool is_Public)
+        {
+            try
+            {
+                lock (this._lock)
+                    return is_Public ? CallAPI_Public1(url, nvc) : CallAPI_Private_WithParam1(url, nvc);
+            }
+            catch (Exception ex)
+            {
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
+                return "";
+            }
+        }
+        private string CallAPI_Public1(string url, NameValueCollection? nvc, int reTryCount = 2)
         {
             string? result = "";
 
             try
             {
-                lock (this._lock)
-                    if (this.HttpClient != null)
+                if (this.HttpClient != null)
+                {
+                    Thread.Sleep(25);
+
+                    var response = this.HttpClient.GetAsync(url + (nvc == null ? "" : ("?" + ToQueryString(nvc)))).Result;
+                    result = response.Content.ReadAsStringAsync().Result;
+
+                    //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
+                    //100 Milliseconds 감소
+                    if (this.HttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
                     {
-                        Thread.Sleep(25);
-
-                        var response = this.HttpClient.GetAsync(url + (nvc == null ? "" : ("?" + ToQueryString(nvc)))).Result;
-                        result = response.Content.ReadAsStringAsync().Result;
-
-                        //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
-                        //100 Milliseconds 감소
-                        if (this.HttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
-                        {
-                            this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds - 100));
-                            this.CallCount = 0;
-                        }
+                        this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds - 100));
+                        this.CallCount = 0;
                     }
+                }
 
                 if (result.Contains("빗썸 서비스 점검 중"))
                     return "";
@@ -125,34 +145,33 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 this.CallCount = 0;
 
                 if (reTryCount > 0)
-                    return this.CallAPI_Public(url, nvc, reTryCount - 1);
+                    return this.CallAPI_Public1(url, nvc, reTryCount - 1);
                 else
                     return "";
             }
         }
-        private string CallAPI_Private_WithParam(string url, NameValueCollection nvc, int reTryCount = 2)
+        private string CallAPI_Private_WithParam1(string url, NameValueCollection nvc, int reTryCount = 2)
         {
             string? result = "";
 
             try
             {
-                lock (this._lock)
-                    if (this.HttpClient != null)
+                if (this.HttpClient != null)
+                {
+                    Thread.Sleep(75);
+
+                    var requestMessage = this.BuildHttpRequestMessage(url, nvc);
+                    var response = this.HttpClient.SendAsync(requestMessage).Result;
+                    result = response.Content.ReadAsStringAsync().Result;
+
+                    //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
+                    //100 Milliseconds 감소
+                    if (this.HttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
                     {
-                        Thread.Sleep(75);
-
-                        var requestMessage = this.BuildHttpRequestMessage(url, nvc);
-                        var response = this.HttpClient.SendAsync(requestMessage).Result;
-                        result = response.Content.ReadAsStringAsync().Result;
-
-                        //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
-                        //100 Milliseconds 감소
-                        if (this.HttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
-                        {
-                            this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds - 100));
-                            this.CallCount = 0;
-                        }
+                        this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds - 100));
+                        this.CallCount = 0;
                     }
+                }
 
                 if (result.Contains("빗썸 서비스 점검 중"))
                     return "";
@@ -169,7 +188,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 this.CallCount = 0;
 
                 if (reTryCount > 0)
-                    return this.CallAPI_Private_WithParam(url, nvc, reTryCount - 1);
+                    return this.CallAPI_Private_WithParam1(url, nvc, reTryCount - 1);
                 else
                     return "";
             }

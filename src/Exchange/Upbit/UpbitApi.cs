@@ -88,7 +88,20 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 this.HttpClient.Timeout = (TimeSpan)timeSpan;
         }
 
-        private string? CallAPI(string url, NameValueCollection? nameValueCollection, HttpMethod httpMethod, int reTryCount = 2)
+        private string? CallAPI(string url, NameValueCollection? nameValueCollection, HttpMethod httpMethod)
+        {
+            try
+            {
+                lock (this._lock)
+                    return this.Call_API(url, nameValueCollection, httpMethod);
+            }
+            catch (Exception ex)
+            {
+                ex.WriteMessage(false, ((IApi)this).ExchangeID);
+                return "";
+            }
+        }
+        private string? Call_API(string url, NameValueCollection? nameValueCollection, HttpMethod httpMethod, int reTryCount = 2)
         {
             string? result = "";
             HttpRequestMessage requestMessage;
@@ -97,34 +110,33 @@ namespace MetaFrm.Stock.Exchange.Upbit
             {
                 this.CallCount += 1;
 
-                lock (this._lock)
-                    if (this.HttpClient != null)
+                if (this.HttpClient != null)
+                {
+                    if (url.Contains("order"))
+                        Thread.Sleep(130);
+                    else if (url.Contains("accounts") || url.Contains("withdraw") || url.Contains("deposit") || url.Contains("status") || url.Contains("api_keys"))
+                        Thread.Sleep(40);
+                    else
+                        Thread.Sleep(110);
+
+                    requestMessage = new()
                     {
-                        if (url.Contains("order"))
-                            Thread.Sleep(130);
-                        else if (url.Contains("accounts") || url.Contains("withdraw") || url.Contains("deposit") || url.Contains("status") || url.Contains("api_keys"))
-                            Thread.Sleep(40);
-                        else
-                            Thread.Sleep(110);
-
-                        requestMessage = new()
-                        {
-                            Method = httpMethod,
-                            RequestUri = new Uri(url + (nameValueCollection == null ? "" : ToQueryString(nameValueCollection)))
-                        };
-                        requestMessage.Headers.Authorization = new("Bearer", this.JWT(nameValueCollection, ((IApi)this).AccessKey, ((IApi)this).SecretKey));
+                        Method = httpMethod,
+                        RequestUri = new Uri(url + (nameValueCollection == null ? "" : ToQueryString(nameValueCollection)))
+                    };
+                    requestMessage.Headers.Authorization = new("Bearer", this.JWT(nameValueCollection, ((IApi)this).AccessKey, ((IApi)this).SecretKey));
 
 
-                        result = this.HttpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead).Result.Content.ReadAsStringAsync().Result;
+                    result = this.HttpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead).Result.Content.ReadAsStringAsync().Result;
 
-                        //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
-                        //100 Milliseconds 감소
-                        if (this.HttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
-                        {
-                            this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds - 100));
-                            this.CallCount = 0;
-                        }
+                    //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
+                    //100 Milliseconds 감소
+                    if (this.HttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
+                    {
+                        this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds - 100));
+                        this.CallCount = 0;
                     }
+                }
 
                 return result;
             }
@@ -138,7 +150,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 this.CallCount = 0;
 
                 if (reTryCount > 0)
-                    return this.CallAPI(url, nameValueCollection, httpMethod, reTryCount - 1);
+                    return this.Call_API(url, nameValueCollection, httpMethod, reTryCount - 1);
                 else
                     return "";
             }
