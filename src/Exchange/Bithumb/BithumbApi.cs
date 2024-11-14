@@ -80,11 +80,14 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         }
         private void CreateHttpClient(TimeSpan? timeSpan)
         {
-            this.HttpClient?.Dispose();
-            this.HttpClient = null;
-            this.HttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
-            if (timeSpan != null)
-                this.HttpClient.Timeout = (TimeSpan)timeSpan;
+            if (this.HttpClient == null)
+            {
+                this.HttpClient?.Dispose();
+                this.HttpClient = null;
+                this.HttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
+                if (timeSpan != null)
+                    this.HttpClient.Timeout = (TimeSpan)timeSpan;
+            }
         }
 
         private string CallAPI_Public(string url, NameValueCollection? nvc)

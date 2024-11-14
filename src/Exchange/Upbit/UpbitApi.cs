@@ -81,11 +81,14 @@ namespace MetaFrm.Stock.Exchange.Upbit
         }
         private void CreateHttpClient(TimeSpan? timeSpan)
         {
-            this.HttpClient?.Dispose();
-            this.HttpClient = null;
-            this.HttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
-            if (timeSpan != null)
-                this.HttpClient.Timeout = (TimeSpan)timeSpan;
+            if (this.HttpClient == null)
+            {
+                this.HttpClient?.Dispose();
+                this.HttpClient = null;
+                this.HttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
+                if (timeSpan != null)
+                    this.HttpClient.Timeout = (TimeSpan)timeSpan;
+            }
         }
 
         private string? CallAPI(string url, NameValueCollection? nameValueCollection, HttpMethod httpMethod)
