@@ -19,20 +19,20 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         private readonly Task<AuthenticationState>? AuthState;
 
         private readonly object _lock = new();
-        private HttpClient? HttpClient { get; set; }
+        private readonly static HttpClient MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
         double IApi.TimeoutMilliseconds
         {
             get
             {
-                if (this.HttpClient != null)
-                    return this.HttpClient.Timeout.TotalMilliseconds;
+                if (MyHttpClient != null)
+                    return MyHttpClient.Timeout.TotalMilliseconds;
                 else
                     return 0;
             }
             set
             {
-                if (this.HttpClient != null)
-                    this.HttpClient.Timeout = TimeSpan.FromMilliseconds(value);
+                if (MyHttpClient != null)
+                    MyHttpClient.Timeout = TimeSpan.FromMilliseconds(value);
             }
         }
 
@@ -63,8 +63,6 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         /// </summary>
         public BithumbApi(bool runTickerFromWebSocket, bool runOrderResultFromWebSocket, Task<AuthenticationState>? authState)
         {
-            this.CreateHttpClient(null);
-
             this.AuthState = authState;
 
             if (runTickerFromWebSocket && !IsRunTickerFromWebSocket)
@@ -77,17 +75,6 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
             if (runOrderResultFromWebSocket && false)
                 this.RunOrderResultFromWebSocket();
-        }
-        private void CreateHttpClient(TimeSpan? timeSpan)
-        {
-            if (this.HttpClient == null)
-            {
-                this.HttpClient?.Dispose();
-                this.HttpClient = null;
-                this.HttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
-                if (timeSpan != null)
-                    this.HttpClient.Timeout = (TimeSpan)timeSpan;
-            }
         }
 
         private string CallAPI_Public(string url, NameValueCollection? nvc)
@@ -117,20 +104,16 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
             try
             {
-                if (this.HttpClient != null)
+                Thread.Sleep(25);
+
+                var response = MyHttpClient.GetAsync(url + (nvc == null ? "" : ("?" + ToQueryString(nvc)))).Result;
+                result = response.Content.ReadAsStringAsync().Result;
+
+                //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
+                //100 Milliseconds 감소
+                if (MyHttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
                 {
-                    Thread.Sleep(25);
-
-                    var response = this.HttpClient.GetAsync(url + (nvc == null ? "" : ("?" + ToQueryString(nvc)))).Result;
-                    result = response.Content.ReadAsStringAsync().Result;
-
-                    //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
-                    //100 Milliseconds 감소
-                    if (this.HttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
-                    {
-                        this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds - 100));
-                        this.CallCount = 0;
-                    }
+                    this.CallCount = 0;
                 }
 
                 if (result.Contains("빗썸 서비스 점검 중"))
@@ -141,9 +124,6 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             catch (Exception ex)
             {
                 ex.WriteMessage(false, ((IApi)this).ExchangeID);
-
-                if (this.HttpClient != null)
-                    this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds + 100));//오류 발생하면 100 Milliseconds 증가
 
                 this.CallCount = 0;
 
@@ -159,21 +139,17 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
             try
             {
-                if (this.HttpClient != null)
+                Thread.Sleep(75);
+
+                var requestMessage = this.BuildHttpRequestMessage(url, nvc);
+                var response = MyHttpClient.SendAsync(requestMessage).Result;
+                result = response.Content.ReadAsStringAsync().Result;
+
+                //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
+                //100 Milliseconds 감소
+                if (MyHttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
                 {
-                    Thread.Sleep(75);
-
-                    var requestMessage = this.BuildHttpRequestMessage(url, nvc);
-                    var response = this.HttpClient.SendAsync(requestMessage).Result;
-                    result = response.Content.ReadAsStringAsync().Result;
-
-                    //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
-                    //100 Milliseconds 감소
-                    if (this.HttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
-                    {
-                        this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds - 100));
-                        this.CallCount = 0;
-                    }
+                    this.CallCount = 0;
                 }
 
                 if (result.Contains("빗썸 서비스 점검 중"))
@@ -184,9 +160,6 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             catch (Exception ex)
             {
                 ex.WriteMessage(false, ((IApi)this).ExchangeID);
-
-                if (this.HttpClient != null)
-                    this.CreateHttpClient(TimeSpan.FromMilliseconds(this.HttpClient.Timeout.TotalMilliseconds + 100));//오류 발생하면 100 Milliseconds 증가
 
                 this.CallCount = 0;
 
@@ -2260,8 +2233,8 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             {
                 //this.JwtHeader = null;
 
-                this.HttpClient?.Dispose();
-                this.HttpClient = null;
+                MyHttpClient?.Dispose();
+                //MyHttpClient = null;
 
                 this.OrderResultFromWebSocketClose();
                 TickerFromWebSocketClose();
