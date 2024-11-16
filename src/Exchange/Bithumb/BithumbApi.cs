@@ -19,7 +19,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         private readonly Task<AuthenticationState>? AuthState;
 
         private readonly object _lock = new();
-        private readonly static HttpClient MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
+        private static HttpClient MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
         double IApi.TimeoutMilliseconds
         {
             get
@@ -125,6 +125,11 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             {
                 ex.WriteMessage(false, ((IApi)this).ExchangeID);
 
+                System.Console.WriteLine(ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
+
+                if (ex.ToString().Contains("Cannot access a disposed object"))
+                    MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
+
                 this.CallCount = 0;
 
                 if (reTryCount > 0)
@@ -160,6 +165,11 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             catch (Exception ex)
             {
                 ex.WriteMessage(false, ((IApi)this).ExchangeID);
+
+                System.Console.WriteLine(ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
+
+                if (ex.ToString().Contains("Cannot access a disposed object"))
+                    MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
 
                 this.CallCount = 0;
 
@@ -2233,7 +2243,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             {
                 //this.JwtHeader = null;
 
-                MyHttpClient?.Dispose();
+                //MyHttpClient?.Dispose();
                 //MyHttpClient = null;
 
                 this.OrderResultFromWebSocketClose();

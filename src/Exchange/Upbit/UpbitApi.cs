@@ -23,7 +23,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
         private readonly object _lock = new();
         private JwtHeader? JwtHeader;
-        private readonly static HttpClient MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
+        private static HttpClient MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
         double IApi.TimeoutMilliseconds
         {
             get
@@ -137,6 +137,11 @@ namespace MetaFrm.Stock.Exchange.Upbit
             catch (Exception ex)
             {
                 ex.WriteMessage(false, ((IApi)this).ExchangeID);
+
+                System.Console.WriteLine(ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
+
+                if (ex.ToString().Contains("Cannot access a disposed object"))
+                    MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
 
                 this.CallCount = 0;
 
@@ -1721,9 +1726,9 @@ namespace MetaFrm.Stock.Exchange.Upbit
         {
             try
             {
-                this.JwtHeader = null;
+                //this.JwtHeader = null;
 
-                MyHttpClient?.Dispose();
+                //MyHttpClient?.Dispose();
                 //MyHttpClient = null;
 
                 this.OrderResultFromWebSocketClose();
