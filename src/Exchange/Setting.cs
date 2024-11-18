@@ -237,6 +237,11 @@ namespace MetaFrm.Stock.Exchange
         /// </summary>
         public decimal? TradePrice => this.Ticker?.TradePrice;
 
+        /// <summary>
+        /// IsFirstReadWorkDataList
+        /// </summary>
+        public bool IsFirstReadWorkDataList { get; set; } = true;
+
 
         /// <summary>
         /// Setting

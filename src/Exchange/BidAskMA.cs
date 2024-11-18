@@ -93,7 +93,11 @@ namespace MetaFrm.Stock.Exchange
                 var allOrderList = allOrder.OrderList.Where(x => x.Market == this.Market);
 
 
-                this.StatusBidAskAlarmMA ??= BidAskAlarmMA.ReadStatusBidAskAlarmMA(this.SettingID, this, this.User.AuthState.Token(), this.User.AuthState.UserID(), this.ExchangeID, (int)this.MinuteCandleType, this.Market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate) ?? new();
+                if (this.StatusBidAskAlarmMA == null && this.IsFirstReadWorkDataList)
+                {
+                    this.IsFirstReadWorkDataList = false;
+                    this.StatusBidAskAlarmMA = BidAskAlarmMA.ReadStatusBidAskAlarmMA(this.SettingID, this, this.User.AuthState.Token(), this.User.AuthState.UserID(), this.ExchangeID, (int)this.MinuteCandleType, this.Market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate) ?? new();
+                }
 
                 if (!BidAskAlarmMA.Candles.ContainsKey($"{this.Market}_{(int)this.MinuteCandleType}"))
                     BidAskAlarmMA.Candles.Add($"{this.Market}_{(int)this.MinuteCandleType}", new(this.Market, this.User.Api.ExchangeID, (int)this.MinuteCandleType));

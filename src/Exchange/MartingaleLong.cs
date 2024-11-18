@@ -57,7 +57,11 @@ namespace MetaFrm.Stock.Exchange
                 //    $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingMartingaleLongTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
 
 
-                this.WorkDataList ??= ReadWorkDataList(this);
+                if (this.WorkDataList == null && this.IsFirstReadWorkDataList)
+                {
+                    this.IsFirstReadWorkDataList = false;
+                    this.WorkDataList = ReadWorkDataList(this);
+                }
 
                 this.CurrentInfo = this.GetCurrentInfo();
                 if (this.CurrentInfo == null)
