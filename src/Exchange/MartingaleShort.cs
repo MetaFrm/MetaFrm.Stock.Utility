@@ -56,7 +56,7 @@ namespace MetaFrm.Stock.Exchange
 
                 if (this.WorkDataList == null || this.Invest == 0)
                 {
-                    this.WorkDataList ??= this.ReadWorkDataList(this.User);
+                    this.WorkDataList ??= ReadWorkDataList(this);
 
                     if (this.WorkDataList == null)
                         if (this.BaseInvest == 0)

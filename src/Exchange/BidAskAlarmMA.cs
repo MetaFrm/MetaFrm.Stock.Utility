@@ -97,7 +97,7 @@ namespace MetaFrm.Stock.Exchange
             this.Rate = rate;
             this.MinuteCandleType = $"_{unit}".EnumParse<MinuteCandleType>();
 
-            this.StatusBidAskAlarmMA = ReadStatusBidAskAlarmMA(0, api.ExchangeID, unit, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate) ?? new();
+            this.StatusBidAskAlarmMA = ReadStatusBidAskAlarmMA(0, this, this.AuthState.Token(), this.AuthState.UserID(), api.ExchangeID, unit, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate) ?? new();
 
             if (this.StatusBidAskAlarmMA.TempInvest <= 0)
                 this.StatusBidAskAlarmMA.TempInvest = 1000000M;
@@ -149,7 +149,7 @@ namespace MetaFrm.Stock.Exchange
                 }
                 finally
                 {
-                    SaveStatusBidAskAlarmMA(0, this.StatusBidAskAlarmMA, this.Api.ExchangeID, candles.Unit, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
+                    SaveStatusBidAskAlarmMA(0, this, this.AuthState.Token(), this.AuthState.UserID(), this.StatusBidAskAlarmMA, this.Api.ExchangeID, candles.Unit, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
                 }
             });
         }
@@ -412,25 +412,59 @@ namespace MetaFrm.Stock.Exchange
         /// ReadStatusBidAskAlarmMA
         /// </summary>
         /// <returns></returns>
-        public static StatusBidAskAlarmMA? ReadStatusBidAskAlarmMA(int settingID, int exchangeID, int unit, string market, int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal rate)
+        public static StatusBidAskAlarmMA? ReadStatusBidAskAlarmMA(int settingID, ICore core, string token, int userID, int exchangeID, int unit, string market, int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal rate)
         {
             try
             {
                 StatusBidAskAlarmMA? result = null;
-                string path = $"Run_{settingID}_{exchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{leftMA7}_{rightMA30}_{rightMA60}_{stopLossRate:N3}_{rate:N3}.txt";
 
-                if (File.Exists(path))
+                ServiceData data = new()
                 {
-                    using (StreamReader streamReader = File.OpenText(path))
-                        result = JsonSerializer.Deserialize<StatusBidAskAlarmMA>(streamReader.ReadToEnd(), JsonSerializerOptions);
+                    TransactionScope = false,
+                    Token = token,
+                };
+                data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("SettingCurrentSub.Get");//"[dbo].[USP_SETTING_CURRENT_SUB_DATA_SEARCH]";
 
+                if (settingID == 0 && market == "KRW-BTC")
+                    data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, 1);
+                else if (settingID == 0 && market == "KRW-ETH")
+                    data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, 2);
+                else
+                    data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, settingID);
+
+                Response response;
+
+                response = core.ServiceRequest(data);
+
+                if (response.Status != Status.OK)
+                    response.Message?.WriteMessage(exchangeID, userID, settingID, market);
+                else if (response.DataSet != null && response.DataSet.DataTables.Count > 0 && response.DataSet.DataTables[0].DataRows.Count > 0 && response.DataSet.DataTables[0].DataRows[0].String("WORK_DATA") != null)
                     try
                     {
-                        File.Move(path, $"{DateTime.Now:MM dd HH mm}_{path}");
+                        result = JsonSerializer.Deserialize<StatusBidAskAlarmMA>(response.DataSet.DataTables[0].DataRows[0].String("WORK_DATA") ?? "", JsonSerializerOptions);
                     }
                     catch (Exception ex)
                     {
-                        ex.WriteMessage(true, exchangeID, null, null, market);
+                        ex.WriteMessage(true, exchangeID, userID, settingID, market);
+                    }
+
+                if (result == null)
+                {
+                    string path = $"Run_{settingID}_{exchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{leftMA7}_{rightMA30}_{rightMA60}_{stopLossRate:N3}_{rate:N3}.txt";
+
+                    if (File.Exists(path))
+                    {
+                        using (StreamReader streamReader = File.OpenText(path))
+                            result = JsonSerializer.Deserialize<StatusBidAskAlarmMA>(streamReader.ReadToEnd(), JsonSerializerOptions);
+
+                        try
+                        {
+                            File.Move(path, $"{DateTime.Now:MM dd HH mm}_{path}");
+                        }
+                        catch (Exception ex)
+                        {
+                            ex.WriteMessage(true, exchangeID, null, null, market);
+                        }
                     }
                 }
 
@@ -446,13 +480,38 @@ namespace MetaFrm.Stock.Exchange
         /// <summary>
         /// SaveStatusBidAskAlarmMA
         /// </summary>
-        public static void SaveStatusBidAskAlarmMA(int settingID, StatusBidAskAlarmMA statusBidAskAlarmMA, int exchangeID, int unit, string market, int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal rate)
+        public static void SaveStatusBidAskAlarmMA(int settingID, ICore core, string token, int userID, StatusBidAskAlarmMA statusBidAskAlarmMA, int exchangeID, int unit, string market, int leftMA7, int rightMA30, int rightMA60, decimal stopLossRate, decimal rate)
         {
             try
             {
-                string path = $"Run_{settingID}_{exchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{leftMA7}_{rightMA30}_{rightMA60}_{stopLossRate:N3}_{rate:N3}.txt";
-                using StreamWriter streamWriter = File.CreateText(path);
-                streamWriter.Write(JsonSerializer.Serialize(statusBidAskAlarmMA, JsonSerializerOptions));
+                Response response;
+
+                ServiceData data = new()
+                {
+                    ServiceName = "",
+                    TransactionScope = false,
+                    Token = token,
+                };
+                data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("SettingCurrentSub.Set");//"Batch.[dbo].[USP_SETTING_CURRENT_SUB_DATA_SAVE]";
+
+                if (settingID == 0 && market == "KRW-BTC")
+                    data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, 1);
+                else if (settingID == 0 && market == "KRW-ETH")
+                    data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, 2);
+                else
+                    data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, settingID);
+
+                data["1"].AddParameter("WORK_DATA", Database.DbType.Text, 0, JsonSerializer.Serialize(statusBidAskAlarmMA, JsonSerializerOptions));
+                data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, userID);
+
+                response = core.ServiceRequest(data);
+
+                if (response.Status != Status.OK)
+                {
+                    string path = $"Run_{settingID}_{exchangeID}_{market}_StatusBidAskAlarmMA_{unit}_{leftMA7}_{rightMA30}_{rightMA60}_{stopLossRate:N3}_{rate:N3}.txt";
+                    using StreamWriter streamWriter = File.CreateText(path);
+                    streamWriter.Write(JsonSerializer.Serialize(statusBidAskAlarmMA, JsonSerializerOptions));
+                }
             }
             catch (Exception ex)
             {

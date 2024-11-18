@@ -88,7 +88,7 @@ namespace MetaFrm.Stock.Exchange
                 //if (allOrder != null && allOrder.OrderList != null)
                 //    $"OCNT:{allOrder.OrderList.Where(x => x.Market == this.Market).Count()} - {nameof(SettingGridTrading)}".WriteMessage(this.User.ExchangeID, this.User.UserID, this.SettingID, this.Market);
 
-                this.WorkDataList ??= this.ReadWorkDataList(this.User);
+                this.WorkDataList ??= ReadWorkDataList(this);
 
                 this.CurrentInfo = this.GetCurrentInfo();
                 if (this.CurrentInfo == null)

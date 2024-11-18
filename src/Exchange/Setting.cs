@@ -268,9 +268,9 @@ namespace MetaFrm.Stock.Exchange
             if (!BID_CANCEL && !ASK_CANCEL && SAVE_WORKDATA)
             {
                 if (this.SettingType != SettingType.BidAskMA)
-                    this.SaveWorkDataList(this.User);
+                    SaveWorkDataList(this);
                 else if (this is BidAskMA bidAskMA && bidAskMA.StatusBidAskAlarmMA != null)
-                    BidAskAlarmMA.SaveStatusBidAskAlarmMA(this.SettingID, bidAskMA.StatusBidAskAlarmMA, this.ExchangeID, (int)bidAskMA.MinuteCandleType, this.Market ?? "", bidAskMA.LeftMA7, bidAskMA.RightMA30, bidAskMA.RightMA60, bidAskMA.StopLossRate, bidAskMA.Rate);
+                    BidAskAlarmMA.SaveStatusBidAskAlarmMA(this.SettingID, this, this.User.AuthState.Token(), this.User.AuthState.UserID(), bidAskMA.StatusBidAskAlarmMA, this.ExchangeID, (int)bidAskMA.MinuteCandleType, this.Market ?? "", bidAskMA.LeftMA7, bidAskMA.RightMA30, bidAskMA.RightMA60, bidAskMA.StopLossRate, bidAskMA.Rate);
             }
 
             if (this.SettingType != SettingType.BidAskMA)
@@ -912,42 +912,118 @@ namespace MetaFrm.Stock.Exchange
             });
         }
 
-        private readonly JsonSerializerOptions jsonSerializerOptions = new() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString };
-        internal void SaveWorkDataList(User user)
+        private static readonly JsonSerializerOptions jsonSerializerOptions = new() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString };
+        internal static void SaveWorkDataList(Setting setting)
         {
             try
             {
-                if (this.WorkDataList != null)
+                if (setting.WorkDataList != null)
                 {
-                    string path = $"S_WDL_{this.SettingID}.txt";
-                    using StreamWriter streamWriter = File.CreateText(path);
-                    streamWriter.Write(JsonSerializer.Serialize(this.WorkDataList, jsonSerializerOptions));
+                    if (setting.SettingType == SettingType.Grid)
+                    {
+                        string path = $"S_WDL_{setting.SettingID}.txt";
+                        using StreamWriter streamWriter = File.CreateText(path);
+                        streamWriter.Write(JsonSerializer.Serialize(setting.WorkDataList, jsonSerializerOptions));
+                    }
+                    else
+                    {
+                        Response response;
+
+                        ServiceData data = new()
+                        {
+                            ServiceName = "",
+                            TransactionScope = false,
+                            Token = setting.User?.AuthState.Token(),
+                        };
+                        data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("SettingCurrentSub.Set");//"Batch.[dbo].[USP_SETTING_CURRENT_SUB_DATA_SAVE]";
+                        data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, setting.SettingID);
+                        data["1"].AddParameter("WORK_DATA", Database.DbType.Text, 0, JsonSerializer.Serialize(setting.WorkDataList, jsonSerializerOptions));
+                        data["1"].AddParameter("USER_ID", Database.DbType.Int, 3, setting.User?.UserID);
+
+                        response = setting.ServiceRequest(data);
+
+                        if (response.Status != Status.OK)
+                        {
+                            response.Message?.WriteMessage(setting.User?.ExchangeID, setting.User?.UserID, setting.SettingID, setting.Market);
+
+                            string path = $"S_WDL_{setting.SettingID}.txt";
+                            using StreamWriter streamWriter = File.CreateText(path);
+                            streamWriter.Write(JsonSerializer.Serialize(setting.WorkDataList, jsonSerializerOptions));
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                ex.WriteMessage(true, user.ExchangeID, user.UserID, this.SettingID, this.Market);
+                ex.WriteMessage(true, setting.User?.ExchangeID, setting.User?.UserID, setting.SettingID, setting.Market);
             }
         }
-        internal List<WorkData>? ReadWorkDataList(User user)
+        internal static List<WorkData>? ReadWorkDataList(Setting setting)
         {
             try
             {
                 List<WorkData>? result = null;
-                string path = $"S_WDL_{this.SettingID}.txt";
+                string path = $"S_WDL_{setting.SettingID}.txt";
 
-                if (File.Exists(path))
+                if (setting.SettingType == SettingType.Grid)
                 {
-                    using (StreamReader streamReader = File.OpenText(path))
-                        result = JsonSerializer.Deserialize<List<WorkData>>(streamReader.ReadToEnd(), jsonSerializerOptions);
+                    if (File.Exists(path))
+                    {
+                        using (StreamReader streamReader = File.OpenText(path))
+                            result = JsonSerializer.Deserialize<List<WorkData>>(streamReader.ReadToEnd(), jsonSerializerOptions);
 
-                    try
-                    {
-                        File.Move(path, $"{DateTime.Now:MM dd HH mm}_{path}");
+                        try
+                        {
+                            File.Move(path, $"{DateTime.Now:MM dd HH mm}_{path}");
+                        }
+                        catch (Exception ex)
+                        {
+                            ex.WriteMessage(true, setting.User?.ExchangeID, setting.User?.UserID, setting.SettingID, setting.Market);
+                        }
                     }
-                    catch (Exception ex)
+                }
+                else
+                {
+                    ServiceData data = new()
                     {
-                        ex.WriteMessage(true, user.ExchangeID, user.UserID, this.SettingID, this.Market);
+                        TransactionScope = false,
+                        Token = setting.User?.AuthState.Token(),
+                    };
+                    data["1"].CommandText = "MetaFrm.Stock.Utility".GetAttribute("SettingCurrentSub.Get");//"[dbo].[USP_SETTING_CURRENT_SUB_DATA_SEARCH]";
+                    data["1"].AddParameter("SETTING_ID", Database.DbType.Int, 3, setting.SettingID);
+
+                    Response response;
+
+                    response = setting.ServiceRequest(data);
+
+                    if (response.Status != Status.OK)
+                        response.Message?.WriteMessage(setting.User?.ExchangeID, setting.User?.UserID, setting.SettingID, setting.Market);
+                    else if (response.DataSet != null && response.DataSet.DataTables.Count > 0 && response.DataSet.DataTables[0].DataRows.Count > 0 && response.DataSet.DataTables[0].DataRows[0].String("WORK_DATA") != null)
+                        try
+                        {
+                            result = JsonSerializer.Deserialize<List<WorkData>>(response.DataSet.DataTables[0].DataRows[0].String("WORK_DATA") ?? "", jsonSerializerOptions);
+                        }
+                        catch (Exception ex)
+                        {
+                            ex.WriteMessage(true, setting.User?.ExchangeID, setting.User?.UserID, setting.SettingID, setting.Market);
+                        }
+
+                    if (result == null)
+                    {
+                        if (File.Exists(path))
+                        {
+                            using (StreamReader streamReader = File.OpenText(path))
+                                result = JsonSerializer.Deserialize<List<WorkData>>(streamReader.ReadToEnd(), jsonSerializerOptions);
+
+                            try
+                            {
+                                File.Move(path, $"{DateTime.Now:MM dd HH mm}_{path}");
+                            }
+                            catch (Exception ex)
+                            {
+                                ex.WriteMessage(true, setting.User?.ExchangeID, setting.User?.UserID, setting.SettingID, setting.Market);
+                            }
+                        }
                     }
                 }
 
@@ -955,7 +1031,7 @@ namespace MetaFrm.Stock.Exchange
             }
             catch (Exception ex)
             {
-                ex.WriteMessage(true, user.ExchangeID, user.UserID, this.SettingID, this.Market);
+                ex.WriteMessage(true, setting.User?.ExchangeID, setting.User?.UserID, setting.SettingID, setting.Market);
             }
 
             return null;
