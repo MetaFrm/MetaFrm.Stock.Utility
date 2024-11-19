@@ -584,6 +584,9 @@ namespace MetaFrm.Stock.Exchange
             }
             finally
             {
+                if (this.IsChangeWorkDataList())
+                    SaveWorkDataList(this);
+
                 this.UpdateMessage(this.User, this.SettingID, this.Message ??"");
             }
         }

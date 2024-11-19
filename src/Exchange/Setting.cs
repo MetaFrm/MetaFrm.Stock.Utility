@@ -1086,6 +1086,35 @@ namespace MetaFrm.Stock.Exchange
             return null;
         }
 
+        private string WorkDataListJson = "";
+        internal bool IsChangeWorkDataList()
+        { 
+            if (this.WorkDataList == null)
+                return false;
+
+            try
+            {
+                string tmp = JsonSerializer.Serialize(this.WorkDataList, jsonSerializerOptions);
+
+                if (this.WorkDataListJson.IsNullOrEmpty())
+                {
+                    this.WorkDataListJson = tmp;
+                    return true;
+                }
+                else if (this.WorkDataListJson != tmp)
+                {
+                    this.WorkDataListJson = tmp;
+                    return true;
+                }
+                else
+                    return false;
+            }
+            catch (Exception ex)
+            {
+                ex.WriteMessage(true, this.User?.ExchangeID, this.User?.UserID, this.SettingID, this.Market);
+                return false;
+            }
+        }
 
         /// <summary>
         /// 시장가 매수

@@ -139,6 +139,9 @@ namespace MetaFrm.Stock.Exchange
                             SecondaryIndicator(this.Api, candles, market, this.MinuteCandleType, this.LeftMA7, this.RightMA30, this.RightMA60);
 
                             this.MA_Test(candles, this.StatusBidAskAlarmMA, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
+
+                            if (this.IsChangeStatusBidAskAlarmMA(this.Api.ExchangeID, market))
+                                SaveStatusBidAskAlarmMA(0, this, this.AuthState.Token(), this.AuthState.UserID(), this.StatusBidAskAlarmMA, this.Api.ExchangeID, candles.Unit, market, this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
                         }
                     }
 
@@ -579,6 +582,36 @@ namespace MetaFrm.Stock.Exchange
                 if (response.Status != Status.OK)
                     response.Message?.WriteMessage(this.Api.ExchangeID, USER_ID, null, market);
             });
+        }
+
+        private string StatusBidAskAlarmMAJson = "";
+        private bool IsChangeStatusBidAskAlarmMA(int exchangeID, string market)
+        {
+            if (this.StatusBidAskAlarmMA == null)
+                return false;
+
+            try
+            {
+                string tmp = JsonSerializer.Serialize(this.StatusBidAskAlarmMA, JsonSerializerOptions);
+
+                if (this.StatusBidAskAlarmMAJson.IsNullOrEmpty())
+                {
+                    this.StatusBidAskAlarmMAJson = tmp;
+                    return true;
+                }
+                else if (this.StatusBidAskAlarmMAJson != tmp)
+                {
+                    this.StatusBidAskAlarmMAJson = tmp;
+                    return true;
+                }
+                else
+                    return false;
+            }
+            catch (Exception ex)
+            {
+                ex.WriteMessage(true, exchangeID, null, null, market);
+                return false;
+            }
         }
     }
 }

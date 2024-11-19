@@ -1,4 +1,6 @@
-﻿namespace MetaFrm.Stock.Exchange
+﻿using System.Text.Json.Serialization;
+
+namespace MetaFrm.Stock.Exchange
 {
     /// <summary>
     /// WorkData
@@ -24,6 +26,7 @@
         /// <summary>
         /// BidOrderChecked
         /// </summary>
+        [JsonIgnore]
         public bool BidOrderChecked { get; set; }
         /// <summary>
         /// BidOrder
@@ -53,6 +56,7 @@
         /// <summary>
         /// AskOrderChecked
         /// </summary>
+        [JsonIgnore]
         public bool AskOrderChecked { get; set; }
         /// <summary>
         /// AskOrder

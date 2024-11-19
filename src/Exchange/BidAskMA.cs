@@ -1,6 +1,7 @@
 ﻿using MetaFrm.Stock.Console;
 using MetaFrm.Stock.Models;
 using System.Text;
+using System.Text.Json;
 
 namespace MetaFrm.Stock.Exchange
 {
@@ -580,6 +581,9 @@ namespace MetaFrm.Stock.Exchange
             }
             finally
             {
+                if (this.IsChangeStatusBidAskAlarmMA())
+                    BidAskAlarmMA.SaveStatusBidAskAlarmMA(this.SettingID, this, this.User.AuthState.Token(), this.User.AuthState.UserID(), this.StatusBidAskAlarmMA, this.ExchangeID, (int)this.MinuteCandleType, this.Market ?? "", this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
+
                 this.UpdateMessage(this.User, this.SettingID, this.Message ?? "");
             }
         }
@@ -679,6 +683,37 @@ namespace MetaFrm.Stock.Exchange
             if (ticker == null || ticker.TickerList == null || ticker.TickerList.Count < 1) return null;
 
             return ticker.TickerList[0];
+        }
+
+        private static readonly JsonSerializerOptions jsonSerializerOptions = new() { NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString };
+        private string StatusBidAskAlarmMAJson = "";
+        private bool IsChangeStatusBidAskAlarmMA()
+        {
+            if (this.StatusBidAskAlarmMA == null)
+                return false;
+
+            try
+            {
+                string tmp = JsonSerializer.Serialize(this.StatusBidAskAlarmMA, jsonSerializerOptions);
+
+                if (this.StatusBidAskAlarmMAJson.IsNullOrEmpty())
+                {
+                    this.StatusBidAskAlarmMAJson = tmp;
+                    return true;
+                }
+                else if (this.StatusBidAskAlarmMAJson != tmp)
+                {
+                    this.StatusBidAskAlarmMAJson = tmp;
+                    return true;
+                }
+                else
+                    return false;
+            }
+            catch (Exception ex)
+            {
+                ex.WriteMessage(true, this.User?.ExchangeID, this.User?.UserID, this.SettingID, this.Market);
+                return false;
+            }
         }
     }
 }
