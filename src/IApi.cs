@@ -23,11 +23,6 @@ namespace MetaFrm.Stock
         string SecretKey { get; set; }
 
         /// <summary>
-        /// Timeout (Milliseconds)
-        /// </summary>
-        double TimeoutMilliseconds { get; set; }
-
-        /// <summary>
         /// 전체 계좌 조회
         /// </summary>
         /// <returns></returns>

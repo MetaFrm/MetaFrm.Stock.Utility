@@ -100,6 +100,7 @@ namespace MetaFrm.Stock.Console
                 return;
 
             if (message.Contains("주문가능한") || message.Contains("주문량이 사용가능") || message.Contains("too_many_requests") || message.Contains("최소주문금액") || message.Contains("최소 주문금액")
+                || message.Contains("제출하신 주문은 귀하가 기존에 제출하신") || message.Contains("권한이 부족합니다")
                 || (Factory.DeviceInfo != null && Factory.DeviceInfo.Platform != Maui.Devices.DevicePlatform.Server))
                 return;
 

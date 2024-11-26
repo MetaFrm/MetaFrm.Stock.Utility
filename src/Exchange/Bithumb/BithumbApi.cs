@@ -2,7 +2,6 @@
 using MetaFrm.Stock.Console;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Collections.Specialized;
-using System.Net;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -19,22 +18,6 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         private readonly Task<AuthenticationState>? AuthState;
 
         private readonly object _lock = new();
-        private static HttpClient MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
-        double IApi.TimeoutMilliseconds
-        {
-            get
-            {
-                if (MyHttpClient != null)
-                    return MyHttpClient.Timeout.TotalMilliseconds;
-                else
-                    return 0;
-            }
-            set
-            {
-                if (MyHttpClient != null)
-                    MyHttpClient.Timeout = TimeSpan.FromMilliseconds(value);
-            }
-        }
 
         int IApi.ExchangeID { get; set; } = 2;
         string IApi.AccessKey { get; set; } = "";
@@ -98,7 +81,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 return "";
             }
         }
-        private string CallAPI_Public1(string url, NameValueCollection? nvc, int reTryCount = 2)
+        private string CallAPI_Public1(string url, NameValueCollection? nvc)
         {
             string? result = "";
 
@@ -106,15 +89,8 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             {
                 Thread.Sleep(25);
 
-                var response = MyHttpClient.GetAsync(url + (nvc == null ? "" : ("?" + ToQueryString(nvc)))).Result;
+                var response = Factory.HttpClientFactory.CreateClient("Exchange").GetAsync(url + (nvc == null ? "" : ("?" + ToQueryString(nvc)))).Result;
                 result = response.Content.ReadAsStringAsync().Result;
-
-                //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
-                //100 Milliseconds 감소
-                if (MyHttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
-                {
-                    this.CallCount = 0;
-                }
 
                 if (result.Contains("빗썸 서비스 점검 중"))
                     return "";
@@ -124,21 +100,12 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             catch (Exception ex)
             {
                 ex.WriteMessage(false, ((IApi)this).ExchangeID);
-
                 System.Console.WriteLine(ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
 
-                if (ex.ToString().Contains("Cannot access a disposed object"))
-                    MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
-
-                this.CallCount = 0;
-
-                if (reTryCount > 0)
-                    return this.CallAPI_Public1(url, nvc, reTryCount - 1);
-                else
-                    return "";
+                return "";
             }
         }
-        private string CallAPI_Private_WithParam1(string url, NameValueCollection nvc, int reTryCount = 2)
+        private string CallAPI_Private_WithParam1(string url, NameValueCollection nvc)
         {
             string? result = "";
 
@@ -147,15 +114,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 Thread.Sleep(75);
 
                 var requestMessage = this.BuildHttpRequestMessage(url, nvc);
-                var response = MyHttpClient.SendAsync(requestMessage).Result;
-                result = response.Content.ReadAsStringAsync().Result;
-
-                //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
-                //100 Milliseconds 감소
-                if (MyHttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
-                {
-                    this.CallCount = 0;
-                }
+                result = Factory.HttpClientFactory.CreateClient("Exchange").SendAsync(requestMessage).Result.Content.ReadAsStringAsync().Result;
 
                 if (result.Contains("빗썸 서비스 점검 중"))
                     return "";
@@ -165,18 +124,9 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             catch (Exception ex)
             {
                 ex.WriteMessage(false, ((IApi)this).ExchangeID);
-
                 System.Console.WriteLine(ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
 
-                if (ex.ToString().Contains("Cannot access a disposed object"))
-                    MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
-
-                this.CallCount = 0;
-
-                if (reTryCount > 0)
-                    return this.CallAPI_Private_WithParam1(url, nvc, reTryCount - 1);
-                else
-                    return "";
+                return "";
             }
         }
         private static string ToQueryString(NameValueCollection? nvc)

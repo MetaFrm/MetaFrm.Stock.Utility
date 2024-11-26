@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
 using System.Net.WebSockets;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -23,22 +22,6 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
         private readonly object _lock = new();
         private JwtHeader? JwtHeader;
-        private static HttpClient MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
-        double IApi.TimeoutMilliseconds
-        {
-            get
-            {
-                if (MyHttpClient != null)
-                    return MyHttpClient.Timeout.TotalMilliseconds;
-                else
-                    return 0;
-            }
-            set
-            {
-                if (MyHttpClient != null)
-                    MyHttpClient.Timeout = TimeSpan.FromMilliseconds(value);
-            }
-        }
         int IApi.ExchangeID { get; set; } = 1;
         string IApi.AccessKey { get; set; } = "";
         string IApi.SecretKey { get; set; } = "";
@@ -47,7 +30,6 @@ namespace MetaFrm.Stock.Exchange.Upbit
         private string BaseWebSocketUrlPrivate { get; set; } = "wss://api.upbit.com/websocket/v1/private";
 
         private double BaseTimeoutMin { get; set; } = 1000;
-        private int CallCount = 0;
         private int BaseTimeoutDecreaseMod { get; set; } = 200;
 
         private readonly int SocketCloseTimeOutSeconds = 60 * 5;
@@ -60,14 +42,6 @@ namespace MetaFrm.Stock.Exchange.Upbit
         private static bool IsRunTickerFromWebSocket = false;
 
         private bool IsDispose = false;
-
-        /// <summary>
-        /// UpbitApi
-        /// </summary>
-        static UpbitApi()
-        {
-            ServicePointManager.DefaultConnectionLimit = 40;
-        }
 
         /// <summary>
         /// UpbitApi
@@ -101,13 +75,8 @@ namespace MetaFrm.Stock.Exchange.Upbit
         }
         private string? Call_API(string url, NameValueCollection? nameValueCollection, HttpMethod httpMethod, int reTryCount = 2)
         {
-            string? result = "";
-            HttpRequestMessage requestMessage;
-
             try
             {
-                this.CallCount += 1;
-
                 if (url.Contains("order"))
                     Thread.Sleep(130);
                 else if (url.Contains("accounts") || url.Contains("withdraw") || url.Contains("deposit") || url.Contains("status") || url.Contains("api_keys"))
@@ -115,40 +84,21 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 else
                     Thread.Sleep(110);
 
-                requestMessage = new()
+                HttpRequestMessage requestMessage = new()
                 {
                     Method = httpMethod,
                     RequestUri = new Uri(url + (nameValueCollection == null ? "" : ToQueryString(nameValueCollection)))
                 };
                 requestMessage.Headers.Authorization = new("Bearer", this.JWT(nameValueCollection, ((IApi)this).AccessKey, ((IApi)this).SecretKey));
 
-
-                result = MyHttpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead).Result.Content.ReadAsStringAsync().Result;
-
-                //최소보다 크거나 연속으로 정상적인 호출 횟수가 BaseTimeoutDecreaseMod에 도달하면
-                //100 Milliseconds 감소
-                if (MyHttpClient.Timeout.TotalMilliseconds > this.BaseTimeoutMin && this.CallCount % this.BaseTimeoutDecreaseMod == 0)
-                {
-                    this.CallCount = 0;
-                }
-
-                return result;
+                return Factory.HttpClientFactory.CreateClient("Exchange").SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead).Result.Content.ReadAsStringAsync().Result;
             }
             catch (Exception ex)
             {
                 ex.WriteMessage(false, ((IApi)this).ExchangeID);
-
                 System.Console.WriteLine(ex.InnerException != null ? ex.InnerException.ToString() : ex.ToString());
 
-                if (ex.ToString().Contains("Cannot access a disposed object"))
-                    MyHttpClient = new(new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate });
-
-                this.CallCount = 0;
-
-                if (reTryCount > 0)
-                    return this.Call_API(url, nameValueCollection, httpMethod, reTryCount - 1);
-                else
-                    return "";
+                return "";
             }
         }
         private static string ToQueryString(NameValueCollection nameValueCollection)
