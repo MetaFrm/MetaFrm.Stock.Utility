@@ -23,7 +23,7 @@ namespace MetaFrm.Stock.Exchange
         /// <summary>
         /// Users
         /// </summary>
-        public List<User> Users { get; set; } = new();
+        public List<User> Users { get; set; } = [];
 
         /// <summary>
         /// IsUnLock
@@ -205,7 +205,7 @@ namespace MetaFrm.Stock.Exchange
         /// <returns></returns>
         public async Task<bool> Exit(bool saveWorkDataList)
         {
-            List<User> users = new();
+            List<User> users = [];
 
             lock (this.Users)
                 foreach (var user in this.Users)

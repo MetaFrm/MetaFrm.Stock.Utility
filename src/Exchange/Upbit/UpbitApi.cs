@@ -29,9 +29,6 @@ namespace MetaFrm.Stock.Exchange.Upbit
         private string BaseWebSocketUrl { get; set; } = "wss://api.upbit.com/websocket/v1";
         private string BaseWebSocketUrlPrivate { get; set; } = "wss://api.upbit.com/websocket/v1/private";
 
-        private double BaseTimeoutMin { get; set; } = 1000;
-        private int BaseTimeoutDecreaseMod { get; set; } = 200;
-
         private readonly int SocketCloseTimeOutSeconds = 60 * 5;
 
         /// <summary>
@@ -73,7 +70,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 return "";
             }
         }
-        private string? Call_API(string url, NameValueCollection? nameValueCollection, HttpMethod httpMethod, int reTryCount = 2)
+        private string? Call_API(string url, NameValueCollection? nameValueCollection, HttpMethod httpMethod)
         {
             try
             {
@@ -104,7 +101,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         private static string ToQueryString(NameValueCollection nameValueCollection)
         {
             var array = (from key in nameValueCollection.AllKeys
-                         from value in nameValueCollection.GetValues(key) ?? Array.Empty<string>()
+                         from value in nameValueCollection.GetValues(key) ?? []
                          select string.Format("{0}={1}", HttpUtility.UrlEncode(key), HttpUtility.UrlEncode(value ?? ""))).ToArray();
 
             //return "?" + string.Join("&", array);
@@ -352,7 +349,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                     if (order.Trades != null)
                     {
-                        result.Trades = new();
+                        result.Trades = [];
                         foreach (var tradeItem in order.Trades)
                         {
                             result.Trades.Add(new()
@@ -431,7 +428,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 if (list == null) return result;
 
-                result.OrderList = new();
+                result.OrderList = [];
                 foreach (var item in list)
                 {
                     Models.Order order = new()
@@ -455,7 +452,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                     if (item.Trades != null)
                     {
-                        order.Trades = new();
+                        order.Trades = [];
                         foreach (var tradeItem in item.Trades)
                         {
                             order.Trades.Add(new()
@@ -522,7 +519,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                     if (order.Trades != null)
                     {
-                        result.Trades = new();
+                        result.Trades = [];
                         foreach (var tradeItem in order.Trades)
                         {
                             order.Trades.Add(new()
@@ -603,7 +600,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                     if (order.Trades != null)
                     {
-                        result.Trades = new();
+                        result.Trades = [];
                         foreach (var tradeItem in order.Trades)
                         {
                             order.Trades.Add(new()
@@ -815,7 +812,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 if (list == null) return result;
 
-                result.DepositsList = new();
+                result.DepositsList = [];
                 foreach (var item in list)
                 {
                     result.DepositsList.Add(new()
@@ -864,7 +861,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 if (list == null) return result;
 
-                result.ApiKyesList = new();
+                result.ApiKyesList = [];
                 foreach (var item in list)
                 {
                     result.ApiKyesList.Add(new()
@@ -886,7 +883,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
 
         #region "시세 종목 조회/마켓 코드 조회"
-        private static Models.Markets MarketsDB = new() { MarketList = new() };
+        private static Models.Markets MarketsDB = new() { MarketList = [] };
         Models.Markets IApi.Markets()
         {
             string? tmp = "";
@@ -918,7 +915,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                         if (list == null) return MarketsDB;
 
-                        result.MarketList = new();
+                        result.MarketList = [];
                         foreach (var item in list)
                             result.MarketList.Add(new()
                             {
@@ -962,7 +959,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 if (list == null) return result;
 
-                result.CandlesMinuteList = new();
+                result.CandlesMinuteList = [];
                 foreach (var item in list)
                 {
                     result.CandlesMinuteList.Add(new(market, 1, (int)unit)
@@ -1009,7 +1006,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 if (list == null) return result;
 
-                result.CandlesDayList = new();
+                result.CandlesDayList = [];
                 foreach (var item in list)
                 {
                     result.CandlesDayList.Add(new()
@@ -1058,7 +1055,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 if (list == null) return result;
 
-                result.CandlesWeekList = new();
+                result.CandlesWeekList = [];
                 foreach (var item in list)
                 {
                     result.CandlesWeekList.Add(new()
@@ -1104,7 +1101,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 if (list == null) return result;
 
-                result.CandlesMonthList = new();
+                result.CandlesMonthList = [];
                 foreach (var item in list)
                 {
                     result.CandlesMonthList.Add(new()
@@ -1153,7 +1150,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 if (list == null) return result;
 
-                result.TicksList = new();
+                result.TicksList = [];
                 foreach (var item in list)
                 {
                     result.TicksList.Add(new()
@@ -1267,7 +1264,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
                     }
                 }
 
-                TickerDB.TickerList ??= new();
+                TickerDB.TickerList ??= [];
 
                 var notIn = tmps.Where(x => !TickerDB.TickerList.Select(x => x.Market).Contains(x));
 
@@ -1581,7 +1578,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 if (list == null) return result;
 
-                result.OrderbookList = new();
+                result.OrderbookList = [];
                 foreach (var item in list)
                 {
                     Models.Orderbook orderbook = new()
@@ -1597,7 +1594,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                     if (item.OrderbookUnits != null)
                     {
-                        orderbook.OrderbookUnits = new();
+                        orderbook.OrderbookUnits = [];
                         foreach (var itemUnit in item.OrderbookUnits)
                         {
                             orderbook.OrderbookUnits.Add(new()
@@ -1643,10 +1640,10 @@ namespace MetaFrm.Stock.Exchange.Upbit
 
                 if (list == null) return result;
 
-                result.OrderbookSupportedLevelList = new();
+                result.OrderbookSupportedLevelList = [];
                 foreach (var item in list)
                 {
-                    List<decimal> decimals = new();
+                    List<decimal> decimals = [];
 
                     if (item.SupportedLevels != null)
                         foreach (var item2 in item.SupportedLevels)

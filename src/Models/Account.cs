@@ -8,7 +8,7 @@
         /// <summary>
         /// AccountList
         /// </summary>
-        public List<Account> AccountList { get; set; } = new();
+        public List<Account> AccountList { get; set; } = [];
 
         /// <summary>
         /// 화폐를 의미하는 영문 대문자 코드

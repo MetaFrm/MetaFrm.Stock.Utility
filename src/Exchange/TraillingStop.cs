@@ -295,7 +295,7 @@ namespace MetaFrm.Stock.Exchange
 
             if (response.Status == Status.OK && response.DataSet != null && response.DataSet.DataTables.Count > 0 && response.DataSet.DataTables[0].DataRows.Count > 0)
             {
-                List<WorkData> workDatas = new();
+                List<WorkData> workDatas = [];
                 foreach (var item in response.DataSet.DataTables[0].DataRows)
                 {
                     workDatas.Add(new()

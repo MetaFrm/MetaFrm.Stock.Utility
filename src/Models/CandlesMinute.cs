@@ -18,7 +18,7 @@
         /// <summary>
         /// CandlesMinuteList
         /// </summary>
-        public List<CandlesMinute>? CandlesMinuteList { get; set; } = new();
+        public List<CandlesMinute>? CandlesMinuteList { get; set; } = [];
 
         /// <summary>
         /// CandlesMinute

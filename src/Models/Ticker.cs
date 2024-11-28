@@ -8,7 +8,7 @@
         /// <summary>
         /// TickerList
         /// </summary>
-        public List<Ticker> TickerList { get; set; } = new();
+        public List<Ticker> TickerList { get; set; } = [];
 
         /// <summary>
         /// ExchangeID

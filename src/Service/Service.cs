@@ -13,8 +13,8 @@ namespace MetaFrm.Stock.Service
         /// <summary>
         /// Markets
         /// </summary>
-        public static readonly Dictionary<int, Markets> Markets = new();
-        private static readonly Dictionary<int, IApi?> Apis = new();
+        public static readonly Dictionary<int, Markets> Markets = [];
+        private static readonly Dictionary<int, IApi?> Apis = [];
 
         /// <summary>
         /// Service
@@ -52,7 +52,7 @@ namespace MetaFrm.Stock.Service
             {
                 if (response.DataSet != null && response.DataSet.DataTables.Count > 0 && response.DataSet.DataTables[0].DataRows.Count > 0)
                 {
-                    Markets markets = new() { MarketList = new() };
+                    Markets markets = new() { MarketList = [] };
                     foreach (var item in response.DataSet.DataTables[0].DataRows)
                     {
                         markets.MarketList.Add(new()
@@ -94,7 +94,7 @@ namespace MetaFrm.Stock.Service
             {
                 var markets1 = api.Markets();
 
-                if (markets1 != null && markets1.MarketList != null && markets1.MarketList.Any())
+                if (markets1 != null && markets1.MarketList != null && markets1.MarketList.Count != 0)
                 {
                     string codes = string.Join(',', markets1.MarketList.Where(y => y.Market != null && y.Market.StartsWith("KRW")).Select(x => $"{(x.Market ?? "-").Split('-')[0]}-{(x.Market ?? "-").Split('-')[1]}"));
 
@@ -103,7 +103,7 @@ namespace MetaFrm.Stock.Service
 
             }
 
-            return new();
+            return [];
         }
     }
 }

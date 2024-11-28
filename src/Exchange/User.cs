@@ -46,7 +46,7 @@ namespace MetaFrm.Stock.Exchange
         /// <summary>
         /// Settings
         /// </summary>
-        public List<Setting> Settings { get; set; } = new();
+        public List<Setting> Settings { get; set; } = [];
         private readonly Queue<Setting> AddSettingQueue = new();
         private readonly Queue<Setting> RemoveSettingQueue = new();
 
@@ -488,7 +488,7 @@ namespace MetaFrm.Stock.Exchange
                 this.RemoveSettingQueue.Enqueue(setting);
         }
 
-        private int StartRunDelay = 3000;
+        private readonly int StartRunDelay = 3000;
         /// <summary>
         /// Start
         /// </summary>
@@ -507,7 +507,7 @@ namespace MetaFrm.Stock.Exchange
                 {
                     try
                     {
-                        List<Models.Order> addSettingsOrder = new();
+                        List<Models.Order> addSettingsOrder = [];
 
                         //중지 요청이면 기존 세팅을 모두 제거 큐에 입력
                         if (this.IsStopped)
@@ -651,7 +651,7 @@ namespace MetaFrm.Stock.Exchange
                                     //$"cnt >= 60:{cnt} ".WriteMessage(this.ExchangeID, this.UserID);
 
                                     Models.Markets markets = this.Api.Markets();
-                                    List<Models.Order> orders = new();
+                                    List<Models.Order> orders = [];
 
                                     if (markets != null && markets.MarketList != null)
                                     {
@@ -695,7 +695,7 @@ namespace MetaFrm.Stock.Exchange
                                             //    $"{item.Currency} Balance:{item.Balance}\tLocked:{item.Locked}".WriteMessage(this.ExchangeID, this.UserID);
 
                                             Models.Markets markets = this.Api.Markets();
-                                            List<Models.Order> orders = new();
+                                            List<Models.Order> orders = [];
 
                                             if (markets != null && markets.MarketList != null)
                                             {
@@ -714,7 +714,7 @@ namespace MetaFrm.Stock.Exchange
 
                                             if (a2.Any())
                                             {
-                                                List<Models.Order> orders = new();
+                                                List<Models.Order> orders = [];
 
                                                 foreach (var item in a2)
                                                     orders.Add(new() { Market = item.Market });

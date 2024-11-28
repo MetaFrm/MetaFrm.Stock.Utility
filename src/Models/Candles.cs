@@ -75,7 +75,7 @@
         /// <summary>
         /// 보조지표
         /// </summary>
-        public Dictionary<string, decimal?> SecondaryIndicator { get; set; } = new();
+        public Dictionary<string, decimal?> SecondaryIndicator { get; set; } = [];
 
         /// <summary>
         /// SecondaryIndicatorCount

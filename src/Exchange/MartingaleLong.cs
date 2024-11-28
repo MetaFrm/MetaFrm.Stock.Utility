@@ -281,10 +281,7 @@ namespace MetaFrm.Stock.Exchange
 
                     //매수가 된게 있다면(가장 싼 가격은 뺴고)
                     List<WorkData> workDataDelete;
-                    workDataDelete = new List<WorkData>();
-
-                    foreach (var item in workDataList)
-                        workDataDelete.Add(item);
+                    workDataDelete = [.. workDataList];
 
                     foreach (var item in workDataDelete)
                     {
@@ -603,7 +600,7 @@ namespace MetaFrm.Stock.Exchange
 
             if (response.Status == Status.OK && response.DataSet != null && response.DataSet.DataTables.Count > 0 && response.DataSet.DataTables[0].DataRows.Count > 0)
             {
-                List<WorkData> workDatas = new();
+                List<WorkData> workDatas = [];
                 foreach (var item in response.DataSet.DataTables[0].DataRows)
                 {
                     workDatas.Add(new()

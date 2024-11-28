@@ -21,7 +21,7 @@ namespace MetaFrm.Stock.Exchange
         /// <summary>
         /// Candles
         /// </summary>
-        public static Dictionary<string, CandlesMinute> Candles { get; set; } = new();
+        public static Dictionary<string, CandlesMinute> Candles { get; set; } = [];
 
         /// <summary>
         /// MinuteCandleType

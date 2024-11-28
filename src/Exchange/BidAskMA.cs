@@ -105,6 +105,8 @@ namespace MetaFrm.Stock.Exchange
 
                 this.Candles ??= BidAskAlarmMA.Candles[$"{this.Market}_{(int)this.MinuteCandleType}"];
 
+                if (this.StatusBidAskAlarmMA == null)
+                    return;
 
                 //세팅 처음 시작시 매수 주문을 미리 생성해 놓는다 -> KRW lock
                 if (this.StatusBidAskAlarmMA.CurrentStatus == "" || this.StatusBidAskAlarmMA.CurrentStatus == "손절")
@@ -300,7 +302,7 @@ namespace MetaFrm.Stock.Exchange
                         }
                         else if (bidOrder.State == "cancel")
                         {
-                            var order = this.BidOrder(this.Market, bidOrder.Price, this.User.Api, this.StatusBidAskAlarmMA, this.User.UserID);
+                            var order = this.BidOrder(this.Market, bidOrder.Price, this.User.Api, this.User.UserID);
                             if (order != null)
                                 this.StatusBidAskAlarmMA.BidOrder = order;
                             return;
@@ -482,7 +484,7 @@ namespace MetaFrm.Stock.Exchange
                                             }
                                             else
                                             {
-                                                order = this.BidOrder(this.Market, item.TradePrice, this.User.Api, this.StatusBidAskAlarmMA, this.User.UserID);
+                                                order = this.BidOrder(this.Market, item.TradePrice, this.User.Api, this.User.UserID);
 
                                                 if (order != null)
                                                 {
@@ -581,13 +583,13 @@ namespace MetaFrm.Stock.Exchange
             }
             finally
             {
-                if (this.IsChangeStatusBidAskAlarmMA())
+                if (this.IsChangeStatusBidAskAlarmMA() && this.StatusBidAskAlarmMA != null)
                     BidAskAlarmMA.SaveStatusBidAskAlarmMA(this.SettingID, this, this.User.AuthState.Token(), this.User.AuthState.UserID(), this.StatusBidAskAlarmMA, this.ExchangeID, (int)this.MinuteCandleType, this.Market ?? "", this.LeftMA7, this.RightMA30, this.RightMA60, this.StopLossRate, this.Rate);
 
                 this.UpdateMessage(this.User, this.SettingID, this.Message ?? "");
             }
         }
-        private Order? BidOrder(string market, decimal price, IApi api, StatusBidAskAlarmMA statusBidAskAlarmMA, int userID)
+        private Order? BidOrder(string market, decimal price, IApi api, int userID)
         {
             this.Fees = DefaultFees(this.ExchangeID);
 

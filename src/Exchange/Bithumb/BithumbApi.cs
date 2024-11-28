@@ -25,10 +25,6 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         internal string BaseUrl { get; set; } = "https://api.bithumb.com";
         private string BaseWebSocketUrl { get; set; } = "wss://pubwss.bithumb.com/pub/ws";
 
-        private double BaseTimeoutMin { get; set; } = 1000;
-        private int CallCount = 0;
-        private int BaseTimeoutDecreaseMod { get; set; } = 200;
-
         private readonly int SocketCloseTimeOutSeconds = 60 + 30;
 
         /// <summary>
@@ -73,7 +69,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             try
             {
                 lock (this._lock)
-                    return is_Public ? CallAPI_Public1(url, nvc) : CallAPI_Private_WithParam1(url, nvc);
+                    return is_Public ? CallAPI_Public1(url, nvc) : CallAPI_Private_WithParam1(url, nvc ?? []);
             }
             catch (Exception ex)
             {
@@ -83,7 +79,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         }
         private string CallAPI_Public1(string url, NameValueCollection? nvc)
         {
-            string? result = "";
+            string? result;
 
             try
             {
@@ -107,7 +103,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         }
         private string CallAPI_Private_WithParam1(string url, NameValueCollection nvc)
         {
-            string? result = "";
+            string? result;
 
             try
             {
@@ -134,7 +130,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             if (nvc == null) { return ""; }
 
             var array = (from key in nvc.AllKeys
-                         from value in nvc.GetValues(key) ?? Array.Empty<string>()
+                         from value in nvc.GetValues(key) ?? []
                          select string.Format("{0}={1}", key, value))
                 .ToArray();
 
@@ -495,7 +491,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             return result;
         }
 
-        private readonly List<BithumbOrder> BithumbOrders = new();
+        private readonly List<BithumbOrder> BithumbOrders = [];
         Models.Order IApi.Order(string market, string sideName, string uuid)
         {
             string? tmp;
@@ -596,7 +592,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                                     if (contract != null)
                                     {
-                                        result.Trades = new();
+                                        result.Trades = [];
                                         foreach (var contractItem in contract)
                                         {
                                             Models.Trade trade = new()
@@ -659,7 +655,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             {
                 account = (this as IApi).Account();
 
-                orderList = new List<Models.Order>();
+                orderList = [];
 
                 if (account.AccountList != null)
                 {
@@ -711,7 +707,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 if ((list.Code != "5600" && list.Message != "거래 진행중인 내역이 존재하지 않습니다.") && list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Datas == null) return result;
 
-                result.OrderList = new();
+                result.OrderList = [];
 
                 foreach (var itemOrder in list.Datas)
                 {
@@ -1109,7 +1105,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Datas == null) return result;
 
-                result.DepositsList = new();
+                result.DepositsList = [];
 
                 foreach (var itemOrder in list.Datas)
                 {
@@ -1166,21 +1162,21 @@ namespace MetaFrm.Stock.Exchange.Bithumb
             else
                 return new()
                 {
-                    ApiKyesList = new()
-                {
-                    new()
-                    {
-                        AccessKey = ((IApi)this).AccessKey,
-                        ExpireAt = DateTime.Now.AddYears(10),
-                    }
-                }
+                    ApiKyesList =
+                    [
+                        new()
+                        {
+                            AccessKey = ((IApi)this).AccessKey,
+                            ExpireAt = DateTime.Now.AddYears(10),
+                        }
+                    ]
                 };
         }
         #endregion
 
 
         #region "시세 종목 조회/마켓 코드 조회"
-        private static Models.Markets MarketsDB = new() { MarketList = new() };
+        private static Models.Markets MarketsDB = new() { MarketList = [] };
         Models.Markets IApi.Markets()
         {
             Models.Ticker ticker1;
@@ -1218,7 +1214,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                             return MarketsDB;
                         }
 
-                        result.MarketList = new();
+                        result.MarketList = [];
                         if (ticker1.TickerList != null && ticker1.TickerList.Count > 0)
                         {
                             if (ticker2.TickerList != null && ticker2.TickerList.Count > 0)
@@ -1290,7 +1286,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
 
-                result.CandlesMinuteList = new();
+                result.CandlesMinuteList = [];
                 foreach (var item in list.Data)
                 {
                     if (item.ValueKind == JsonValueKind.Array && item is JsonElement element)
@@ -1379,7 +1375,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
 
-                result.CandlesDayList = new();
+                result.CandlesDayList = [];
                 foreach (var item in list.Data)
                 {
                     if (item.ValueKind == JsonValueKind.Array && item is JsonElement element)
@@ -1480,7 +1476,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Datas == null) return result;
 
-                result.TicksList = new();
+                result.TicksList = [];
 
                 foreach (var itemOrder in list.Datas)
                 {
@@ -1604,7 +1600,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                     }
                 }
 
-                TickerDB.TickerList ??= new();
+                TickerDB.TickerList ??= [];
 
                 var notIn = tmps.Where(x => !TickerDB.TickerList.Select(x => x.Market).Contains(x));
 
@@ -2116,7 +2112,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 if (list.Code != "0000") { result.Error = GetError(list.Code, list.Message); return result; }
                 if (list.Data == null) return result;
 
-                result.OrderbookList = new();
+                result.OrderbookList = [];
                 foreach (var item in list.Data)
                 {
                     if (item.Value.ValueKind == JsonValueKind.String)
@@ -2150,7 +2146,7 @@ namespace MetaFrm.Stock.Exchange.Bithumb
 
                     if (tmpBidsList != null && tmpAsksList != null && tmpBidsList.Length == 15 && tmpAsksList.Length == 15)
                     {
-                        result.OrderbookUnits = new();
+                        result.OrderbookUnits = [];
                         for (int i = 0; i < 15; i++)
                         {
                             result.OrderbookUnits.Add(new()
@@ -2212,20 +2208,15 @@ namespace MetaFrm.Stock.Exchange.Bithumb
         }
     }
 
-    internal class BithumbOrder
+    internal class BithumbOrder(Models.Order order)
     {
         /// <summary>
         /// Order
         /// </summary>
-        public Models.Order Order { get; set; }
+        public Models.Order Order { get; set; } = order;
         /// <summary>
         /// 주문 생성 시간
         /// </summary>
         public DateTime InsertDateTime { get; set; } = DateTime.Now;
-
-        public BithumbOrder(Models.Order order)
-        {
-            this.Order = order;
-        }
     }
 }

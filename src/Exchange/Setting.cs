@@ -8,12 +8,16 @@ namespace MetaFrm.Stock.Exchange
     /// <summary>
     /// Setting
     /// </summary>
-    public class Setting : ISettingAction
+    /// <remarks>
+    /// Setting
+    /// </remarks>
+    /// <param name="user"></param>
+    public class Setting(User? user) : ISettingAction
     {
         /// <summary>
         /// User
         /// </summary>
-        public User? User { get; set; }
+        public User? User { get; set; } = user;
 
         /// <summary>
         /// SettingID
@@ -241,16 +245,6 @@ namespace MetaFrm.Stock.Exchange
         /// IsFirstReadWorkDataList
         /// </summary>
         public bool IsFirstReadWorkDataList { get; set; } = true;
-
-
-        /// <summary>
-        /// Setting
-        /// </summary>
-        /// <param name="user"></param>
-        public Setting(User? user)
-        { 
-            this.User = user;
-        }
 
         /// <summary>
         /// Organized
