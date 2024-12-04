@@ -558,7 +558,7 @@ namespace MetaFrm.Stock.Exchange
                                         //IsProfitStop = IS_PROFIT_STOP,
                                         //Message = MESSAGE,
 
-                                        OrderType = ORDER_TYPE2.IsNullOrEmpty() ? Models.OrderType.price_market : ORDER_TYPE2.EnumParse<Models.OrderType>(),
+                                        OrderType = string.IsNullOrEmpty(ORDER_TYPE2) ? Models.OrderType.price_market : ORDER_TYPE2.EnumParse<Models.OrderType>(),
                                         MinuteCandleType = MINUTE_CANDLE_TYPE.EnumParse<Models.MinuteCandleType>(),
                                         LeftMA7 = (int)LEFT_MA7,
                                         RightMA30 = (int)RIGHT_MA30,
