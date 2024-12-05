@@ -2,6 +2,7 @@
 using MetaFrm.Service;
 using MetaFrm.Stock.Console;
 using Microsoft.AspNetCore.Components.Authorization;
+using System.Collections.Concurrent;
 using System.Text;
 
 namespace MetaFrm.Stock.Exchange
@@ -47,8 +48,7 @@ namespace MetaFrm.Stock.Exchange
         /// Settings
         /// </summary>
         public List<Setting> Settings { get; set; } = [];
-        private readonly Queue<Setting> AddSettingQueue = new();
-        private readonly Queue<Setting> RemoveSettingQueue = new();
+        private readonly ConcurrentQueue<Setting> SettingQueue = new();
 
         /// <summary>
         /// Orders
@@ -111,7 +111,7 @@ namespace MetaFrm.Stock.Exchange
 
             lock (this.Settings)
                 if (!this.Settings.Any(x => x.SettingID == setting.SettingID))
-                    this.AddSettingQueue.Enqueue(setting);
+                    this.SettingQueue.Enqueue(setting);
         }
 
         /// <summary>
@@ -485,7 +485,10 @@ namespace MetaFrm.Stock.Exchange
         public void RemoveSetting(Setting setting)
         {
             if (this.Settings.Contains(setting))
-                this.RemoveSettingQueue.Enqueue(setting);
+            {
+                setting.IsDelete = true;
+                this.SettingQueue.Enqueue(setting);
+            }
         }
 
         private readonly int StartRunDelay = 3000;
@@ -509,114 +512,114 @@ namespace MetaFrm.Stock.Exchange
                     {
                         List<Models.Order> addSettingsOrder = [];
 
-                        //중지 요청이면 기존 세팅을 모두 제거 큐에 입력
-                        if (this.IsStopped)
-                            foreach (var item in this.Settings)
-                                this.RemoveSettingQueue.Enqueue(item);
-
                         lock (this.Settings)
                         {
-                            while (this.RemoveSettingQueue.Count > 0)
-                            {
-                                bool isContains = false;
-
-                                var setting = this.RemoveSettingQueue.Dequeue();
-
-                                isContains = this.Settings.Contains(setting);
-
-                                if (isContains)
+                            //중지 요청이면 기존 세팅을 모두 제거 큐에 입력
+                            if (this.IsStopped)
+                                foreach (var item in this.Settings)
                                 {
-                                    if (this.SaveWorkDataList)//서버 프로그램 종료시 저장
-                                    {
-                                        if (setting.SettingType == SettingType.GridMartingaleShort)
-                                        {
-                                            setting.SaveLossStack(this);
+                                    item.IsDelete = true;
+                                    this.SettingQueue.Enqueue(item);
+                                }
 
-                                            (((GridMartingaleShort)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true, false);
-                                        }
-                                        else if (setting.SettingType == SettingType.GridMartingaleLong)
-                                        {
-                                            setting.SaveLossStack(this);
+                            while (this.SettingQueue.TryDequeue(out Setting? setting))
+                            {
+                                if (setting == null)
+                                    continue;
 
-                                            (((GridMartingaleLong)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true, false);
-                                        }
-                                        else
-                                            (setting as ISettingAction).Organized(setting.SettingID, false, false, false, false, true, true, false);
-                                    }
-                                    else
+                                if (!setting.IsDelete)//세팅 추가
+                                {
+                                    setting.User = this;
+
+                                    this.Settings.Add(setting);
+                                    $"Added {setting.SettingTypeString}".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
+
+                                    if (Exchanger.IsUnLock)
+                                        setting.SettingInOut(setting.User, setting.SettingID, true);
+
+                                    if (setting.Market != null)
+                                        addSettingsOrder.Add(new() { Market = setting.Market });
+                                }
+                                else//세팅 삭제
+                                {
+                                    if (this.Settings.Contains(setting))
                                     {
-                                        //사용자 세팅 중지 요청
-                                        if (setting.BidCancel || setting.AskCancel || setting.AskCurrentPrice || setting.BidCurrentPrice)
+                                        if (this.SaveWorkDataList)//서버 프로그램 종료시 저장
                                         {
                                             if (setting.SettingType == SettingType.GridMartingaleShort)
                                             {
-                                                GridMartingaleShort set2 = (GridMartingaleShort)setting;
+                                                setting.SaveLossStack(this);
 
-                                                if (set2.Current?.SettingType == SettingType.MartingaleShort)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
-                                                else if (set2.Current?.SettingType == SettingType.Grid)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                                (((GridMartingaleShort)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true, false);
                                             }
                                             else if (setting.SettingType == SettingType.GridMartingaleLong)
                                             {
-                                                GridMartingaleLong set2 = (GridMartingaleLong)setting;
+                                                setting.SaveLossStack(this);
 
-                                                if (set2.Current?.SettingType == SettingType.MartingaleLong)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
-                                                else if (set2.Current?.SettingType == SettingType.Grid)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                                (((GridMartingaleLong)setting).Current as ISettingAction)?.Organized(setting.SettingID, false, false, false, false, true, true, false);
                                             }
                                             else
-                                                (setting as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                                (setting as ISettingAction).Organized(setting.SettingID, false, false, false, false, true, true, false);
                                         }
                                         else
                                         {
-                                            //서버 프로그램에서 개별 세팅 중지
-                                            if (setting.SettingType == SettingType.MartingaleShort)
-                                                (setting as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true, true);
-
-                                            else if (setting.SettingType == SettingType.GridMartingaleShort)
+                                            //사용자 세팅 중지 요청
+                                            if (setting.BidCancel || setting.AskCancel || setting.AskCurrentPrice || setting.BidCurrentPrice)
                                             {
-                                                GridMartingaleShort set2 = (GridMartingaleShort)setting;
+                                                if (setting.SettingType == SettingType.GridMartingaleShort)
+                                                {
+                                                    GridMartingaleShort set2 = (GridMartingaleShort)setting;
 
-                                                if (set2.Current?.SettingType == SettingType.MartingaleShort)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true, true);
-                                                else if (set2.Current?.SettingType == SettingType.Grid)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
-                                            }
-                                            else if (setting.SettingType == SettingType.GridMartingaleLong)
-                                            {
-                                                GridMartingaleLong set2 = (GridMartingaleLong)setting;
+                                                    if (set2.Current?.SettingType == SettingType.MartingaleShort)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                                    else if (set2.Current?.SettingType == SettingType.Grid)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                                }
+                                                else if (setting.SettingType == SettingType.GridMartingaleLong)
+                                                {
+                                                    GridMartingaleLong set2 = (GridMartingaleLong)setting;
 
-                                                if (set2.Current?.SettingType == SettingType.MartingaleLong)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
-                                                else if (set2.Current?.SettingType == SettingType.Grid)
-                                                    (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                                    if (set2.Current?.SettingType == SettingType.MartingaleLong)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                                    else if (set2.Current?.SettingType == SettingType.Grid)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
+                                                }
+                                                else
+                                                    (setting as ISettingAction).Organized(setting.SettingID, setting.BidCancel, setting.AskCancel, setting.AskCurrentPrice, setting.BidCurrentPrice, false, true, true);
                                             }
                                             else
-                                                (setting as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                            {
+                                                //서버 프로그램에서 개별 세팅 중지
+                                                if (setting.SettingType == SettingType.MartingaleShort)
+                                                    (setting as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true, true);
+
+                                                else if (setting.SettingType == SettingType.GridMartingaleShort)
+                                                {
+                                                    GridMartingaleShort set2 = (GridMartingaleShort)setting;
+
+                                                    if (set2.Current?.SettingType == SettingType.MartingaleShort)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, false, true, false, false, false, true, true);
+                                                    else if (set2.Current?.SettingType == SettingType.Grid)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                                }
+                                                else if (setting.SettingType == SettingType.GridMartingaleLong)
+                                                {
+                                                    GridMartingaleLong set2 = (GridMartingaleLong)setting;
+
+                                                    if (set2.Current?.SettingType == SettingType.MartingaleLong)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                                    else if (set2.Current?.SettingType == SettingType.Grid)
+                                                        (set2.Current as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                                }
+                                                else
+                                                    (setting as ISettingAction).Organized(setting.SettingID, true, false, false, false, false, true, true);
+                                            }
                                         }
+
+                                        this.Settings.Remove(setting);
+                                        $"Removed setting".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
                                     }
-
-                                    this.Settings.Remove(setting);
-                                    $"Removed setting".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
                                 }
-                            }
-
-                            while (this.AddSettingQueue.Count > 0)
-                            {
-                                var setting = this.AddSettingQueue.Dequeue();
-
-                                setting.User = this;
-
-                                this.Settings.Add(setting);
-                                $"Added {setting.SettingTypeString}".WriteMessage(this.ExchangeID, this.UserID, setting.SettingID, setting.Market, ConsoleColor.Yellow);
-
-                                if (Exchanger.IsUnLock)
-                                    setting.SettingInOut(setting.User, setting.SettingID, true);
-
-                                if (setting.Market != null)
-                                    addSettingsOrder.Add(new() { Market = setting.Market });
                             }
 
                             //중지 요청이고 세팅이 모두 제거 되었다면 while 빠져나가기
@@ -803,7 +806,7 @@ namespace MetaFrm.Stock.Exchange
             if (e.Action == "OrderExecution" && e.Value != null && e.Value is Models.Order order)
             {
                 //$"OrderExecution {order.Side} {order.Price} {order.ExecutedVolume} {order.UUID}".WriteMessage(this.ExchangeID, this.UserID, null, order.Market, ConsoleColor.Cyan);
-                if (this.Api != null && !this.RemoveSettingQueue.Any(x => x.Market == order.Market))
+                if (this.Api != null && !this.SettingQueue.Any(x => x.Market == order.Market && x.IsDelete))
                 {
                     bool isAny = false;
 

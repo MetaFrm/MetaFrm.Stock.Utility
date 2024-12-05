@@ -247,6 +247,11 @@ namespace MetaFrm.Stock.Exchange
         public bool IsFirstReadWorkDataList { get; set; } = true;
 
         /// <summary>
+        /// IsDelete
+        /// </summary>
+        public bool IsDelete { get; set; } = false;
+
+        /// <summary>
         /// Organized
         /// </summary>
         /// <param name="SETTING_ID"></param>
