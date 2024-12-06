@@ -171,7 +171,7 @@ namespace MetaFrm.Stock.Exchange
 
                 while (true)
                 {
-                    await Task.Delay(3000);
+                    await Task.Delay(2000);
 
                     lock (user.Settings)
                         if (user.Settings.Count != 0)
@@ -222,7 +222,7 @@ namespace MetaFrm.Stock.Exchange
                 if (this.BidAskAlarmMA_ETH != null)
                     this.BidAskAlarmMA_ETH.IsRunReciveData = false;
 
-                await Task.Delay(10000);
+                await Task.Delay(5000);
 
                 int count = 0;
 

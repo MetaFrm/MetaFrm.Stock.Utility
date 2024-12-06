@@ -484,11 +484,8 @@ namespace MetaFrm.Stock.Exchange
         /// <param name="setting"></param>
         public void RemoveSetting(Setting setting)
         {
-            if (this.Settings.Contains(setting))
-            {
-                setting.IsDelete = true;
-                this.SettingQueue.Enqueue(setting);
-            }
+            setting.IsDelete = true;
+            this.SettingQueue.Enqueue(setting);
         }
 
         private readonly int StartRunDelay = 3000;
@@ -542,7 +539,25 @@ namespace MetaFrm.Stock.Exchange
                                 }
                                 else//세팅 삭제
                                 {
-                                    if (this.Settings.Contains(setting))
+                                    if (!this.Settings.Contains(setting))
+                                    {
+                                        var sel = Settings.SingleOrDefault(x => x.SettingID == setting.SettingID);
+
+                                        if (sel != null)
+                                        {
+                                            sel.IsDelete = true;
+                                            sel.BidCancel = setting.BidCancel;
+                                            sel.AskCancel = setting.AskCancel;
+                                            sel.AskCurrentPrice = setting.AskCurrentPrice;
+                                            sel.BidCurrentPrice = setting.BidCurrentPrice;
+
+                                            setting = sel;
+                                        }
+                                        else
+                                            setting = null;
+                                    }
+
+                                    if (setting != null && this.Settings.Contains(setting))
                                     {
                                         if (this.SaveWorkDataList)//서버 프로그램 종료시 저장
                                         {
