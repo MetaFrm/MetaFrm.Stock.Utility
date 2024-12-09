@@ -957,21 +957,31 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 $"Start : RunOrderResultFromWebSocket".WriteMessage(((IApi)this).ExchangeID);
                 while (true)
                 {
-                    await Task.Delay(2000);
+                    await Task.Delay(1500);
 
                     if (this.IsDispose) break;
 
-                    if (this.WebSocketOrder == null)
+                    object? obj = Config.Client.GetAttribute("App.Status");
+                    string status = "Run";
+
+                    if (obj != null && obj is string tmp)
+                        status = tmp;
+
+                    if ((Factory.Platform != Maui.Devices.DevicePlatform.Android && Factory.Platform != Maui.Devices.DevicePlatform.iOS)
+                    || ((Factory.Platform == Maui.Devices.DevicePlatform.Android || Factory.Platform == Maui.Devices.DevicePlatform.iOS) && status == "Run"))
                     {
-                        this.RunOrderResultFromWebSocketDateTime = DateTime.Now;
-                        this.WebSocketOrder = new ClientWebSocket();
-                        this.OrderResultFromWebSocket(((IApi)this).AccessKey, ((IApi)this).SecretKey);
+                        if (this.WebSocketOrder == null)
+                        {
+                            this.RunOrderResultFromWebSocketDateTime = DateTime.Now;
+                            this.WebSocketOrder = new ClientWebSocket();
+                            this.OrderResultFromWebSocket(((IApi)this).AccessKey, ((IApi)this).SecretKey);
+                        }
                     }
 
                     if ((DateTime.Now - this.RunOrderResultFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
                     {
                         this.OrderResultFromWebSocketClose();
-                        $"OrderResultFromWebSocketClose(RunOrderResultFromWebSocket)\"".WriteMessage(((IApi)this).ExchangeID);
+                        //$"OrderResultFromWebSocketClose(RunOrderResultFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
                     }
                 }
             });
@@ -1828,11 +1838,21 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                 {
                     if (this.IsDispose) break;
 
-                    if (WebSocketTickerDB == null)
+                    object? obj = Config.Client.GetAttribute("App.Status");
+                    string status = "Run";
+
+                    if (obj != null && obj is string tmp)
+                        status = tmp;
+
+                    if ((Factory.Platform != Maui.Devices.DevicePlatform.Android && Factory.Platform != Maui.Devices.DevicePlatform.iOS)
+                    || ((Factory.Platform == Maui.Devices.DevicePlatform.Android || Factory.Platform == Maui.Devices.DevicePlatform.iOS) && status == "Run"))
                     {
-                        RunTickerFromWebSocketDateTime = DateTime.Now;
-                        WebSocketTickerDB = new ClientWebSocket();
-                        this.TickerFromWebSocket();
+                        if (WebSocketTickerDB == null)
+                        {
+                            RunTickerFromWebSocketDateTime = DateTime.Now;
+                            WebSocketTickerDB = new ClientWebSocket();
+                            this.TickerFromWebSocket();
+                        }
                     }
 
                     if ((DateTime.Now - RunTickerFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
@@ -1841,7 +1861,15 @@ namespace MetaFrm.Stock.Exchange.Bithumb
                         //$"TickerFromWebSocketClose(RunTickerFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
                     }
 
-                    await Task.Delay(2000);
+                    if (Factory.Platform == Maui.Devices.DevicePlatform.Android || Factory.Platform == Maui.Devices.DevicePlatform.iOS)
+                    {
+                        if (status == "Run")
+                            await Task.Delay(3000);
+                        else
+                            await Task.Delay(6000);
+                    }
+                    else
+                        await Task.Delay(1500);
                 }
             });
         }

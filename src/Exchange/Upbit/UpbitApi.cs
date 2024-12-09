@@ -29,7 +29,7 @@ namespace MetaFrm.Stock.Exchange.Upbit
         private string BaseWebSocketUrl { get; set; } = "wss://api.upbit.com/websocket/v1";
         private string BaseWebSocketUrlPrivate { get; set; } = "wss://api.upbit.com/websocket/v1/private";
 
-        private readonly int SocketCloseTimeOutSeconds = 60 * 5;
+        private readonly int SocketCloseTimeOutSeconds = (Factory.Platform != Maui.Devices.DevicePlatform.Android && Factory.Platform != Maui.Devices.DevicePlatform.iOS) ? 60 * 5 : 60 + 35;
 
         /// <summary>
         /// Action event Handler입니다.
@@ -646,15 +646,25 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 $"Start : RunOrderResultFromWebSocket".WriteMessage(((IApi)this).ExchangeID);
                 while (true)
                 {
-                    await Task.Delay(2000);
+                    await Task.Delay(1500);
 
                     if (this.IsDispose) break;
 
-                    if (this.WebSocketOrder == null)
+                    object? obj = Config.Client.GetAttribute("App.Status");
+                    string status = "Run";
+
+                    if (obj != null && obj is string tmp)
+                        status = tmp;
+
+                    if ((Factory.Platform != Maui.Devices.DevicePlatform.Android && Factory.Platform != Maui.Devices.DevicePlatform.iOS)
+                    || ((Factory.Platform == Maui.Devices.DevicePlatform.Android || Factory.Platform == Maui.Devices.DevicePlatform.iOS) && status == "Run"))
                     {
-                        this.RunOrderResultFromWebSocketDateTime = DateTime.Now;
-                        this.WebSocketOrder = new ClientWebSocket();
-                        this.OrderResultFromWebSocket(((IApi)this).AccessKey, ((IApi)this).SecretKey);
+                        if (this.WebSocketOrder == null)
+                        {
+                            this.RunOrderResultFromWebSocketDateTime = DateTime.Now;
+                            this.WebSocketOrder = new ClientWebSocket();
+                            this.OrderResultFromWebSocket(((IApi)this).AccessKey, ((IApi)this).SecretKey);
+                        }
                     }
 
                     if ((DateTime.Now - this.RunOrderResultFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
@@ -1366,11 +1376,21 @@ namespace MetaFrm.Stock.Exchange.Upbit
                 {
                     if (this.IsDispose) break;
 
-                    if (WebSocketTickerDB == null)
+                    object? obj = Config.Client.GetAttribute("App.Status");
+                    string status = "Run";
+
+                    if (obj != null && obj is string tmp)
+                        status = tmp;
+
+                    if ((Factory.Platform != Maui.Devices.DevicePlatform.Android && Factory.Platform != Maui.Devices.DevicePlatform.iOS)
+                    || ((Factory.Platform == Maui.Devices.DevicePlatform.Android || Factory.Platform == Maui.Devices.DevicePlatform.iOS) && status == "Run"))
                     {
-                        RunTickerFromWebSocketDateTime = DateTime.Now;
-                        WebSocketTickerDB = new ClientWebSocket();
-                        this.TickerFromWebSocket();
+                        if (WebSocketTickerDB == null)
+                        {
+                            RunTickerFromWebSocketDateTime = DateTime.Now;
+                            WebSocketTickerDB = new ClientWebSocket();
+                            this.TickerFromWebSocket();
+                        }
                     }
 
                     if ((DateTime.Now - RunTickerFromWebSocketDateTime).TotalSeconds >= this.SocketCloseTimeOutSeconds * 2)
@@ -1379,7 +1399,15 @@ namespace MetaFrm.Stock.Exchange.Upbit
                         //$"TickerFromWebSocketClose(RunTickerFromWebSocket)".WriteMessage(((IApi)this).ExchangeID);
                     }
 
-                    await Task.Delay(2000);
+                    if (Factory.Platform == Maui.Devices.DevicePlatform.Android || Factory.Platform == Maui.Devices.DevicePlatform.iOS)
+                    {
+                        if (status == "Run")
+                            await Task.Delay(3000);
+                        else
+                            await Task.Delay(6000);
+                    }
+                    else
+                        await Task.Delay(1500);
                 }
             });
         }
