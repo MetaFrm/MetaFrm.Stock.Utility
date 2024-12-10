@@ -258,10 +258,10 @@ namespace MetaFrm.Stock.Exchange
                         $"SettingTraillingStop.GapRate 는 3.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                         return false;
                     }
-                    if (setting.ListMin < 2)
+                    if (setting.ListMin < 2 || setting.ListMin > 20)
                     {
-                        message = "'리스트 수'는 2 보다 커야 합니다.";
-                        $"'리스트 수'는 2 보다 커야 합니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        message = "'리스트 수'는 2 보다 크고 20 보다 작아야 합니다.";
+                        $"'리스트 수'는 2 보다 크고 20 보다 작아야 합니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                         return false;
                     }
                     break;
@@ -294,10 +294,10 @@ namespace MetaFrm.Stock.Exchange
                         $"SettingTraillingStop.GapRate 는 3.0 이상만 됩니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                         return false;
                     }
-                    if (setting.ListMin < 2)
+                    if (setting.ListMin < 2 || setting.ListMin > 20)
                     {
-                        message = "'리스트 수'는 2 보다 커야 합니다.";
-                        $"'리스트 수'는 2 보다 커야 합니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
+                        message = "'리스트 수'는 2 보다 크고 20 보다 작아야 합니다.";
+                        $"'리스트 수'는 2 보다 크고 20 보다 작아야 합니다.".WriteMessage(ExchangeID, UserID, setting.SettingID, setting.Market, ConsoleColor.Red);
                         return false;
                     }
                     break;
